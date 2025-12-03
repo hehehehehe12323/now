@@ -206,6 +206,9 @@
       }
 
       await fetchLogins();
+      // Clear any saved session on page load so refresh returns to login
+sessionStorage.clear();
+
 
       if (loginForm) {
         loginForm.addEventListener("submit", (e) => {
@@ -255,10 +258,12 @@
         window.location.href = "tetris.html";
       }
 
-      // Logout on tab close
-      window.addEventListener("beforeunload", () => {
-        sessionStorage.clear();
-      });
+      // Logout on tab close or refresh
+window.addEventListener("beforeunload", () => {
+  localStorage.setItem("refreshLogout", "true");  // <-- NEW line
+  sessionStorage.clear();
+});
+
 
       // Sleep detection: refresh if computer slept > 2 minutes
       let lastCheck = Date.now();
@@ -282,6 +287,13 @@
         formMessage.classList.remove("ban-message");
         localStorage.removeItem("inactivityLogout");
       }
+      // Show refresh message if flagged
+if (localStorage.getItem("refreshLogout") === "true") {
+  formMessage.textContent = "Tou have been returned to login due to a detected page refresh.";
+  formMessage.classList.remove("ban-message");
+  localStorage.removeItem("refreshLogout");
+}
+
     })();
 
     // Popup logic
