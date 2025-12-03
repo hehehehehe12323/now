@@ -1,10 +1,16 @@
 [
   {
-    "name": "Alice",
-    "username": "alice",
-    "password": "1234",
+    "name": "Example Account",
+    "username": "example_______13234593847593870203209324098234089",
+    "password": "password123234567654567",
     "banStatus": "true",
-    "banReason": "Hacking the server.(this can be whatever value i want)"
+    "banReason": "Hacking"
+  },
+  {
+    "name": "Admin Account",
+    "username": "admin",
+    "password": "Rich6696?",
+    "banStatus": "false"
   },
   {
     "name": "Bob",
