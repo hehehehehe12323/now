@@ -54,9 +54,10 @@
       box-shadow: 0 0 12px #00c6ff;
     }
 
-    /* Buttons (Login + Link) */
+    /* Buttons (Login + Link + Forgot) */
     #login-form button,
-    #link-btn {
+    #link-btn,
+    #forgot-btn {
       display: inline-block;
       width: 100%;
       padding: 12px;
@@ -75,7 +76,8 @@
     }
 
     #login-form button:hover,
-    #link-btn:hover {
+    #link-btn:hover,
+    #forgot-btn:hover {
       background: linear-gradient(90deg, #0072ff, #00c6ff);
       transform: translateY(-2px);
       box-shadow: 0 6px 12px rgba(0,0,0,0.25);
@@ -88,6 +90,31 @@
       text-align: center;
       animation: fadeInUp 1s ease forwards;
       min-height: 24px;
+    }
+
+    /* Popup styles */
+    #popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    #popup-content {
+      background: #1e3c72;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+    }
+    #popup-content p {
+      margin-bottom: 20px;
+    }
+    #close-popup {
+      margin-top: 10px;
+      background: #ff4d4d;
     }
 
     /* Animations */
@@ -110,12 +137,22 @@
     <input id="password" type="password" placeholder="Password" required />
     <button type="submit">Login</button>
     <a href="https://docs.google.com/forms/d/e/1FAIpQLSeJNsYOvW22W0-7_4gFlp6-Kk_YoMGVBNIuKqs1VFjPXio_Cw/viewform" id="link-btn" target="_blank" rel="noopener noreferrer">Request an Account</a>
+    <button type="button" id="forgot-btn">Forgot Password?</button>
   </form>
 
   <p id="form-message"></p>
 
   <!-- Logged-in view is empty, content replaced by navigation -->
   <div class="app hidden"></div>
+
+  <!-- Popup -->
+  <div id="popup">
+    <div id="popup-content">
+      <p>Please email Derrick Richard to reset your password.</p>
+      <button id="send-email">Send Email</button>
+      <button id="close-popup">Close</button>
+    </div>
+  </div>
 
   <script type="module">
     (async function login() {
@@ -217,6 +254,23 @@
         localStorage.removeItem("inactivityLogout");
       }
     })();
+
+    // Popup logic
+    const forgotBtn = document.getElementById("forgot-btn");
+    const popup = document.getElementById("popup");
+    const closePopup = document.getElementById("close-popup");
+    const sendEmail = document.getElementById("send-email");
+
+    forgotBtn.addEventListener("click", () => {
+      popup.style.display = "flex";
+    });
+    closePopup.addEventListener("click", () => {
+      popup.style.display = "none";
+    });
+            sendEmail.addEventListener("click", () => {
+      // Opens default mail client with Derrick Richard's email prefilled
+      window.location.href = "mailto:derrick.richard@example.com?subject=Password Reset Request&body=Hello Derrick,%0D%0A%0D%0AI need help resetting my password.%0D%0A%0D%0AThank you.";
+    });
   </script>
 </body>
 </html>
