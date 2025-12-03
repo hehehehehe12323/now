@@ -3,44 +3,50 @@
     "name": "Example Account",
     "username": "example_______13234593847593870203209324098234089",
     "password": "password123234567654567",
-    "banStatus": true,
+    "banStatus": "true",
     "banReason": "Hacking"
   },
   {
     "name": "Admin Account",
     "username": "admin",
     "password": "Rich6696?",
-    "banStatus": false
+    "banStatus": "false"
   },
   {
     "name": "Brayden Parker",
     "username": "BONEYHUN1",
     "password": "Brayden16?",
-    "banStatus": true,
+    "banStatus": "true",
     "banReason": "Too big."
   },
   {
     "name": "Evan Day",
     "username": "Unsupervisedmale",
     "password": "Evan2011!",
-    "banStatus": false
+    "banStatus": "false"
   },
   {
     "name": "Morgan Padgett",
     "username": "PadgettBoys8198",
     "password": "apple_cider",
-    "banStatus": false
+    "banStatus": "false"
   },
   {
     "name": "Raina Diaz",
     "username": "Daina-Riaz",
     "password": "Diaz0920",
-    "banStatus": false
+    "banStatus": "false"
   },
   {
     "name": "Cam Cordes",
     "username": "Camallen2010",
     "password": "Cor004167",
-    "banStatus": false
+    "banStatus": "false"
+  },
+  {
+    "name": "Colt Strictland",
+    "username": "IcantThinkOfaName",
+    "password": "PASSwordE134:",
+    "banStatus": "false"
   }
 ]
