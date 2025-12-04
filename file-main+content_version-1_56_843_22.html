@@ -644,10 +644,17 @@ function saveData() {
   // Combine with cookies
   let data = JSON.stringify(storageObj, null, 2) + "\n\n|\n\n" + document.cookie;
 
-  // Trigger download
+  // Build date string in mm-dd-yyyy format
+  let now = new Date();
+  let month = String(now.getMonth() + 1).padStart(2, '0');
+  let day = String(now.getDate()).padStart(2, '0');
+  let year = now.getFullYear();
+  let dateString = `${month}-${day}-${year}`;
+
+  // Trigger download with custom filename
   const link = document.createElement("a");
   link.href = URL.createObjectURL(new Blob([data], { type: "text/plain" }));
-  link.download = `${Date.now()}.data`;
+  link.download = `asteroid_save_data_${dateString}.JSON`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
