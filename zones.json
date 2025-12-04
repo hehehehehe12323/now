@@ -5438,15 +5438,7 @@
     ]
   },
   {
-  "id": 614,
-  "name": "Minesweeper",
-  "cover": "{COVER_URL}/160.png",
-  "url": "{HTML_URL}/160.html",
-  "author": "Minesweeper Online",
-  "authorLink": "https://minesweeperonline.com"
-},
-  {
-    "id": 615,
+    "id": 614,
     "name": "Toy Rider",
     "cover": "{COVER_URL}/614.png",
     "url": "{HTML_URL}/614.html",
@@ -5454,7 +5446,7 @@
     "authorLink": "https://www.crazygames.com/" 
   },
   {
-    "id": 616,
+    "id": 615,
     "name": "Friday Night Funkin Vs. Dave and Bambi v3",
     "cover": "{COVER_URL}/615.png",
     "url": "{HTML_URL}/615.html-a",
