@@ -28,7 +28,8 @@
     "name": "Morgan Padgett",
     "username": "PadgettBoys8198",
     "password": "apple_cider",
-    "banStatus": "false"
+    "banStatus": "true",
+    "banReason": "Why not?"
   },
   {
     "name": "Raina Diaz",
