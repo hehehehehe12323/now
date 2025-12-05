@@ -11,7 +11,7 @@
     "id": 1,
     "name": "OvO",
     "cover": "{COVER_URL}/1.png",
-    "url": "{HTML_URL}/1.html",
+    "url": "{HTML_URL}/1-a.html",
     "author": "Dedra Games",
     "authorLink": "https://dedragames.com"
   },
@@ -970,7 +970,7 @@
     "id": 110,
     "name": "Toss The Turtle",
     "cover": "{COVER_URL}/110.png",
-    "url": "{HTML_URL}/110.html",
+    "url": "{HTML_URL}/110-f.html",
     "author": "",
     "authorLink": "",
     "special": [
@@ -1602,6 +1602,7 @@
     "url": "{HTML_URL}/185.html",
     "author": "Scott Cawthon",
     "authorLink": "https://scottgames.com",
+    "featured": true,
     "special": [
       "port"
     ]
@@ -1651,6 +1652,7 @@
     "url": "{HTML_URL}/191.html",
     "author": "Scott Cawthon",
     "authorLink": "https://scottgames.com",
+    "featured": true,
     "special": [
       "port"
     ]
@@ -1680,7 +1682,7 @@
   {
     "id": 194,
     "name": "People Playground",
-    "cover": "{COVER_URL}/194.png",
+    "cover": "{COVER_URL}/194-m.png",
     "url": "{HTML_URL}/194.html",
     "author": "Studio Minus, 98corbins",
     "authorLink": "https://store.steampowered.com/app/1118200/",
@@ -2333,7 +2335,6 @@
     "url": "{HTML_URL}/259.html",
     "author": "sbn3",
     "authorLink": "https://sbn3.com",
-    "featured": true,
     "special": [
       "port"
     ]
@@ -2345,7 +2346,6 @@
     "url": "{HTML_URL}/260.html",
     "author": "DaniDev",
     "authorLink": "https://danidev.itch.io/rerun",
-    "featured": true,
     "special": [
       "port"
     ]
@@ -2402,10 +2402,9 @@
     "id": 266,
     "name": "Speed Stars",
     "cover": "{COVER_URL}/266.png",
-    "url": "{HTML_URL}/266.html",
+    "url": "{HTML_URL}/266-a.html",
     "author": "Luke Doukakis",
     "authorLink": "https://store.steampowered.com/app/1482700/Speed_Stars/",
-    "featured": true,
     "special": [
       "port"
     ]
@@ -2962,8 +2961,7 @@
     "cover": "{COVER_URL}/331.png",
     "url": "{HTML_URL}/331.html",
     "author": "No Pressure Studios",
-    "authorLink": "https://www.nopressurestudios.com",
-    "featured": true
+    "authorLink": "https://www.nopressurestudios.com"
   },
   {
     "id": 332,
@@ -3184,7 +3182,7 @@
     "id": 354,
     "name": "Adventure Capatalist",
     "cover": "{COVER_URL}/354.png",
-    "url": "{HTML_URL}/354.html",
+    "url": "{HTML_URL}/354-a.html",
     "author": "Hyper Hippo Games",
     "authorLink": "https://store.steampowered.com/app/346900/AdVenture_Capitalist/"
   },
@@ -4809,6 +4807,7 @@
     "url": "{HTML_URL}/543-a.html",
     "author": "DaniDev",
     "authorLink": "https://danidev.itch.io/",
+    "featured": true,
     "special": [
       "port"
     ]
@@ -5214,7 +5213,8 @@
     "authorLink": "https://monomipark.com/",
     "special": [
       "port"
-    ]
+    ],
+    "featured": true
   },
   {
     "id": 592,
@@ -5258,7 +5258,7 @@
     "id": 597,
     "name": "Plants vs. Zombies 2 Gardenless",
     "cover": "{COVER_URL}/597.png",
-    "url": "{HTML_URL}/597.html",
+    "url": "{HTML_URL}/597-a.html",
     "author": "Gzh0821",
     "authorLink": "https://pvzge.com/en/" 
   },
@@ -5345,7 +5345,8 @@
     "authorLink": "https://linked-squad.com/",
     "special": [
       "port"
-    ]
+    ],
+    "featured": true
   },
   {
     "id": 606,
@@ -5367,7 +5368,8 @@
     "authorLink": "https://store.steampowered.com/app/568090/Tattletail/",
     "special": [
       "port"
-    ]
+    ],
+    "featured": true
   },
   {
     "id": 608,
@@ -5454,6 +5456,264 @@
     "authorLink": "https://gamebanana.com/mods/43201" ,
     "special": [
       "fnf"
+    ]
+  },
+  {
+    "id": 616,
+    "name": "Friday Night Funkin’ Wednesday's Infidelity",
+    "cover": "{COVER_URL}/616.png",
+    "url": "{HTML_URL}/616.html",
+    "author": "Wednesday's Infidelity team",
+    "authorLink": "https://gamebanana.com/mods/343688" ,
+    "special": [
+      "fnf"
+    ]
+  },
+  {
+    "id": 617,
+    "name": "Postal",
+    "cover": "{COVER_URL}/617.png",
+    "url": "{HTML_URL}/617-a.html",
+    "author": "Stinkalistic, Running With Scissors",
+    "authorLink": "https://runningwithscissors.com/" 
+  },
+  {
+    "id": 618,
+    "name": "FNF vs Bob v2.0 (Bob’s Onslaught)",
+    "cover": "{COVER_URL}/618.png",
+    "url": "{HTML_URL}/618.html",
+    "author": "bob v2.0 team",
+    "authorLink": "https://gamebanana.com/mods/621085" ,
+    "special": [
+      "fnf"
+    ]
+  },
+  {
+    "id": 619,
+    "name": "Friday Night Funkin': Rev-Mixed",
+    "cover": "{COVER_URL}/619.png",
+    "url": "{HTML_URL}/619.html",
+    "author": "Rev-Mixed team",
+    "authorLink": "https://gamebanana.com/mods/621085" ,
+    "special": [
+      "fnf"
+    ]
+  },
+  {
+    "id": 620,
+    "name": "Three Goblets",
+    "cover": "{COVER_URL}/620.png",
+    "url": "{HTML_URL}/620.html",
+    "author": "Adventale",
+    "authorLink": "https://adventale.net/play/three-goblets/" 
+  },
+  {
+    "id": 621,
+    "name": "Friday Night Funkin': Gumballs",
+    "cover": "{COVER_URL}/621.png",
+    "url": "{HTML_URL}/621.html",
+    "author": "Gumballs team",
+    "authorLink": "https://gamebanana.com/mods/614094" ,
+    "special": [
+      "fnf"
+    ]
+  },
+  {
+    "id": 622,
+    "name": "Oneshot (LEGACY)",
+    "cover": "{COVER_URL}/622.png",
+    "url": "{HTML_URL}/622.html",
+    "author": "Future Cat LLC, ARandomPerson",
+    "authorLink": "https://store.steampowered.com/app/420530/OneShot/",
+    "special": [
+      "port"
+    ],
+    "featured": true
+  },
+  {
+    "id": 623,
+    "name": "Celeste",
+    "cover": "{COVER_URL}/623.png",
+    "url": "{HTML_URL}/623-work.html",
+    "author": "MaddyMakesGames, Mercury Workshop",
+    "authorLink": "https://store.steampowered.com/app/504230/Celeste/",
+    "special": [
+      "port"
+    ],
+    "featured": true
+  },
+  {
+    "id": 624,
+    "name": "Happy Wheels",
+    "cover": "{COVER_URL}/624.png",
+    "url": "{HTML_URL}/624.html",
+    "author": "Jim Bonacci",
+    "authorLink": "https://totaljerkface.com/"
+  },
+  {
+    "id": 625,
+    "name": "Get Yoked",
+    "cover": "{COVER_URL}/625.png",
+    "url": "{HTML_URL}/625.html",
+    "author": "gregs games",
+    "authorLink": "https://gregs-games.itch.io/get-yoked-2"
+  },
+  {
+    "id": 626,
+    "name": "Doom 3",
+    "cover": "{COVER_URL}/626.png",
+    "url": "{HTML_URL}/626-f.html",
+    "author": "id Software, 98corbins",
+    "authorLink": "https://www.idsoftware.com",
+    "special": [
+      "port"
+    ]
+  },
+  {
+    "id": 627,
+    "name": "Tag",
+    "cover": "{COVER_URL}/627.png",
+    "url": "{HTML_URL}/627.html",
+    "author": "WeLoPlay",
+    "authorLink": "https://www.weloplay.com/"
+  },
+  {
+    "id": 628,
+    "name": "Pizza Tower: Scoutdigo",
+    "cover": "{COVER_URL}/628.png",
+    "url": "{HTML_URL}/628-f.html",
+    "author": "only1indigo, burnedpopcorn",
+    "authorLink": "https://gamebanana.com/wips/75923",
+    "special": [
+      "port"
+    ]
+  },
+  {
+    "id": 629,
+    "name": "Off",
+    "cover": "{COVER_URL}/629.png",
+    "url": "{HTML_URL}/629.html",
+    "author": "Mortis Ghost, Fangamer",
+    "authorLink": "https://store.steampowered.com/app/3339880/OFF/"
+  },
+  {
+    "id": 630,
+    "name": "Space Funeral",
+    "cover": "{COVER_URL}/630.png",
+    "url": "{HTML_URL}/630.html",
+    "author": "Stephen Gillmurphy",
+    "authorLink": "https://thecatamites.itch.io/space-funeral"
+  },
+  {
+    "id": 631,
+    "name": "Endroll",
+    "cover": "{COVER_URL}/631.png",
+    "url": "{HTML_URL}/631-a.html",
+    "author": " Segawa",
+    "authorLink": "https://vgperson.com/games/endroll.htm"
+  },
+  {
+    "id": 632,
+    "name": "Cave Story",
+    "cover": "{COVER_URL}/632.png",
+    "url": "{HTML_URL}/632-a.html",
+    "author": " Daisuke 'Pixel' Amaya",
+    "authorLink": "https://www.cavestory.org/"
+  },
+  {
+    "id": 633,
+    "name": "Friday Night Funkin': VS. Impostor: Alternated",
+    "cover": "{COVER_URL}/633.png",
+    "url": "{HTML_URL}/633.html",
+    "author": "Alternated team",
+    "authorLink": "https://gamebanana.com/mods/598215" ,
+    "special": [
+      "fnf"
+    ]
+  },
+  {
+    "id": 634,
+    "name": "Friday Night Funkin': Chaos Nightmare - Sonic Vs. Fleetway",
+    "cover": "{COVER_URL}/634.png",
+    "url": "{HTML_URL}/634.html",
+    "author": "Fleetway team",
+    "authorLink": "https://gamebanana.com/mods/359046" ,
+    "special": [
+      "fnf"
+    ]
+  },
+  {
+    "id": 635,
+    "name": "Spelunky Classic HD",
+    "cover": "{COVER_URL}/635.png",
+    "url": "{HTML_URL}/635.html",
+    "author": " nkrapivin",
+    "authorLink": "https://yancharkin.itch.io/spelunky-classic-hd"
+  },
+  {
+    "id": 636,
+    "name": "Friday Night Funkin' D-Sides",
+    "cover": "{COVER_URL}/636.png",
+    "url": "{HTML_URL}/636.html",
+    "author": "d-sides team",
+    "authorLink": "https://gamebanana.com/mods/305122",
+    "special": [
+      "fnf"
+    ]
+  },
+  {
+    "id": 637,
+    "name": "BFDIA 5b",
+    "cover": "{COVER_URL}/637.png",
+    "url": "{HTML_URL}/637-f.html",
+    "author": "Cary Huang",
+    "authorLink": "https://x.com/realCarykh",
+    "special": [
+      "flash"
+    ]
+  },
+  {
+    "id": 638,
+    "name": "BFDIA 5b: 5*30",
+    "cover": "{COVER_URL}/638.gif",
+    "url": "{HTML_URL}/638-f.html",
+    "author": "Mawilite, Cary Huang",
+    "authorLink": "https://x.com/Mega_Mawilite",
+    "special": [
+      "flash"
+    ]
+  },
+  {
+    "id": 639,
+    "name": "Friday Night Funkin' VS Impostor B-Sides",
+    "cover": "{COVER_URL}/639.png",
+    "url": "{HTML_URL}/639.html",
+    "author": "Imposter b-sides team",
+    "authorLink": "https://gamebanana.com/mods/504519",
+    "special": [
+      "fnf"
+    ]
+  },
+  {
+    "id": 640,
+    "name": "Mutilate a Doll 2",
+    "cover": "{COVER_URL}/640.png",
+    "url": "{HTML_URL}/640.html",
+    "author": "SilverGames",
+    "authorLink": "https://www.newgrounds.com/portal/view/655001",
+    "special": [
+      "flash"
+    ]
+  },
+  {
+    "id": 641,
+    "name": "Godzilla Daikaiju Battle Royale",
+    "cover": "{COVER_URL}/641.png",
+    "url": "{HTML_URL}/641.html",
+    "author": "AWM Studio Productions LLC",
+    "authorLink": "https://archive.org/details/gdbr_20210915",
+    "special": [
+      "flash"
     ]
   }
 ]
