@@ -5446,15 +5446,7 @@
     "authorLink": "https://www.crazygames.com/" 
   },
   {
-  "id": 615,
-  "name": "Monster Snake",
-  "cover": "{COVER_URL}/615.png",
-  "url": "{HTML_URL}/615.html",
-  "author": "Derrick Richard",
-  "authorLink": "https://raw.githubusercontent.com/asteroid-pixel/snake-math/refs/heads/main/snake.html"
-}
-  {
-    "id": 616,
+    "id": 615,
     "name": "Friday Night Funkin Vs. Dave and Bambi v3",
     "cover": "{COVER_URL}/615.png",
     "url": "{HTML_URL}/615.html-a",
