@@ -71,5 +71,11 @@
     "username": "bob56",
     "password": "12345",
     "banStatus": "false"
+  },
+  {
+    "name": "Bryan Perez",
+    "username": "Annieofthestars",
+    "password": "AnnieofAllstars",
+    "banStatus": "false"
   }
 ]
