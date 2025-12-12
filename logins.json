@@ -107,5 +107,11 @@
     "username": "john",
     "password": "mata",
     "banStatus": "false"
+  },
+  {
+    "name": "Knox Dzuik",
+    "username": "dzuik",
+    "password": "dzuik",
+    "banStatus": "false"
   }
 ]
