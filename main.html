@@ -26,6 +26,20 @@
       transition: background-color 0.3s, color 0.3s;
     }
 
+    /* Huge Countdown Timer Styles */
+    #countdown-timer {
+      font-size: clamp(2rem, 8vw, 5rem);
+      font-weight: 800;
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--primary-color);
+      text-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+      background-color: rgba(0, 0, 0, 0.2);
+      border-bottom: 4px solid var(--primary-color);
+      margin-bottom: 30px;
+      font-variant-numeric: tabular-nums;
+    }
+
     h1, h2, p {
       text-align: center;
       margin: 0.5em 0;
@@ -369,7 +383,6 @@
   <!-- Matomo -->
   <script>
     var _paq = window._paq = window._paq || [];
-    /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
     _paq.push(['trackPageView']);
     _paq.push(['enableLinkTracking']);
     (function() {
@@ -380,16 +393,18 @@
       g.async=true; g.src='https://cdn.matomo.cloud/classroomgms.matomo.cloud/matomo.js'; s.parentNode.insertBefore(g,s);
     })();
   </script>
-  <!-- End Matomo Code -->
 </head>
 <body class="dark-mode">
+
+  <!-- Huge Countdown Timer -->
+  <div id="countdown-timer">Loading Timer...</div>
 
   <div style="position: absolute; top: 20px; left: 20px;">
       <img src="asteroid.jpeg" alt="ClassroomGMS Logo" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" />
   </div>
 
   <h1>Asteroid Version 1.4.8</h1>
-  </div>
+
   <div class="center-button">
     <a href="https://asteroid-pixel.github.io" rel="noopener noreferrer">
       <button class="styled-button">Log Out</button>
@@ -456,19 +471,40 @@
   </footer>
 
   <script>
+    // Countdown Logic
+    const targetDate = new Date("January 10, 2026 00:00:00").getTime();
+    
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const distance = targetDate - now;
+
+      if (distance < 0) {
+        document.getElementById("countdown-timer").innerHTML = "0d 0h 0m 0s";
+        return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      document.getElementById("countdown-timer").innerHTML = 
+        `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+    
+    setInterval(updateCountdown, 1000);
+    updateCountdown();
+
     // Check for active login session
-  const retrievedLogin = sessionStorage.getItem("usernamePassword");
+    const retrievedLogin = sessionStorage.getItem("usernamePassword");
+    if (!retrievedLogin) {
+      window.location.href = "index.html";
+    }
 
-  // If no session, redirect to login
-  if (!retrievedLogin) {
-    window.location.href = "index.html"; // <-- replace with your login page filename
-  }
-
-  // On refresh, clear session and redirect to login
-  window.addEventListener("beforeunload", () => {
-    sessionStorage.clear();
-    localStorage.setItem("refreshLogout", "true");
-  });
+    window.addEventListener("beforeunload", () => {
+      sessionStorage.clear();
+      localStorage.setItem("refreshLogout", "true");
+    });
     
     const container = document.getElementById('container');
     const zoneViewer = document.getElementById('zoneViewer');
@@ -477,7 +513,7 @@
     const sortOptions = document.getElementById('sortOptions');
     const zonesURL = "zones.json";
     const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
-   const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
+    const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
 
     let zones = [];
     let popularityData = {};
@@ -601,7 +637,7 @@
 
       zoneViewer.classList.remove('fly-in', 'flyInTop', 'flyInBottom', 'flyInLeft', 'flyInRight');
       zoneViewer.classList.remove('fly-out', 'flyOutTop', 'flyOutBottom', 'flyOutLeft', 'flyOutRight');
-      void zoneViewer.offsetWidth; // Force reflow
+      void zoneViewer.offsetWidth;
       zoneViewer.classList.add('fly-out', randomDirection);
 
       setTimeout(() => {
@@ -614,7 +650,7 @@
           zoneFrame.id = "zoneFrame";
           zoneViewer.appendChild(zoneFrame);
         }
-      }, 600); // Match animation duration
+      }, 600);
     }
 
     function fullscreenZone() {
@@ -641,58 +677,51 @@
       });
     }
 
-function saveData() {
-  // Build an object of all localStorage key/value pairs
-  let storageObj = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    let key = localStorage.key(i);
-    storageObj[key] = localStorage.getItem(key);
-  }
-
-  // Combine with cookies
-  let data = JSON.stringify(storageObj, null, 2) + "\n\n|\n\n" + document.cookie;
-
-  // Build date string in mm-dd-yyyy format
-  let now = new Date();
-  let month = String(now.getMonth() + 1).padStart(2, '0');
-  let day = String(now.getDate()).padStart(2, '0');
-  let year = now.getFullYear();
-  let dateString = `${month}-${day}-${year}`;
-
-  // Trigger download with custom filename
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(new Blob([data], { type: "text/plain" }));
-  link.download = `asteroid_save_data_${dateString}.JSON`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
-function loadData(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const content = e.target.result;
-    const [localStorageData, cookieData] = content.split("\n\n|\n\n");
-    try {
-      const parsedData = JSON.parse(localStorageData);
-      for (let key in parsedData) {
-        localStorage.setItem(key, parsedData[key]);
+    function saveData() {
+      let storageObj = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        let key = localStorage.key(i);
+        storageObj[key] = localStorage.getItem(key);
       }
-    } catch (error) {
-      console.error("Failed to parse localStorage data:", error);
+      let data = JSON.stringify(storageObj, null, 2) + "\n\n|\n\n" + document.cookie;
+      let now = new Date();
+      let month = String(now.getMonth() + 1).padStart(2, '0');
+      let day = String(now.getDate()).padStart(2, '0');
+      let year = now.getFullYear();
+      let dateString = `${month}-${day}-${year}`;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(new Blob([data], { type: "text/plain" }));
+      link.download = `asteroid_save_data_${dateString}.JSON`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
-    if (cookieData) {
-      const cookies = cookieData.split("; ");
-      cookies.forEach(cookie => {
-        document.cookie = cookie;
-      });
+
+    function loadData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const content = e.target.result;
+        const [localStorageData, cookieData] = content.split("\n\n|\n\n");
+        try {
+          const parsedData = JSON.parse(localStorageData);
+          for (let key in parsedData) {
+            localStorage.setItem(key, parsedData[key]);
+          }
+        } catch (error) {
+          console.error("Failed to parse localStorage data:", error);
+        }
+        if (cookieData) {
+          const cookies = cookieData.split("; ");
+          cookies.forEach(cookie => {
+            document.cookie = cookie;
+          });
+        }
+        alert("Data Loaded.");
+      };
+      reader.readAsText(file);
     }
-    alert("Data Loaded.");
-  };
-  reader.readAsText(file);
-}
 
     function getGameOfTheDay() {
       if (!zones || zones.length === 0) return null;
@@ -745,7 +774,6 @@ function loadData(event) {
     (function () {
       let lastTime = Date.now();
       const threshold = 60000;
-
       setInterval(() => {
         const currentTime = Date.now();
         if (currentTime - lastTime > threshold) {
@@ -756,17 +784,13 @@ function loadData(event) {
     })();
 
     let hoverTimer;
-
-    // Wait for the DOM to load
     window.addEventListener("DOMContentLoaded", function () {
       const logo = document.querySelector("img[alt='ClassroomGMS Logo']");
-
       logo.addEventListener("mouseenter", function () {
         hoverTimer = setTimeout(function () {
           alert(" You found the Easter Egg!\n\nYour code is: bRAdEr52\n\nFill out the form linked at the top of the game page to get a shoutout and custom quote on the homepage!");
         }, 999999999);
       });
-
       logo.addEventListener("mouseleave", function () {
         clearTimeout(hoverTimer);
       });
