@@ -3,7 +3,7 @@
     "name": "Demo Account",
     "username": "demo",
     "password": "demo55",
-    "banStatus": "false",
+    "banStatus": "false"
   },
   {
     "name": "Admin Account",
