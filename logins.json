@@ -1,10 +1,9 @@
 [
   {
-    "name": "Example Account",
-    "username": "example_______13234593847593870203209324098234089",
-    "password": "password123234567654567",
-    "banStatus": "true",
-    "banReason": "Hacking"
+    "name": "Demo Account",
+    "username": "demo",
+    "password": "demo55",
+    "banStatus": "false",
   },
   {
     "name": "Admin Account",
