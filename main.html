@@ -3,384 +3,286 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Asteroid</title>
+  <title>Asteroid | Premium Gaming</title>
   <link rel="icon" type="image/png" sizes="512x512" href="asteroid.jpeg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary-color: #4f46e5;
-      --primary-dark: #3730a3;
-      --bg-dark: #1e1e2f;
-      --bg-light: #f9f9f9;
-      --text-dark: #ffffff;
-      --text-light: #1a1a1a;
-      --card-bg-dark: #2c2c3e;
-      --card-bg-light: #ffffff;
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.5);
+      --accent: #10b981;
+      --bg-deep: #020617;
+      --bg-surface: #0f172a;
+      --bg-card: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --glass: rgba(15, 23, 42, 0.8);
+      --border: rgba(255, 255, 255, 0.1);
     }
+
+    * { box-sizing: border-box; }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Plus Jakarta Sans', sans-serif;
       margin: 0;
-      padding: 0;
-      background-color: var(--bg-dark);
-      color: var(--text-dark);
-      transition: background-color 0.3s, color 0.3s;
+      background-color: var(--bg-deep);
+      background-image: 
+        radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    /* Huge Countdown Timer Styles */
-    #countdown-timer {
-      font-size: clamp(2rem, 8vw, 5rem);
-      font-weight: 800;
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--primary-color);
-      text-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
-      background-color: rgba(0, 0, 0, 0.2);
-      border-bottom: 4px solid var(--primary-color);
-      margin-bottom: 30px;
-      font-variant-numeric: tabular-nums;
-    }
-
-    h1, h2, p {
-      text-align: center;
-      margin: 0.5em 0;
-      animation: slideDown 0.8s ease-out forwards;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    .center-button {
+    /* Navbar */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 2rem;
       display: flex;
-      justify-content: center;
+      justify-content: space-between;
       align-items: center;
-      margin-bottom: 1rem;
     }
 
-    .center-button > button,
-    .styled-button {
-      padding: 10px 15px;
-      border-radius: 5px;
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
+    .nav-left { display: flex; align-items: center; gap: 1rem; }
+    .nav-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
       cursor: pointer;
-      font-size: 16px;
-      transition: transform 0.3s ease, background-color 0.3s ease;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .nav-logo:hover { transform: scale(1.1) rotate(5deg); }
+    
+    .nav-brand h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -0.5px;
+      background: linear-gradient(to right, #fff, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    .styled-button:hover,
-    .center-button > button:hover {
-      transform: scale(1.05);
-      background-color: var(--primary-dark);
-    }
+    .nav-right { display: flex; gap: 0.75rem; }
 
-    section {
-      animation: fadeIn 1s ease-out forwards;
-      margin-top: 40px;
+    /* Hero Section */
+    .hero {
+      max-width: 1200px;
+      margin: 4rem auto 2rem;
+      padding: 0 2rem;
       text-align: center;
     }
 
-    img[alt="ClassroomGMS Logo"] {
-      animation: logoIntro 1s ease-out forwards;
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-top: 20px;
+    .hero h2 {
+      font-size: clamp(2.5rem, 8vw, 4rem);
+      font-weight: 800;
+      margin: 0;
+      letter-spacing: -2px;
+      line-height: 1.1;
     }
 
-    #darkModeToggle {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 12px 16px;
-      border-radius: 50px;
+    .version-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Featured Game */
+    .featured-section {
+      max-width: 1000px;
+      margin: 3rem auto;
+      padding: 0 2rem;
+    }
+
+    #gameOfTheDay {
+      background: var(--bg-card);
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      transition: all 0.4s ease;
       cursor: pointer;
-      font-size: 14px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      position: relative;
     }
 
-    #darkModeToggle:hover {
-      background-color: var(--primary-dark);
+    #gameOfTheDay:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4), 0 0 20px var(--primary-glow);
+      border-color: var(--primary);
     }
 
+    .gotd-banner {
+      height: 350px;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+
+    .gotd-info {
+      padding: 2rem;
+      background: linear-gradient(to top, var(--bg-card) 20%, transparent);
+    }
+
+    /* Toolbar */
+    .toolbar {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .search-wrapper { flex: 1; position: relative; min-width: 300px; }
     #searchBar {
-      display: block;
-      margin: 1.5em auto;
-      padding: 12px;
-      width: 90%;
-      max-width: 600px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      background-color: #333;
-      color: #fff;
+      width: 100%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      padding: 14px 20px;
+      border-radius: 16px;
+      color: white;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+    #searchBar:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
     }
 
+    select, .btn {
+      padding: 12px 20px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .btn-primary { background: var(--primary); border: none; }
+    .btn-primary:hover { transform: scale(1.05); background: #4f46e5; }
+    .btn-success { background: var(--accent); border: none; }
+    .btn-danger { background: #ef4444; border: none; }
+
+    /* Game Grid */
     #container {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 20px;
-      padding: 20px;
-      max-width: 1000px;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 2rem;
+      padding: 2rem;
+      max-width: 1400px;
       margin: 0 auto;
     }
 
-    .zone-item {
-      background-color: var(--card-bg-dark);
-      border-radius: 10px;
+    .game-card {
+      background: var(--bg-card);
+      border-radius: 20px;
       overflow: hidden;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .zone-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
-    }
-
-    .zone-item img {
-      width: 100%;
-      height: 140px;
-      object-fit: cover;
-    }
-
-    .zone-item button {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      background-color: var(--primary-color);
-      color: white;
-      font-size: 15px;
+      border: 1px solid var(--border);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
-      transition: background-color 0.2s;
     }
 
-    .zone-item button:hover {
-      background-color: var(--primary-dark);
+    .game-card:hover {
+      transform: translateY(-10px);
+      border-color: var(--primary);
+      box-shadow: 0 12px 30px -10px rgba(0,0,0,0.5);
     }
 
+    .game-card img {
+      width: 100%;
+      aspect-ratio: 16/10;
+      object-fit: cover;
+      transition: transform 0.5s;
+    }
+    .game-card:hover img { transform: scale(1.05); }
+
+    .game-info {
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .game-info h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    /* Modal Viewer */
     #zoneViewer {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 85%;
-      height: 85%;
-      background: #111;
-      border-radius: 10px;
-      overflow: hidden;
-      z-index: 1000;
+      inset: 0;
+      background: var(--bg-deep);
+      z-index: 2000;
       display: none;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
-      opacity: 0;
+      flex-direction: column;
     }
 
-    #zoneViewer iframe {
-      width: 100%;
-      height: 90%;
-      border: none;
-    }
-
-    #zoneInfo {
+    #zoneHeader {
+      padding: 1rem 2rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px;
-      background: #222;
-      color: #fff;
     }
 
-    #controls button {
-      margin-left: 10px;
-      padding: 8px 12px;
-      background-color: var(--primary-color);
+    #zoneFrame {
+      flex: 1;
       border: none;
-      border-radius: 4px;
-      color: white;
-      cursor: pointer;
+      background: #000;
     }
 
-    #controls button:hover {
-      background-color: var(--primary-dark);
-    }
-
-    #topControls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      margin: 20px auto;
-      max-width: 1000px;
-      padding: 0 20px;
-    }
-
-    #dataButtons button,
-    #sortOptions {
-      padding: 10px 15px;
-      margin: 5px;
-      border: none;
-      border-radius: 5px;
-      font-size: 15px;
-      cursor: pointer;
-    }
-
-    #dataButtons button {
-      background-color: #10b981;
-      color: white;
-    }
-
-    #dataButtons button:hover {
-      background-color: #059669;
-    }
-
-    #sortOptions {
-      background-color: #fff;
-      color: #000;
-    }
-
-    .zone-wrapper {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    .zone-count {
+    /* Data Footer */
+    .data-footer {
+      max-width: 800px;
+      margin: 4rem auto;
+      padding: 2rem;
+      background: rgba(15, 23, 42, 0.4);
+      border-radius: 24px;
       text-align: center;
-      font-size: 18px;
-      margin-bottom: 10px;
+      border: 1px dashed var(--border);
     }
 
-    body:not(.dark-mode) {
-      background-color: var(--bg-light);
-      color: var(--text-light);
+    footer {
+      padding: 4rem 2rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      border-top: 1px solid var(--border);
     }
-
-    body:not(.dark-mode) #searchBar {
-      background-color: #eee;
-      color: #000;
-    }
-
-    body:not(.dark-mode) .zone-item {
-      background-color: var(--card-bg-light);
-      color: #000;
-    }
-
-    body:not(.dark-mode) #zoneViewer {
-      background-color: #fff;
-    }
-
-    body:not(.dark-mode) #zoneInfo {
-      background-color: #f0f0f0;
-      color: #000;
-    }
+    footer a { color: var(--text-main); text-decoration: none; font-weight: 600; }
 
     /* Animations */
-    @keyframes logoIntro {
-      0% { opacity: 0; transform: scale(0.8); }
-      100% { opacity: 1; transform: scale(1); }
-    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: fadeIn 0.6s ease forwards; }
 
-    @keyframes slideDown {
-      0% { opacity: 0; transform: translateY(-20px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeIn {
-      0% { opacity: 0; }
-      100% { opacity: 1; }
-    }
-
-    @keyframes flyInTop {
-      from { transform: translate(-50%, -150%); opacity: 0; }
-      to { transform: translate(-50%, -50%); opacity: 1; }
-    }
-
-    @keyframes flyInBottom {
-      from { transform: translate(-50%, 150%); opacity: 0; }
-      to { transform: translate(-50%, -50%); opacity: 1; }
-    }
-
-    @keyframes flyInLeft {
-      from { transform: translate(-150%, -50%); opacity: 0; }
-      to { transform: translate(-50%, -50%); opacity: 1; }
-    }
-
-    @keyframes flyInRight {
-      from { transform: translate(150%, -50%); opacity: 0; }
-      to { transform: translate(-50%, -50%); opacity: 1; }
-    }
-
-    .fly-in {
-      animation-duration: 0.6s;
-      animation-fill-mode: both;
-      animation-timing-function: ease-out;
-    }
-
-    .flyInTop {
-      animation-name: flyInTop;
-    }
-
-    .flyInBottom {
-      animation-name: flyInBottom;
-    }
-
-    .flyInLeft {
-      animation-name: flyInLeft;
-    }
-
-    .flyInRight {
-      animation-name: flyInRight;
-    }
-
-    @keyframes flyOutTop {
-      from { transform: translate(-50%, -50%); opacity: 1; }
-      to { transform: translate(-50%, -150%); opacity: 0; }
-    }
-
-    @keyframes flyOutBottom {
-      from { transform: translate(-50%, -50%); opacity: 1; }
-      to { transform: translate(-50%, 150%); opacity: 0; }
-    }
-
-    @keyframes flyOutLeft {
-      from { transform: translate(-50%, -50%); opacity: 1; }
-      to { transform: translate(-150%, -50%); opacity: 0; }
-    }
-
-    @keyframes flyOutRight {
-      from { transform: translate(-50%, -50%); opacity: 1; }
-      to { transform: translate(150%, -50%); opacity: 0; }
-    }
-
-    .fly-out {
-      animation-duration: 0.6s;
-      animation-fill-mode: both;
-      animation-timing-function: ease-in;
-    }
-
-    .flyOutTop {
-      animation-name: flyOutTop;
-    }
-
-    .flyOutBottom {
-      animation-name: flyOutBottom;
-    }
-
-    .flyOutLeft {
-      animation-name: flyOutLeft;
-    }
-
-    .flyOutRight {
-      animation-name: flyOutRight;
+    @media (max-width: 768px) {
+      .toolbar { flex-direction: column; align-items: stretch; }
+      .nav-right .btn { padding: 8px 12px; font-size: 0.8rem; }
+      .hero h2 { font-size: 2.5rem; }
     }
   </style>
 
-  <!-- Matomo -->
   <script>
     var _paq = window._paq = window._paq || [];
     _paq.push(['trackPageView']);
@@ -394,108 +296,94 @@
     })();
   </script>
 </head>
-<body class="dark-mode">
+<body>
 
-  <!-- Huge Countdown Timer -->
-  <div id="countdown-timer">Loading Timer...</div>
+  <nav>
+    <div class="nav-left">
+      <img src="asteroid.jpeg" alt="Asteroid Logo" class="nav-logo" id="mainLogo" />
+      <div class="nav-brand">
+        <h1>ASTEROID</h1>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="btn" onclick="saveData()">Save</button>
+      <button class="btn" onclick="document.getElementById('file').click()">Load</button>
+      <a href="https://asteroid-pixel.github.io" class="btn btn-primary">Log Out</a>
+    </div>
+  </nav>
 
-  <div style="position: absolute; top: 20px; left: 20px;">
-      <img src="asteroid.jpeg" alt="ClassroomGMS Logo" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" />
-  </div>
+  <header class="hero">
+    <span class="version-badge">VERSION 1.4.8</span>
+    <h2>Explore the Galaxy of Games</h2>
+    <p style="color: var(--text-muted); max-width: 600px; margin: 1.5rem auto;">
+      A premium collection of high-performance unblocked web applications. 
+      Sync your data across devices and play anywhere.
+    </p>
+  </header>
 
-  <h1>Asteroid Version 1.4.8</h1>
+  <section class="featured-section">
+    <div id="gameOfTheDay" class="animate-in">
+      <!-- Injected by JS -->
+    </div>
+  </section>
 
-  <div class="center-button">
-    <a href="https://asteroid-pixel.github.io" rel="noopener noreferrer">
-      <button class="styled-button">Log Out</button>
-    </a>
-  </div>
- <div class="center-button">
-  <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGjJMErXtdt4AJZ4juio21Mp-M6zBfZRsd9flU3lEbTEl1EA/viewform?usp=header" 
-     target="_blank" 
-     rel="noopener noreferrer" 
-     class="styled-button">
-    Add a game to Asteroid
-  </a>
-</div>
-
-  <input type="text" id="searchBar" placeholder="Search Games" onkeyup="filterZones()" />
-
-  <div id="topControls">
-    <div id="dataButtons">
-      <button onclick="saveData()">Save Data</button>
-      <button onclick="document.getElementById('file').click()">Load Data</button>
-      <p>Saving data will create a file with all of your save data. When pressing load data, select that file to use your game states.</p>
-      <input type="file" id="file" style="display:none" onchange="loadData(event)" />
+  <div class="toolbar">
+    <div class="search-wrapper">
+      <input type="text" id="searchBar" placeholder="Search the nebula..." onkeyup="filterZones()" />
     </div>
     <select id="sortOptions" onchange="sortZones()">
-      <option value="name">by Name</option>
-      <option value="id">by Id</option>
-      <option value="popular">by Popularity</option>
+      <option value="popular">Most Popular</option>
+      <option value="name">Alphabetical</option>
+      <option value="id">Numeric ID</option>
     </select>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGjJMErXtdt4AJZ4juio21Mp-M6zBfZRsd9flU3lEbTEl1EA/viewform" target="_blank" class="btn btn-success">Submit Game</a>
   </div>
 
-  <div class="zone-wrapper">
-    <div id="zoneCount" class="zone-count"></div>
-    <h2>Game Of The Day</h2>
-    <div id="gameOfTheDay" class="game-of-the-day"></div>
-    <div id="container">Loading...</div>
-  </div>
+  <div id="zoneCount" style="text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem;"></div>
+
+  <main id="container">
+    <!-- Game cards injected here -->
+  </main>
+
+  <section class="data-footer">
+    <h3 style="margin-top: 0;">Cloud Data Synchronization</h3>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">
+      Your progress is stored locally. Export your save file to backup your game states or transfer them to another browser.
+    </p>
+    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 1.5rem;">
+      <button onclick="saveData()" class="btn btn-success">Export Backup</button>
+      <button onclick="document.getElementById('file').click()" class="btn">Import Backup</button>
+    </div>
+    <input type="file" id="file" style="display:none" onchange="loadData(event)" />
+  </section>
 
   <div id="zoneViewer">
-    <div id="zoneInfo">
-      <div id="zoneTitle">
-        <span id="zoneName"></span> <span id="zoneId"></span>
+    <div id="zoneHeader">
+      <div>
+        <span id="zoneName" style="font-weight: 800; font-size: 1.2rem;"></span>
+        <span id="zoneId" style="color: var(--text-muted); margin-left: 10px; font-size: 0.9rem;"></span>
       </div>
-      <div id="controls">
-        <button onclick="closeZone()">Close</button>
-        <button onclick="fullscreenZone()">Fullscreen</button>
-        <button onclick="aboutBlank()">about:blank</button>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-primary" onclick="fullscreenZone()">Fullscreen</button>
+        <button class="btn" onclick="aboutBlank()">Stealth Window</button>
+        <button class="btn btn-danger" onclick="closeZone()">Close</button>
       </div>
     </div>
     <iframe id="zoneFrame"></iframe>
   </div>
 
-  <button id="darkModeToggle">Toggle Dark Mode</button>
-
-  <footer style="text-align: center; font-size: 14px; padding: 30px 20px; margin-top: 60px; background-color: #111; color: #ccc;">
+  <footer>
     <p>
-      <a href="https://asteroid-pixel.github.io" style="color: #ccc;">Asteroid</a> © 2025 by 
-      <a href="https://derrickrichard.github.io/profile/" style="color: #ccc;">Derrick Richard</a> is licensed under 
-      <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" style="color: #ccc;">Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International</a>
-      <img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="CC" style="max-width: 1em; max-height: 1em; margin-left: .2em;">
-      <img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="BY" style="max-width: 1em; max-height: 1em; margin-left: .2em;">
-      <img src="https://mirrors.creativecommons.org/presskit/icons/nc.svg" alt="NC" style="max-width: 1em; max-height: 1em; margin-left: .2em;">
-      <img src="https://mirrors.creativecommons.org/presskit/icons/nd.svg" alt="ND" style="max-width: 1em; max-height: 1em; margin-left: .2em;">
+      <a href="https://asteroid-pixel.github.io">Asteroid</a> &copy; 2025 by 
+      <a href="https://derrickrichard.github.io/profile/">Derrick Richard</a>
     </p>
+    <div style="margin-top: 1rem; opacity: 0.6;">
+      Licensed under Creative Commons BY-NC-ND 4.0
+    </div>
   </footer>
 
   <script>
-    // Countdown Logic
-    const targetDate = new Date("January 10, 2026 00:00:00").getTime();
-    
-    function updateCountdown() {
-      const now = new Date().getTime();
-      const distance = targetDate - now;
-
-      if (distance < 0) {
-        document.getElementById("countdown-timer").innerHTML = "0d 0h 0m 0s";
-        return;
-      }
-
-      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      document.getElementById("countdown-timer").innerHTML = 
-        `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    }
-    
-    setInterval(updateCountdown, 1000);
-    updateCountdown();
-
-    // Check for active login session
+    // Security & Auth
     const retrievedLogin = sessionStorage.getItem("usernamePassword");
     if (!retrievedLogin) {
       window.location.href = "index.html";
@@ -505,12 +393,14 @@
       sessionStorage.clear();
       localStorage.setItem("refreshLogout", "true");
     });
-    
+
     const container = document.getElementById('container');
+    const featuredContainer = document.getElementById('gameOfTheDay');
     const zoneViewer = document.getElementById('zoneViewer');
     let zoneFrame = document.getElementById('zoneFrame');
     const searchBar = document.getElementById('searchBar');
     const sortOptions = document.getElementById('sortOptions');
+    
     const zonesURL = "zones.json";
     const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
     const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
@@ -521,21 +411,19 @@
     async function listZones() {
       try {
         const response = await fetch(zonesURL);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         zones = await response.json();
         await fetchPopularity();
         sortZones();
+        
+        // Deep link check
         const search = new URLSearchParams(window.location.search);
         const id = search.get('id');
         if (id) {
-          const zone = zones.find(zone => zone.id + '' == id + '');
-          if (zone) {
-            openZone(zone);
-          }
+          const zone = zones.find(z => z.id + '' == id + '');
+          if (zone) openZone(zone);
         }
-        displayGameOfTheDay();
       } catch (error) {
-        container.innerHTML = `Error loading zones: ${error.message}`;
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center;">Error syncing with nebula: ${error.message}</div>`;
       }
     }
 
@@ -545,26 +433,17 @@
         const data = await response.json();
         data.forEach(file => {
           const idMatch = file.name.match(/\/(\d+)\.html$/);
-          if (idMatch) {
-            const id = parseInt(idMatch[1]);
-            popularityData[id] = file.hits.total;
-          }
+          if (idMatch) popularityData[parseInt(idMatch[1])] = file.hits.total;
         });
-      } catch (error) {
-        popularityData[0] = 0;
-      }
+      } catch (e) { console.warn("Popularity metrics offline"); }
     }
 
     function sortZones() {
       const sortBy = sortOptions.value;
-      if (sortBy === 'name') {
-        zones.sort((a, b) => a.name.localeCompare(b.name));
-      } else if (sortBy === 'id') {
-        zones.sort((a, b) => a.id - b.id);
-      } else if (sortBy === 'popular') {
-        zones.sort((a, b) => (popularityData[b.id] || 0) - (popularityData[a.id] || 0));
-      }
-      zones.sort((a, b) => (a.id === -1 ? -1 : b.id === -1 ? 1 : 0));
+      if (sortBy === 'name') zones.sort((a, b) => a.name.localeCompare(b.name));
+      else if (sortBy === 'id') zones.sort((a, b) => a.id - b.id);
+      else if (sortBy === 'popular') zones.sort((a, b) => (popularityData[b.id] || 0) - (popularityData[a.id] || 0));
+      
       displayZones(zones);
       displayGameOfTheDay();
     }
@@ -572,109 +451,96 @@
     function displayZones(zonesToDisplay) {
       container.innerHTML = "";
       if (!zonesToDisplay.length) {
-        container.innerHTML = "No zones found.";
+        container.innerHTML = "<div style='grid-column:1/-1; text-align:center;'>No games found in this sector.</div>";
         return;
       }
 
-      zonesToDisplay.forEach(file => {
-        const zoneItem = document.createElement("div");
-        zoneItem.className = "zone-item";
-        zoneItem.onclick = () => openZone(file);
+      zonesToDisplay.forEach((game, index) => {
+        const card = document.createElement("div");
+        card.className = "game-card animate-in";
+        card.style.animationDelay = `${index * 0.02}s`;
+        card.onclick = () => openZone(game);
 
         const img = document.createElement("img");
-        img.src = file.cover.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL);
-        zoneItem.appendChild(img);
+        img.src = game.cover.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL);
+        img.loading = "lazy";
 
-        const button = document.createElement("button");
-        button.textContent = file.name;
-        button.onclick = (event) => {
-          event.stopPropagation();
-          openZone(file);
-        };
-        zoneItem.appendChild(button);
+        const info = document.createElement("div");
+        info.className = "game-info";
+        info.innerHTML = `<h3>${game.name}</h3>`;
 
-        container.appendChild(zoneItem);
+        card.appendChild(img);
+        card.appendChild(info);
+        container.appendChild(card);
       });
-      document.getElementById("zoneCount").textContent = `Total Games: ${zonesToDisplay.length}`;
+      document.getElementById("zoneCount").textContent = `${zonesToDisplay.length} Galactic Entities Discovered`;
+    }
+
+    function displayGameOfTheDay() {
+      const game = getGameOfTheDay();
+      if (game) {
+        const cover = game.cover.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL);
+        featuredContainer.innerHTML = `
+          <div class="gotd-banner" style="background-image: url('${cover}')"></div>
+          <div class="gotd-info">
+            <span class="version-badge" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #f59e0b; margin: 0 0 1rem 0;">GAME OF THE DAY</span>
+            <h3 style="font-size: 2rem; margin: 0 0 0.5rem 0;">${game.name}</h3>
+            <p style="color: var(--text-muted); margin: 0;">Featured selection based on system popularity and performance.</p>
+          </div>
+        `;
+        featuredContainer.onclick = () => openZone(game);
+      }
+    }
+
+    function getGameOfTheDay() {
+      if (!zones.length) return null;
+      const seed = new Date().getFullYear() * 10000 + (new Date().getMonth() + 1) * 100 + new Date().getDate();
+      return zones[seed % zones.length];
     }
 
     function filterZones() {
       const query = searchBar.value.toLowerCase();
-      const filteredZones = zones.filter(zone => zone.name.toLowerCase().includes(query));
-      displayZones(filteredZones);
+      displayZones(zones.filter(z => z.name.toLowerCase().includes(query)));
     }
 
     function openZone(file) {
-      const directions = ['flyInTop', 'flyInBottom', 'flyInLeft', 'flyInRight'];
-      const randomDirection = directions[Math.floor(Math.random() * directions.length)];
-
-      zoneViewer.classList.remove('fly-in', 'flyInTop', 'flyInBottom', 'flyInLeft', 'flyInRight');
-      zoneViewer.classList.add('fly-in', randomDirection);
-
       if (file.url.startsWith("http")) {
         window.location.href = file.url;
-      } else {
-        const url = file.url.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL);
-        fetch(url).then(response => response.text()).then(html => {
-          if (zoneFrame.contentDocument === null) {
-            zoneFrame = document.createElement("iframe");
-            zoneFrame.id = "zoneFrame";
-            zoneViewer.appendChild(zoneFrame);
-          }
-          zoneFrame.contentDocument.open();
-          zoneFrame.contentDocument.write(html);
-          zoneFrame.contentDocument.close();
-          document.getElementById('zoneName').textContent = file.name;
-          document.getElementById('zoneId').textContent = file.id;
-          zoneViewer.style.display = "block";
-        }).catch(error => alert("Failed to load zone: " + error));
+        return;
       }
+      
+      const url = file.url.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL);
+      fetch(url).then(res => res.text()).then(html => {
+        zoneViewer.style.display = "flex";
+        document.body.style.overflow = "hidden";
+        
+        zoneFrame.contentDocument.open();
+        zoneFrame.contentDocument.write(html);
+        zoneFrame.contentDocument.close();
+        
+        document.getElementById('zoneName').textContent = file.name;
+        document.getElementById('zoneId').textContent = `#${file.id}`;
+      }).catch(err => alert("Transmission failure: " + err));
     }
 
     function closeZone() {
-      const directions = ['flyOutTop', 'flyOutBottom', 'flyOutLeft', 'flyOutRight'];
-      const randomDirection = directions[Math.floor(Math.random() * directions.length)];
-
-      zoneViewer.classList.remove('fly-in', 'flyInTop', 'flyInBottom', 'flyInLeft', 'flyInRight');
-      zoneViewer.classList.remove('fly-out', 'flyOutTop', 'flyOutBottom', 'flyOutLeft', 'flyOutRight');
-      void zoneViewer.offsetWidth;
-      zoneViewer.classList.add('fly-out', randomDirection);
-
-      setTimeout(() => {
-        zoneViewer.style.display = "none";
-        zoneViewer.classList.remove('fly-out', randomDirection);
-        zoneViewer.classList.remove('fly-in');
-        if (zoneFrame) {
-          zoneViewer.removeChild(zoneFrame);
-          zoneFrame = document.createElement("iframe");
-          zoneFrame.id = "zoneFrame";
-          zoneViewer.appendChild(zoneFrame);
-        }
-      }, 600);
+      zoneViewer.style.display = "none";
+      document.body.style.overflow = "auto";
+      zoneFrame.src = "about:blank";
     }
 
     function fullscreenZone() {
-      if (zoneFrame.requestFullscreen) {
-        zoneFrame.requestFullscreen();
-      } else if (zoneFrame.mozRequestFullScreen) {
-        zoneFrame.mozRequestFullScreen();
-      } else if (zoneFrame.webkitRequestFullscreen) {
-        zoneFrame.webkitRequestFullscreen();
-      } else if (zoneFrame.msRequestFullscreen) {
-        zoneFrame.msRequestFullscreen();
-      }
+      if (zoneFrame.requestFullscreen) zoneFrame.requestFullscreen();
+      else if (zoneFrame.webkitRequestFullscreen) zoneFrame.webkitRequestFullscreen();
     }
 
     function aboutBlank() {
-      const newWindow = window.open("about:blank", "_blank");
-      let zone = zones.find(zone => zone.id + '' === document.getElementById('zoneId').textContent).url.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL);
-      fetch(zone).then(response => response.text()).then(html => {
-        if (newWindow) {
-          newWindow.document.open();
-          newWindow.document.write(html);
-          newWindow.document.close();
-        }
-      });
+      const newWin = window.open("about:blank", "_blank");
+      if (newWin) {
+        const html = zoneFrame.contentDocument.documentElement.outerHTML;
+        newWin.document.write(html);
+        newWin.document.close();
+      }
     }
 
     function saveData() {
@@ -684,117 +550,49 @@
         storageObj[key] = localStorage.getItem(key);
       }
       let data = JSON.stringify(storageObj, null, 2) + "\n\n|\n\n" + document.cookie;
-      let now = new Date();
-      let month = String(now.getMonth() + 1).padStart(2, '0');
-      let day = String(now.getDate()).padStart(2, '0');
-      let year = now.getFullYear();
-      let dateString = `${month}-${day}-${year}`;
       const link = document.createElement("a");
       link.href = URL.createObjectURL(new Blob([data], { type: "text/plain" }));
-      link.download = `asteroid_save_data_${dateString}.JSON`;
-      document.body.appendChild(link);
+      link.download = `asteroid_save_${new Date().toISOString().split('T')[0]}.json`;
       link.click();
-      document.body.removeChild(link);
     }
 
     function loadData(event) {
       const file = event.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = function (e) {
-        const content = e.target.result;
-        const [localStorageData, cookieData] = content.split("\n\n|\n\n");
+      reader.onload = (e) => {
         try {
-          const parsedData = JSON.parse(localStorageData);
-          for (let key in parsedData) {
-            localStorage.setItem(key, parsedData[key]);
-          }
-        } catch (error) {
-          console.error("Failed to parse localStorage data:", error);
-        }
-        if (cookieData) {
-          const cookies = cookieData.split("; ");
-          cookies.forEach(cookie => {
-            document.cookie = cookie;
-          });
-        }
-        alert("Data Loaded.");
+          const parts = e.target.result.split("\n\n|\n\n");
+          const parsed = JSON.parse(parts[0]);
+          for (let k in parsed) localStorage.setItem(k, parsed[k]);
+          if (parts[1]) parts[1].split("; ").forEach(c => document.cookie = c);
+          alert("Synchronization successful.");
+          location.reload();
+        } catch (err) { alert("Data corruption detected."); }
       };
       reader.readAsText(file);
     }
 
-    function getGameOfTheDay() {
-      if (!zones || zones.length === 0) return null;
-      const now = new Date();
-      const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-      const index = seed % zones.length;
-      return zones[index];
-    }
-
-    function displayGameOfTheDay() {
-      const game = getGameOfTheDay();
-      const container = document.getElementById("container");
-      let existing = document.getElementById("gameOfTheDayCard");
-      if (existing) existing.remove();
-
-      if (game) {
-        const card = document.createElement("div");
-        card.id = "gameOfTheDayCard";
-        card.className = "zone-item";
-        card.style.margin = "0 auto 15px auto";
-        card.style.maxWidth = "200px";
-        card.style.cursor = "pointer";
-        card.onclick = () => openZone(game);
-
-        const img = document.createElement("img");
-        img.src = game.cover.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL);
-        card.appendChild(img);
-
-        const button = document.createElement("button");
-        button.textContent = `${game.name}`;
-        button.style.width = "100%";
-        button.style.textAlign = "center";
-        button.onclick = (e) => {
-          e.stopPropagation();
-          openZone(game);
-        };
-        card.appendChild(button);
-
-        container.parentNode.insertBefore(card, container);
-      }
-    }
-
-    const darkModeToggle = document.getElementById('darkModeToggle');
-    darkModeToggle.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
+    // Easter Egg Logic
+    let hoverTimer;
+    document.getElementById("mainLogo").addEventListener("mouseenter", () => {
+      hoverTimer = setTimeout(() => {
+        alert("You found the Easter Egg!\n\nYour code is: bRAdEr52\n\nSubmit this in the game form for a shoutout!");
+      }, 5000);
     });
+    document.getElementById("mainLogo").addEventListener("mouseleave", () => clearTimeout(hoverTimer));
 
-    listZones();
-
+    // Auto-refresh logic
     (function () {
       let lastTime = Date.now();
-      const threshold = 60000;
       setInterval(() => {
-        const currentTime = Date.now();
-        if (currentTime - lastTime > threshold) {
-          location.reload();
-        }
-        lastTime = currentTime;
+        if (Date.now() - lastTime > 60000) location.reload();
+        lastTime = Date.now();
       }, 10000);
     })();
 
-    let hoverTimer;
-    window.addEventListener("DOMContentLoaded", function () {
-      const logo = document.querySelector("img[alt='ClassroomGMS Logo']");
-      logo.addEventListener("mouseenter", function () {
-        hoverTimer = setTimeout(function () {
-          alert(" You found the Easter Egg!\n\nYour code is: bRAdEr52\n\nFill out the form linked at the top of the game page to get a shoutout and custom quote on the homepage!");
-        }, 999999999);
-      });
-      logo.addEventListener("mouseleave", function () {
-        clearTimeout(hoverTimer);
-      });
-    });
+    // Init
+    listZones();
   </script>
 </body>
 </html>
