@@ -314,7 +314,7 @@
 
   <header class="hero">
     <span class="version-badge">VERSION 1.4.8</span>
-    <h2>Your Game Library</h2>
+    <h2>Your Library</h2>
     <p style="color: var(--text-muted); max-width: 600px; margin: 1.5rem auto;">
       A curated collection of unblocked web applications. 
       Sync your data across devices and pick up where you left off.
@@ -329,7 +329,7 @@
 
   <div class="toolbar">
     <div class="search-wrapper">
-      <input type="text" id="searchBar" placeholder="Search for games..." onkeyup="filterZones()" />
+      <input type="text" id="searchBar" placeholder="Search." onkeyup="filterZones()" />
     </div>
     <select id="sortOptions" onchange="sortZones()">
       <option value="popular">Most Popular</option>
@@ -451,7 +451,7 @@
     function displayZones(zonesToDisplay) {
       container.innerHTML = "";
       if (!zonesToDisplay.length) {
-        container.innerHTML = "<div style='grid-column:1/-1; text-align:center;'>No games found matching your search.</div>";
+        container.innerHTML = "<div style='grid-column:1/-1; text-align:center;'>No games found matching your search. :(</div>";
         return;
       }
 
@@ -483,7 +483,7 @@
         featuredContainer.innerHTML = `
           <div class="gotd-banner" style="background-image: url('${cover}')"></div>
           <div class="gotd-info">
-            <span class="version-badge" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #f59e0b; margin: 0 0 1rem 0;">FEATURED GAME</span>
+            <span class="version-badge" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #f59e0b; margin: 0 0 1rem 0;">FEATURED</span>
             <h3 style="font-size: 2rem; margin: 0 0 0.5rem 0;">${game.name}</h3>
             <p style="color: var(--text-muted); margin: 0;">Hand-picked for you based on current community trends.</p>
           </div>
