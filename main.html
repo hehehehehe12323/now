@@ -491,10 +491,12 @@
       }
     }
 
-    function getGameOfTheDay() {
+        function getGameOfTheDay() {
       if (!zones.length) return null;
+      // Create a copy and sort by ID to ensure the index always points to the same game
+      const stableZones = [...zones].sort((a, b) => a.id - b.id);
       const seed = new Date().getFullYear() * 10000 + (new Date().getMonth() + 1) * 100 + new Date().getDate();
-      return zones[seed % zones.length];
+      return stableZones[seed % stableZones.length];
     }
 
     function filterZones() {
