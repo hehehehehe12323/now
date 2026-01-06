@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Asteroid | Premium Gaming</title>
+  <title>Asteroid | Dashboard</title>
   <link rel="icon" type="image/png" sizes="512x512" href="asteroid.jpeg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -314,10 +314,10 @@
 
   <header class="hero">
     <span class="version-badge">VERSION 1.4.8</span>
-    <h2>Explore the Galaxy of Games</h2>
+    <h2>Your Game Library</h2>
     <p style="color: var(--text-muted); max-width: 600px; margin: 1.5rem auto;">
-      A premium collection of high-performance unblocked web applications. 
-      Sync your data across devices and play anywhere.
+      A curated collection of unblocked web applications. 
+      Sync your data across devices and pick up where you left off.
     </p>
   </header>
 
@@ -329,7 +329,7 @@
 
   <div class="toolbar">
     <div class="search-wrapper">
-      <input type="text" id="searchBar" placeholder="Search the nebula..." onkeyup="filterZones()" />
+      <input type="text" id="searchBar" placeholder="Search for games..." onkeyup="filterZones()" />
     </div>
     <select id="sortOptions" onchange="sortZones()">
       <option value="popular">Most Popular</option>
@@ -346,9 +346,9 @@
   </main>
 
   <section class="data-footer">
-    <h3 style="margin-top: 0;">Cloud Data Synchronization</h3>
+    <h3 style="margin-top: 0;">Data Synchronization</h3>
     <p style="color: var(--text-muted); font-size: 0.9rem;">
-      Your progress is stored locally. Export your save file to backup your game states or transfer them to another browser.
+      Your progress is stored locally. Export your save file to backup your states or transfer them to another browser.
     </p>
     <div style="display: flex; gap: 10px; justify-content: center; margin-top: 1.5rem;">
       <button onclick="saveData()" class="btn btn-success">Export Backup</button>
@@ -365,7 +365,7 @@
       </div>
       <div style="display: flex; gap: 10px;">
         <button class="btn btn-primary" onclick="fullscreenZone()">Fullscreen</button>
-        <button class="btn" onclick="aboutBlank()">Stealth Window</button>
+        <button class="btn" onclick="aboutBlank()">External Window</button>
         <button class="btn btn-danger" onclick="closeZone()">Close</button>
       </div>
     </div>
@@ -423,7 +423,7 @@
           if (zone) openZone(zone);
         }
       } catch (error) {
-        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center;">Error syncing with nebula: ${error.message}</div>`;
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center;">Connection error: ${error.message}</div>`;
       }
     }
 
@@ -451,7 +451,7 @@
     function displayZones(zonesToDisplay) {
       container.innerHTML = "";
       if (!zonesToDisplay.length) {
-        container.innerHTML = "<div style='grid-column:1/-1; text-align:center;'>No games found in this sector.</div>";
+        container.innerHTML = "<div style='grid-column:1/-1; text-align:center;'>No games found matching your search.</div>";
         return;
       }
 
@@ -473,7 +473,7 @@
         card.appendChild(info);
         container.appendChild(card);
       });
-      document.getElementById("zoneCount").textContent = `${zonesToDisplay.length} Galactic Entities Discovered`;
+      document.getElementById("zoneCount").textContent = `${zonesToDisplay.length} Games Available`;
     }
 
     function displayGameOfTheDay() {
@@ -483,9 +483,9 @@
         featuredContainer.innerHTML = `
           <div class="gotd-banner" style="background-image: url('${cover}')"></div>
           <div class="gotd-info">
-            <span class="version-badge" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #f59e0b; margin: 0 0 1rem 0;">GAME OF THE DAY</span>
+            <span class="version-badge" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #f59e0b; margin: 0 0 1rem 0;">FEATURED GAME</span>
             <h3 style="font-size: 2rem; margin: 0 0 0.5rem 0;">${game.name}</h3>
-            <p style="color: var(--text-muted); margin: 0;">Featured selection based on system popularity and performance.</p>
+            <p style="color: var(--text-muted); margin: 0;">Hand-picked for you based on current community trends.</p>
           </div>
         `;
         featuredContainer.onclick = () => openZone(game);
@@ -520,7 +520,7 @@
         
         document.getElementById('zoneName').textContent = file.name;
         document.getElementById('zoneId').textContent = `#${file.id}`;
-      }).catch(err => alert("Transmission failure: " + err));
+      }).catch(err => alert("Loading failed: " + err));
     }
 
     function closeZone() {
@@ -568,19 +568,10 @@
           if (parts[1]) parts[1].split("; ").forEach(c => document.cookie = c);
           alert("Synchronization successful.");
           location.reload();
-        } catch (err) { alert("Data corruption detected."); }
+        } catch (err) { alert("Invalid data file."); }
       };
       reader.readAsText(file);
     }
-
-    // Easter Egg Logic
-    let hoverTimer;
-    document.getElementById("mainLogo").addEventListener("mouseenter", () => {
-      hoverTimer = setTimeout(() => {
-        alert("You found the Easter Egg!\n\nYour code is: bRAdEr52\n\nSubmit this in the game form for a shoutout!");
-      }, 5000);
-    });
-    document.getElementById("mainLogo").addEventListener("mouseleave", () => clearTimeout(hoverTimer));
 
     // Auto-refresh logic
     (function () {
