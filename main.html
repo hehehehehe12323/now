@@ -496,27 +496,47 @@
       } catch (e) { console.warn("Popularity metrics offline"); }
     }
 
-    async function loadLeaderboard() {
-      const list = document.getElementById('leaderboard-list');
-      try {
-        const response = await fetch(SCRIPT_URL, { redirect: 'follow' });
-        const data = await response.json();
-        
-        list.innerHTML = data.slice(0, 10).map((entry, index) => {
-          let rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
-          let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
-          
-          return `
-            <div class="leader-row ${rankClass}">
-              <span style="font-weight:700;">${medal} ${entry.username}</span>
-              <span style="color:var(--accent); font-weight:800;">${entry.score.toLocaleString()} mins</span>
-            </div>
-          `;
-        }).join('') || '<p style="grid-column: 1/-1; text-align: center;">No rankings found.</p>';
-      } catch (e) {
-        list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #ef4444;">Sync Error</p>';
-      }
-    }
+    // REPLACE THIS FUNCTION ONLY
+async function loadLeaderboard() {
+  const list = document.getElementById('leaderboard-list');
+  
+  // 1. Your Sheet ID
+  const SHEET_ID = "1c-m9GrpH9s3glEy3t2cCYzzTGtRUllhQreU0WEKdwJI"; 
+  const TAB_NAME = "Leaderboard";
+  
+  // Public CSV export URL
+  const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${TAB_NAME}`;
+
+  try {
+    const response = await fetch(CSV_URL);
+    const text = await response.text();
+    
+    // Simple CSV parser
+    const rows = text.split('\n').slice(1); // Remove headers
+    const data = rows.map(row => {
+      const parts = row.split('","').map(p => p.replace(/"/g, ''));
+      return { username: parts[0], score: parseInt(parts[1]) || 0 };
+    });
+
+    // Sort by minutes descending
+    const sorted = data.sort((a,b) => b.score - a.score).slice(0, 10);
+    
+    list.innerHTML = sorted.map((entry, index) => {
+      let rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+      let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+      
+      return `
+        <div class="leader-row ${rankClass}">
+          <span style="font-weight:700;">${medal} ${entry.username}</span>
+          <span style="color:var(--accent); font-weight:800;">${entry.score.toLocaleString()} mins</span>
+        </div>
+      `;
+    }).join('') || '<p style="grid-column: 1/-1; text-align: center;">No rankings found.</p>';
+    
+  } catch (e) {
+    list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #ef4444;">Sync Error: Make sure Sheet is Shared to View</p>';
+  }
+}
 
     // Playtime Tracker Logic
     let startTime = Date.now();
