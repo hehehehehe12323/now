@@ -499,20 +499,16 @@
       const list = document.getElementById('leaderboard-list');
       
       try {
-        // Updated fetch options to support Workspace organizational redirects
-        const response = await fetch(SCRIPT_URL, { 
-          method: 'GET',
-          mode: 'cors',
-          credentials: 'include',
-          redirect: 'follow'
-        });
+        // Standard fetch for Google Apps Scripts to handle redirects automatically
+        const response = await fetch(SCRIPT_URL);
         
         if (!response.ok) throw new Error("Restricted Access");
         
         const sorted = await response.json();
         
-        if (sorted.length === 0) {
-          list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No rankings found.</p>';
+        // Handle empty scenario nicely
+        if (!sorted || sorted.length === 0) {
+          list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No rankings yet. Be the first!</p>';
           return;
         }
 
@@ -533,6 +529,7 @@
         }).join('');
         
       } catch (e) {
+        console.error("Leaderboard error:", e);
         list.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
           Leaderboard restricted to @pothisd.us.<br>
           <a href="${SCRIPT_URL}" target="_blank" style="color:var(--primary)">Click here to Authorize</a>
