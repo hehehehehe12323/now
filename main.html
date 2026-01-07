@@ -499,7 +499,14 @@
       const list = document.getElementById('leaderboard-list');
       
       try {
-        const response = await fetch(SCRIPT_URL);
+        // Updated fetch options to support Workspace organizational redirects
+        const response = await fetch(SCRIPT_URL, { 
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'include',
+          redirect: 'follow'
+        });
+        
         if (!response.ok) throw new Error("Restricted Access");
         
         const sorted = await response.json();
@@ -526,7 +533,10 @@
         }).join('');
         
       } catch (e) {
-        list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #ef4444;">Login to Workspace Required</p>';
+        list.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
+          Leaderboard restricted to @pothisd.us.<br>
+          <a href="${SCRIPT_URL}" target="_blank" style="color:var(--primary)">Click here to Authorize</a>
+        </p>`;
       }
     }
 
