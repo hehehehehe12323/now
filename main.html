@@ -276,6 +276,47 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-in { animation: fadeIn 0.6s ease forwards; }
 
+    /* New Leaderboard Styles */
+    .leaderboard-section {
+      max-width: 1000px;
+      margin: 0 auto 3rem;
+      padding: 0 2rem;
+    }
+    .leaderboard-container {
+      background: var(--bg-card);
+      border-radius: 24px;
+      padding: 2rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .leaderboard-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--primary);
+      letter-spacing: 1px;
+    }
+    .leaderboard-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .leader-row {
+      background: var(--bg-deep);
+      padding: 0.75rem 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .rank-1 { border-color: #fbbf24; background: rgba(251, 191, 36, 0.05); }
+    .rank-2 { border-color: #94a3b8; background: rgba(148, 163, 184, 0.05); }
+    .rank-3 { border-color: #92400e; background: rgba(146, 64, 14, 0.05); }
+
     @media (max-width: 768px) {
       .toolbar { flex-direction: column; align-items: stretch; }
       .nav-right .btn { padding: 8px 12px; font-size: 0.8rem; }
@@ -324,6 +365,20 @@
   <section class="featured-section">
     <div id="gameOfTheDay" class="animate-in">
       <!-- Injected by JS -->
+    </div>
+  </section>
+
+  <!-- Global Leaderboard Section -->
+  <section class="leaderboard-section">
+    <div class="leaderboard-container animate-in">
+      <div class="leaderboard-title">
+        <span>PLAYTIME LEADERS</span>
+        <button onclick="loadLeaderboard()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size: 0.75rem;">↻ Refresh</button>
+      </div>
+      <div id="leaderboard-list" class="leaderboard-list">
+        <!-- Fetched automatically -->
+        <p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">Syncing with global servers...</p>
+      </div>
     </div>
   </section>
 
@@ -401,6 +456,9 @@
     const searchBar = document.getElementById('searchBar');
     const sortOptions = document.getElementById('sortOptions');
     
+    // Leaderboard Config
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaEoIjcFiDPuHcL-v8wmPupmEPzrpvwfhLgDxp8W5tKb2xFb9d93LmWH_FQX5w4XmZ/exec";
+
     const zonesURL = "zones.json";
     const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
     const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
@@ -437,6 +495,46 @@
         });
       } catch (e) { console.warn("Popularity metrics offline"); }
     }
+
+    async function loadLeaderboard() {
+      const list = document.getElementById('leaderboard-list');
+      try {
+        const response = await fetch(SCRIPT_URL, { redirect: 'follow' });
+        const data = await response.json();
+        
+        list.innerHTML = data.slice(0, 10).map((entry, index) => {
+          let rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+          let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+          
+          return `
+            <div class="leader-row ${rankClass}">
+              <span style="font-weight:700;">${medal} ${entry.username}</span>
+              <span style="color:var(--accent); font-weight:800;">${entry.score.toLocaleString()} mins</span>
+            </div>
+          `;
+        }).join('') || '<p style="grid-column: 1/-1; text-align: center;">No rankings found.</p>';
+      } catch (e) {
+        list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #ef4444;">Sync Error</p>';
+      }
+    }
+
+    // Playtime Tracker Logic
+    let startTime = Date.now();
+    setInterval(async () => {
+      const user = JSON.parse(sessionStorage.getItem("usernamePassword"));
+      if (!user) return;
+      const minutesPlayed = Math.floor((Date.now() - startTime) / 60000);
+      if (minutesPlayed > 0) {
+        await fetch(SCRIPT_URL, {
+          method: "POST",
+          mode: 'no-cors',
+          body: JSON.stringify({
+            username: user.username,
+            score: minutesPlayed
+          })
+        });
+      }
+    }, 60000);
 
     function sortZones() {
       const sortBy = sortOptions.value;
@@ -586,6 +684,7 @@
 
     // Init
     listZones();
+    loadLeaderboard();
   </script>
 </body>
 </html>
