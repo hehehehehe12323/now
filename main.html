@@ -276,7 +276,7 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-in { animation: fadeIn 0.6s ease forwards; }
 
-    /* New Leaderboard Styles */
+    /* Leaderboard Styles */
     .leaderboard-section {
       max-width: 1000px;
       margin: 0 auto 3rem;
@@ -456,8 +456,8 @@
     const searchBar = document.getElementById('searchBar');
     const sortOptions = document.getElementById('sortOptions');
     
-    // Leaderboard Config
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaEoIjcFiDPuHcL-v8wmPupmEPzrpvwfhLgDxp8W5tKb2xFb9d93LmWH_FQX5w4XmZ/exec";
+    // Updated Leaderboard Config
+    const SCRIPT_URL = "https://script.google.com/a/macros/pothisd.us/s/AKfycbycB_WFRUPflu_wtUUyv67PESoyOlXdh1ZVVXM9MtwMDMHHuJKnwwBKyLoNCWm2PK5S/exec";
 
     const zonesURL = "zones.json";
     const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
@@ -473,7 +473,6 @@
         await fetchPopularity();
         sortZones();
         
-        // Deep link check
         const search = new URLSearchParams(window.location.search);
         const id = search.get('id');
         if (id) {
@@ -496,55 +495,48 @@
       } catch (e) { console.warn("Popularity metrics offline"); }
     }
 
-    // REPLACE THIS FUNCTION ONLY
-async function loadLeaderboard() {
-  const list = document.getElementById('leaderboard-list');
-  
-  // 1. Your Sheet ID
-  const SHEET_ID = "1c-m9GrpH9s3glEy3t2cCYzzTGtRUllhQreU0WEKdwJI"; 
-  const TAB_NAME = "Leaderboard";
-  
-  // Public CSV export URL
-  const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${TAB_NAME}`;
-
-  try {
-    const response = await fetch(CSV_URL);
-    const text = await response.text();
-    
-    // Simple CSV parser
-    const rows = text.split('\n').slice(1); // Remove headers
-    const data = rows.map(row => {
-      const parts = row.split('","').map(p => p.replace(/"/g, ''));
-      return { username: parts[0], score: parseInt(parts[1]) || 0 };
-    });
-
-    // Sort by minutes descending
-    const sorted = data.sort((a,b) => b.score - a.score).slice(0, 10);
-    
-    list.innerHTML = sorted.map((entry, index) => {
-      let rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
-      let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+    async function loadLeaderboard() {
+      const list = document.getElementById('leaderboard-list');
       
-      return `
-        <div class="leader-row ${rankClass}">
-          <span style="font-weight:700;">${medal} ${entry.username}</span>
-          <span style="color:var(--accent); font-weight:800;">${entry.score.toLocaleString()} mins</span>
-        </div>
-      `;
-    }).join('') || '<p style="grid-column: 1/-1; text-align: center;">No rankings found.</p>';
-    
-  } catch (e) {
-    list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #ef4444;">Sync Error: Make sure Sheet is Shared to View</p>';
-  }
-}
+      try {
+        const response = await fetch(SCRIPT_URL);
+        if (!response.ok) throw new Error("Restricted Access");
+        
+        const sorted = await response.json();
+        
+        if (sorted.length === 0) {
+          list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No rankings found.</p>';
+          return;
+        }
 
-    // Playtime Tracker Logic
+        list.innerHTML = sorted.map((entry, index) => {
+          let rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+          let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+          
+          return `
+            <div class="leader-row ${rankClass}">
+              <span style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                ${medal} ${entry.username}
+              </span>
+              <span style="color:var(--accent); font-weight:800; min-width: 60px; text-align: right;">
+                ${entry.score.toLocaleString()}m
+              </span>
+            </div>
+          `;
+        }).join('');
+        
+      } catch (e) {
+        list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #ef4444;">Login to Workspace Required</p>';
+      }
+    }
+
     let startTime = Date.now();
     setInterval(async () => {
       const user = JSON.parse(sessionStorage.getItem("usernamePassword"));
       if (!user) return;
       const minutesPlayed = Math.floor((Date.now() - startTime) / 60000);
       if (minutesPlayed > 0) {
+        startTime = Date.now(); // Reset counter after record
         await fetch(SCRIPT_URL, {
           method: "POST",
           mode: 'no-cors',
@@ -610,9 +602,8 @@ async function loadLeaderboard() {
       }
     }
 
-        function getGameOfTheDay() {
+    function getGameOfTheDay() {
       if (!zones.length) return null;
-      // Create a copy and sort by ID to ensure the index always points to the same game
       const stableZones = [...zones].sort((a, b) => a.id - b.id);
       const seed = new Date().getFullYear() * 10000 + (new Date().getMonth() + 1) * 100 + new Date().getDate();
       return stableZones[seed % stableZones.length];
@@ -693,7 +684,6 @@ async function loadLeaderboard() {
       reader.readAsText(file);
     }
 
-    // Auto-refresh logic
     (function () {
       let lastTime = Date.now();
       setInterval(() => {
@@ -702,7 +692,6 @@ async function loadLeaderboard() {
       }, 10000);
     })();
 
-    // Init
     listZones();
     loadLeaderboard();
   </script>
