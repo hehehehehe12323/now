@@ -1,87 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - Page Not Found</title>
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Asteroid | 404 Not Found</title>
+  <link rel="icon" type="image/png" sizes="512x512" href="asteroid.jpeg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.5);
+      --accent: #10b981;
+      --bg-deep: #020617;
+      --bg-surface: #0f172a;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.1);
+    }
 
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .container {
-            background: var(--card-bg);
-            padding: 3rem;
-            border-radius: 1rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            max-width: 500px;
-            width: 90%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
 
-        h1 {
-            font-size: 5rem;
-            margin: 0;
-            background: linear-gradient(to right, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1;
-        }
+    /* Left Side - Visuals */
+    .hero-side {
+      flex: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5rem;
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+      border-right: 1px solid var(--border);
+    }
 
-        h2 {
-            font-size: 1.5rem;
-            margin: 1rem 0;
-        }
+    .hero-side::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url('asteroid.jpeg') no-repeat center;
+      background-size: cover;
+      opacity: 0.03;
+      filter: grayscale(1);
+    }
 
-        p {
-            color: var(--text-muted);
-            line-height: 1.6;
-            margin-bottom: 2rem;
-        }
+    .brand-content {
+      position: relative;
+      z-index: 2;
+      animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
 
-        .btn {
-            display: inline-block;
-            background-color: var(--primary);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            border: none;
-            cursor: pointer;
-        }
+    .brand-content img {
+      width: 100px;
+      height: 100px;
+      border-radius: 24px;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 50px var(--primary-glow);
+    }
 
-        .btn:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-        }
-    </style>
+    .brand-content h1 {
+      font-size: 5rem;
+      font-weight: 800;
+      letter-spacing: -4px;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(to bottom right, #fff, var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Right Side - Content Panel */
+    .form-side {
+      width: 550px;
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5rem;
+      position: relative;
+      z-index: 10;
+      box-shadow: -20px 0 50px rgba(0,0,0,0.5);
+    }
+
+    .error-header { margin-bottom: 2.5rem; animation: fadeIn 1s ease forwards; }
+    .error-header h2 { font-size: 4rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--primary); }
+    .error-header h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
+    .error-header p { color: var(--text-muted); line-height: 1.6; font-size: 1.1rem; }
+
+    .btn-primary {
+      display: block;
+      width: 100%;
+      padding: 1.2rem;
+      border-radius: 16px;
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 1rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: #4f46e5;
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3);
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 1024px) {
+      .hero-side { display: none; }
+      .form-side { width: 100%; padding: 2rem; }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>404</h1>
-        <h2>Oops! Page Not Found</h2>
-        <p>It looks like the link you followed has been changed or moved to a new location. Please use the button below to return to the main site.</p>
-        <a href="https://asteroid-pixel.github.io" class="btn">Return to Asteroid Pixel</a>
+
+  <div class="hero-side">
+    <div class="brand-content">
+      <img src="asteroid.jpeg" alt="Asteroid" />
+      <h1>ASTEROID</h1>
     </div>
+  </div>
+
+  <div class="form-side">
+    <div class="error-header">
+      <h2>404</h2>
+      <h3>Lost in Space?</h3>
+      <p>It looks like the link you followed has been changed or moved to a new location.</p>
+    </div>
+
+    <a href="https://asteroid-pixel.github.io" class="btn-primary">Return to Asteroid Login</a>
+  </div>
+
 </body>
 </html>
