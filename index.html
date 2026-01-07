@@ -223,6 +223,58 @@
       border: 1px solid var(--border);
     }
 
+    /* Terms Popup Styles */
+    #terms-popup {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.95);
+      backdrop-filter: blur(16px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    #terms-content {
+      background: var(--bg-surface);
+      padding: 3rem;
+      border-radius: 32px;
+      max-width: 600px;
+      width: 90%;
+      border: 1px solid var(--border);
+      text-align: left;
+      animation: slideUp 0.5s ease;
+    }
+
+    .terms-scrollbox {
+      background: var(--bg-deep);
+      padding: 1.5rem;
+      border-radius: 16px;
+      height: 350px;
+      overflow-y: auto;
+      margin: 1.5rem 0;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .terms-scrollbox h4 { color: var(--text-main); margin-bottom: 0.5rem; }
+    .terms-scrollbox p { margin-bottom: 1rem; }
+
+    #terms-link-btn {
+      background: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 1rem;
+      text-align: center;
+      width: 100%;
+      cursor: pointer;
+      border: none;
+    }
+
+    #terms-link-btn:hover { color: var(--primary); text-decoration: underline; }
+
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -263,6 +315,8 @@
          class="btn-link" target="_blank">Register Account</a>
       
       <button type="button" id="forgot-btn">Forgot password?</button>
+      
+      <button type="button" id="terms-link-btn">Terms & Conditions</button>
 
       <div id="form-message"></div>
     </form>
@@ -277,13 +331,46 @@
     </div>
   </div>
 
+  <!-- Terms and Conditions Popup -->
+  <div id="terms-popup">
+    <div id="terms-content">
+      <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Terms & Conditions</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Please review our terms before continuing.</p>
+      
+      <div class="terms-scrollbox">
+        <h4>1. Acceptance</h4>
+        <p>By using Asteroid, you agree to abide by all local laws and community guidelines. Unauthorized access or exploitation of the platform is strictly prohibited.</p>
+        
+        <h4>2. Privacy</h4>
+        <p>We value your data. Session information is cleared upon logout. We do not track personal identification beyond account credentials provided for access.</p>
+        
+        <h4>3. User Responsibility</h4>
+        <p>Users are responsible for the security of their own credentials. Do not share your password with anyone.</p>
+        
+        <h4>4. False Reporting</h4>
+        <p>Users found falsely reporting a bug will have their account banned.</p>
+        
+        <h4>5. Service Availability</h4>
+        <p>Asteroid is provided "as is". We reserve the right to modify or terminate access to any account found in violation of security policies.</p>
+    </div>
+
+      <button id="agree-terms" class="btn-primary">I Agree & Continue</button>
+      <button id="close-terms" class="btn-link" style="border:none">Close</button>
+    </div>
+  </div>
+
   <script type="module">
     (async function login() {
       const LOGINS = `./logins.json?nocache=${Date.now()}`;
       const loginForm = document.getElementById("login-form");
       const formMessage = document.getElementById("form-message");
+      const termsPopup = document.getElementById("terms-popup");
+      const agreeBtn = document.getElementById("agree-terms");
+      const closeTermsBtn = document.getElementById("close-terms");
+      const termsLinkBtn = document.getElementById("terms-link-btn");
 
       let storedLogin = [];
+      let pendingMatch = null;
 
       async function fetchLogins() {
         try {
@@ -320,13 +407,43 @@
               loginForm.reset();
               return;
             }
-            sessionStorage.setItem("usernamePassword", JSON.stringify(matchedLogin));
-            window.location.href = "main.html";
+
+            // Check if terms have been agreed to previously
+            if (localStorage.getItem(`agreed_terms_${userName}`) === "true") {
+              sessionStorage.setItem("usernamePassword", JSON.stringify(matchedLogin));
+              window.location.href = "main.html";
+            } else {
+              // First time login - Show Terms
+              pendingMatch = matchedLogin;
+              termsPopup.style.display = "flex";
+              closeTermsBtn.style.display = "none"; // Must agree to continue
+            }
           } else {
             showMessage("Invalid username or password.", true);
           }
         });
       }
+
+      // Agreement Action
+      agreeBtn.addEventListener("click", () => {
+        if (pendingMatch) {
+          localStorage.setItem(`agreed_terms_${pendingMatch.username}`, "true");
+          sessionStorage.setItem("usernamePassword", JSON.stringify(pendingMatch));
+          window.location.href = "main.html";
+        }
+        termsPopup.style.display = "none";
+      });
+
+      // Manual view handling
+      termsLinkBtn.addEventListener("click", () => {
+        pendingMatch = null;
+        termsPopup.style.display = "flex";
+        closeTermsBtn.style.display = "block"; // Allow closing when just viewing
+      });
+
+      closeTermsBtn.addEventListener("click", () => {
+        termsPopup.style.display = "none";
+      });
 
       const retrievedLogin = sessionStorage.getItem("usernamePassword");
       if (retrievedLogin) window.location.href = "main.html";
