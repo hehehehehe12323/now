@@ -499,16 +499,15 @@
       const list = document.getElementById('leaderboard-list');
       
       try {
-        // Standard fetch for Google Apps Scripts to handle redirects automatically
         const response = await fetch(SCRIPT_URL);
-        
-        if (!response.ok) throw new Error("Restricted Access");
-        
         const sorted = await response.json();
         
-        // Handle empty scenario nicely
         if (!sorted || sorted.length === 0) {
-          list.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No rankings yet. Be the first!</p>';
+          list.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 15px;">
+              <p style="margin:0;">Leaderboard is empty!</p>
+              <p style="font-size: 0.7rem; opacity: 0.7;">Play for 1 minute to record your first score.</p>
+            </div>`;
           return;
         }
 
@@ -529,11 +528,12 @@
         }).join('');
         
       } catch (e) {
-        console.error("Leaderboard error:", e);
-        list.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size: 0.8rem;">
-          Leaderboard restricted to @pothisd.us.<br>
-          <a href="${SCRIPT_URL}" target="_blank" style="color:var(--primary)">Click here to Authorize</a>
-        </p>`;
+        list.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 15px;">
+            <p style="margin:0 0 10px 0;">Leaderboard restricted to @pothisd.us.</p>
+            <a href="${SCRIPT_URL}" target="_blank" class="btn btn-primary" style="font-size: 0.7rem; padding: 5px 10px; display: inline-block;">Authorize & View Live</a>
+         <p style="margin-top: 10px; font-size: 0.65rem; opacity: 0.6;">(If you see "[]" in the other tab, there are no scores yet! Just play for 1 minute.)</p>
+          </div>`;
       }
     }
 
