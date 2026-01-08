@@ -451,21 +451,26 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
     const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // Robust Name Extraction
+    // FIX: Robust Name Extraction from JSON session object
     const retrievedLogin = sessionStorage.getItem("usernamePassword");
     let currentUser = null;
 
     if (retrievedLogin) {
       try {
-        if (retrievedLogin.startsWith('{')) {
-          const parts = retrievedLogin.split(/:(.+)/);
-          const userObj = JSON.parse(parts[0]);
-          currentUser = userObj.username || userObj.name || userObj.user;
+        // Split by the LAST colon (where the password starts)
+        const lastColonIdx = retrievedLogin.lastIndexOf(':');
+        const userPart = lastColonIdx === -1 ? retrievedLogin : retrievedLogin.substring(0, lastColonIdx);
+
+        if (userPart.startsWith('{')) {
+          const userObj = JSON.parse(userPart);
+          // Pull 'name' or 'username' from your JSON structure
+          currentUser = userObj.name || userObj.username || "User";
         } else {
-          currentUser = retrievedLogin.split(':')[0];
+          currentUser = userPart;
         }
       } catch (e) {
-        currentUser = retrievedLogin.split(':')[0].replace(/[^a-zA-Z0-9]/g, "");
+        // Emergency fallback if JSON is corrupt
+        currentUser = retrievedLogin.split(':')[0].replace(/[^a-zA-Z0-9 ]/g, "").trim();
       }
     }
 
