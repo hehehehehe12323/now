@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- Supabase Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --primary: #6366f1;
@@ -295,8 +297,8 @@
 
   <div class="form-side">
     <div class="form-header">
-      <h2>Sign In</h2>
-      <p>Please enter your credentials to continue.</p>
+      <h2 id="form-title">Sign In</h2>
+      <p id="form-subtitle">Please enter your credentials to continue.</p>
     </div>
 
     <form id="login-form">
@@ -309,10 +311,10 @@
         <input id="password" type="password" placeholder="Enter password" required autocomplete="current-password" />
       </div>
       
-      <button type="submit" class="btn-primary">Sign In</button>
+      <button type="submit" id="submit-btn" class="btn-primary">Sign In</button>
       
-      <a href="https://docs.google.com/forms/d/e/1FAIpQLSeJNsYOvW22W0-7_4gFlp6-Kk_YoMGVBNIuKqs1VFjPXio_Cw/viewform" 
-         class="btn-link" target="_blank">Register Account</a>
+      <!-- Changed link to a toggle button for instant registration -->
+      <button type="button" id="auth-toggle" class="btn-link">Register Account</button>
       
       <button type="button" id="forgot-btn">Forgot password?</button>
       
@@ -331,7 +333,6 @@
     </div>
   </div>
 
-  <!-- Terms and Conditions Popup -->
   <div id="terms-popup">
     <div id="terms-content">
       <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Terms & Conditions</h3>
@@ -360,71 +361,113 @@
   </div>
 
   <script type="module">
-    (async function login() {
-      const LOGINS = `./logins.json?nocache=${Date.now()}`;
+    // --- SUPABASE CONFIGURATION ---
+    const SUPABASE_URL = 'https://lnlnuoylmumabscobtsl.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    (async function authSystem() {
       const loginForm = document.getElementById("login-form");
       const formMessage = document.getElementById("form-message");
       const termsPopup = document.getElementById("terms-popup");
       const agreeBtn = document.getElementById("agree-terms");
       const closeTermsBtn = document.getElementById("close-terms");
       const termsLinkBtn = document.getElementById("terms-link-btn");
+      const authToggle = document.getElementById("auth-toggle");
+      const submitBtn = document.getElementById("submit-btn");
+      const formTitle = document.getElementById("form-title");
+      const formSubtitle = document.getElementById("form-subtitle");
 
-      let storedLogin = [];
+      let isSignUpMode = false;
       let pendingMatch = null;
-
-      async function fetchLogins() {
-        try {
-          const response = await fetch(LOGINS);
-          if (response.ok) {
-            storedLogin = await response.json();
-          } else {
-            showMessage("Server connection failed.", true);
-          }
-        } catch (e) { console.error(e); }
-      }
 
       function showMessage(text, isError = true) {
         formMessage.textContent = text;
         formMessage.className = isError ? "message-active" : "message-info";
       }
 
-      await fetchLogins();
       sessionStorage.clear();
 
+      // Toggle between Login and Register
+      authToggle.addEventListener("click", () => {
+        isSignUpMode = !isSignUpMode;
+        formTitle.textContent = isSignUpMode ? "Register" : "Sign In";
+        formSubtitle.textContent = isSignUpMode ? "Create an account to get started." : "Please enter your credentials to continue.";
+        submitBtn.textContent = isSignUpMode ? "Create Account" : "Sign In";
+        authToggle.textContent = isSignUpMode ? "Already have an account? Sign In" : "Register Account";
+        formMessage.className = "";
+        formMessage.textContent = "";
+      });
+
       if (loginForm) {
-        loginForm.addEventListener("submit", (e) => {
+        loginForm.addEventListener("submit", async (e) => {
           e.preventDefault();
           const userName = document.getElementById("username").value;
           const passWord = document.getElementById("password").value;
 
-          const matchedLogin = storedLogin.find(
-            (login) => login.username === userName && login.password === passWord
-          );
+          try {
+            if (isSignUpMode) {
+              // --- REGISTRATION LOGIC ---
+              // First, check if username exists
+              const { data: existingUser } = await supabase
+                .from('profiles')
+                .select('username')
+                .eq('username', userName)
+                .single();
 
-          if (matchedLogin) {
-            if (matchedLogin.banStatus === "true") {
-              showMessage(`Access denied. Reason: ${matchedLogin.banReason || "Security Violation"}`, true);
-              loginForm.reset();
-              return;
-            }
+              if (existingUser) {
+                showMessage("Username already taken.", true);
+                return;
+              }
 
-            // Check if terms have been agreed to previously
-            if (localStorage.getItem(`agreed_terms_${userName}`) === "true") {
-              sessionStorage.setItem("usernamePassword", JSON.stringify(matchedLogin));
-              window.location.href = "main.html";
+              // Insert new user
+              const { data: newUser, error } = await supabase
+                .from('profiles')
+                .insert([{ username: userName, password: passWord, banStatus: 'false' }])
+                .select()
+                .single();
+
+              if (error) throw error;
+
+              showMessage("Account created! Please Sign In.", false);
+              authToggle.click(); // Switch back to login mode
             } else {
-              // First time login - Show Terms
-              pendingMatch = matchedLogin;
-              termsPopup.style.display = "flex";
-              closeTermsBtn.style.display = "none"; // Must agree to continue
+              // --- LOGIN LOGIC ---
+              const { data: user, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('username', userName)
+                .eq('password', passWord)
+                .single();
+
+              if (error || !user) {
+                showMessage("Invalid username or password.", true);
+                return;
+              }
+
+              if (user.banStatus === "true") {
+                showMessage(`Access denied. Reason: ${user.banReason || "Security Violation"}`, true);
+                loginForm.reset();
+                return;
+              }
+
+              // Normal flow: Check terms agreement
+              if (localStorage.getItem(`agreed_terms_${userName}`) === "true") {
+                sessionStorage.setItem("usernamePassword", JSON.stringify(user));
+                window.location.href = "main.html";
+              } else {
+                pendingMatch = user;
+                termsPopup.style.display = "flex";
+                closeTermsBtn.style.display = "none";
+              }
             }
-          } else {
-            showMessage("Invalid username or password.", true);
+          } catch (err) {
+            console.error(err);
+            showMessage("Database connection error.", true);
           }
         });
       }
 
-      // Agreement Action
       agreeBtn.addEventListener("click", () => {
         if (pendingMatch) {
           localStorage.setItem(`agreed_terms_${pendingMatch.username}`, "true");
@@ -434,31 +477,29 @@
         termsPopup.style.display = "none";
       });
 
-      // Manual view handling
       termsLinkBtn.addEventListener("click", () => {
         pendingMatch = null;
         termsPopup.style.display = "flex";
-        closeTermsBtn.style.display = "block"; // Allow closing when just viewing
+        closeTermsBtn.style.display = "block";
       });
 
       closeTermsBtn.addEventListener("click", () => {
         termsPopup.style.display = "none";
       });
 
-      const retrievedLogin = sessionStorage.getItem("usernamePassword");
-      if (retrievedLogin) window.location.href = "main.html";
-
+      // Existing UI logic
+      if (sessionStorage.getItem("usernamePassword")) window.location.href = "main.html";
       if (localStorage.getItem("inactivityLogout") === "true") {
         showMessage("Session expired.", false);
         localStorage.removeItem("inactivityLogout");
       }
-      
       if (localStorage.getItem("refreshLogout") === "true") {
         showMessage("Please sign in again.", false);
         localStorage.removeItem("refreshLogout");
       }
     })();
 
+    // Recovery Popup
     const forgotBtn = document.getElementById("forgot-btn");
     const popup = document.getElementById("popup");
     const closePopup = document.getElementById("close-popup");
