@@ -364,7 +364,10 @@
     // --- SUPABASE CONFIGURATION ---
     const SUPABASE_URL = 'https://lnlnuoylmumabscobtsl.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // Fixed initialization to prevent name collision crash
+    const { createClient } = window.supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     (async function authSystem() {
       const loginForm = document.getElementById("login-form");
@@ -408,22 +411,20 @@
           try {
             if (isSignUpMode) {
               // --- REGISTRATION LOGIC ---
-              // First, check if username exists
-              const { data: existingUser } = await supabase
+              const { data: existingUser } = await db
                 .from('profiles')
                 .select('username')
                 .eq('username', userName)
-                .single();
+                .maybeSingle();
 
               if (existingUser) {
                 showMessage("Username already taken.", true);
                 return;
               }
 
-              // Insert new user
-              const { data: newUser, error } = await supabase
+              const { data: newUser, error } = await db
                 .from('profiles')
-                .insert([{ username: userName, password: passWord, banStatus: 'false' }])
+                .insert([{ username: userName, password: passWord, is_banned: false, full_name: userName }])
                 .select()
                 .single();
 
@@ -433,20 +434,20 @@
               authToggle.click(); // Switch back to login mode
             } else {
               // --- LOGIN LOGIC ---
-              const { data: user, error } = await supabase
+              const { data: user, error } = await db
                 .from('profiles')
                 .select('*')
                 .eq('username', userName)
                 .eq('password', passWord)
-                .single();
+                .maybeSingle();
 
               if (error || !user) {
                 showMessage("Invalid username or password.", true);
                 return;
               }
 
-              if (user.banStatus === "true") {
-                showMessage(`Access denied. Reason: ${user.banReason || "Security Violation"}`, true);
+              if (user.is_banned === true) {
+                showMessage(`Access denied. Reason: ${user.ban_reason || "Security Violation"}`, true);
                 loginForm.reset();
                 return;
               }
