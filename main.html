@@ -451,26 +451,23 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
     const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // FIX: Robust Name Extraction from JSON session object
+    // FIX: Optimized and robust Name Extraction
     const retrievedLogin = sessionStorage.getItem("usernamePassword");
     let currentUser = null;
 
     if (retrievedLogin) {
       try {
-        // Split by the LAST colon (where the password starts)
         const lastColonIdx = retrievedLogin.lastIndexOf(':');
         const userPart = lastColonIdx === -1 ? retrievedLogin : retrievedLogin.substring(0, lastColonIdx);
 
-        if (userPart.startsWith('{')) {
+        if (userPart.trim().startsWith('{')) {
           const userObj = JSON.parse(userPart);
-          // Pull 'name' or 'username' from your JSON structure
-          currentUser = userObj.name || userObj.username || "User";
+          currentUser = userObj.name || userObj.username || userObj.user || "User";
         } else {
           currentUser = userPart;
         }
       } catch (e) {
-        // Emergency fallback if JSON is corrupt
-        currentUser = retrievedLogin.split(':')[0].replace(/[^a-zA-Z0-9 ]/g, "").trim();
+        currentUser = retrievedLogin.split(':')[0];
       }
     }
 
@@ -517,11 +514,22 @@
       if (data) {
         const body = document.getElementById('leaderboardBody');
         body.innerHTML = data.map((entry, index) => {
-            const displayName = entry.username.startsWith('{') ? "Legacy User" : entry.username;
+            let rowName = entry.username;
+            
+            // If the database has a JSON string, extract the actual name from it
+            if (rowName.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(rowName);
+                    rowName = parsed.name || parsed.username || parsed.user || "Player";
+                } catch(e) { rowName = "Player"; }
+            }
+
+            const isMe = (rowName === currentUser || entry.username === currentUser);
+
             return `
-              <tr class="${entry.username === currentUser ? 'current-user' : ''}">
+              <tr class="${isMe ? 'current-user' : ''}">
                 <td class="rank-cell">#${index + 1}</td>
-                <td class="user-cell">${displayName} ${entry.username === currentUser ? '<small>(You)</small>' : ''}</td>
+                <td class="user-cell">${rowName} ${isMe ? '<small>(You)</small>' : ''}</td>
                 <td class="mins-cell">${entry.minutes}m</td>
               </tr>
             `;
