@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- Supabase Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --primary: #6366f1;
@@ -182,6 +184,44 @@
     .btn-primary:hover { transform: scale(1.05); background: #4f46e5; }
     .btn-success { background: var(--accent); border: none; }
     .btn-danger { background: #ef4444; border: none; }
+    .btn-leaderboard { background: linear-gradient(135deg, #f59e0b, #d97706); border: none; }
+
+    /* Leaderboard Styles */
+    #leaderboardSection {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: var(--bg-card);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      padding: 2rem;
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .leaderboard-table th {
+      text-align: left;
+      color: var(--text-muted);
+      padding: 1rem;
+      border-bottom: 2px solid var(--border);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .leaderboard-table td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .rank-cell { font-weight: 800; width: 60px; }
+    .user-cell { font-weight: 600; }
+    .mins-cell { color: var(--accent); font-weight: 800; text-align: right; }
+    .current-user { background: rgba(99, 102, 241, 0.1); }
 
     /* Game Grid */
     #container {
@@ -305,7 +345,8 @@
         <h1>ASTEROID</h1>
       </div>
     </div>
-       <div class="nav-right">
+    <div class="nav-right">
+      <button class="btn btn-leaderboard" onclick="toggleLeaderboard()">Leaderboard</button>
       <button class="btn" onclick="saveData()">Save</button>
       <button class="btn" onclick="document.getElementById('file').click()">Load</button>
       <a href="https://docs.google.com/forms/d/e/1FAIpQLSfTZ5mk7aVxGnheE0Zo7kbVrV_XVCuTXSVMVElE5yYZbs5A6Q/viewform?usp=publish-editor" class="btn btn-danger" target="_blank" rel="noopener noreferrer">Report A Bug</a>
@@ -320,6 +361,28 @@
       Sync your data across devices and pick up where you left off.
     </p>
   </header>
+
+  <!-- Leaderboard Section -->
+  <section id="leaderboardSection" class="animate-in">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; letter-spacing: -1px;">Global Leaderboard</h3>
+      <button class="btn" onclick="toggleLeaderboard()">Close</button>
+    </div>
+    <div id="leaderboardContent">
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>User</th>
+            <th style="text-align: right;">Time Played</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+          <!-- Injected by JS -->
+        </tbody>
+      </table>
+    </div>
+  </section>
 
   <section class="featured-section">
     <div id="gameOfTheDay" class="animate-in">
@@ -383,11 +446,71 @@
   </footer>
 
   <script>
+    // Supabase Initialization
+    const supabaseUrl = 'https://lnlnuoylmumabscobtsl.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
+    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
     // Security & Auth
     const retrievedLogin = sessionStorage.getItem("usernamePassword");
+    const currentUser = retrievedLogin ? retrievedLogin.split(':')[0] : null;
+
     if (!retrievedLogin) {
       window.location.href = "index.html";
     }
+
+    // Leaderboard Logic
+    async function trackMinutes() {
+      if (!currentUser) return;
+      
+      // Fetch current count to increment manually (upsert fallback)
+      const { data } = await _supabase
+        .from('leaderboard')
+        .select('minutes')
+        .eq('username', currentUser)
+        .single();
+      
+      const nextMins = (data ? data.minutes : 0) + 1;
+
+      await _supabase.from('leaderboard').upsert({ 
+        username: currentUser, 
+        minutes: nextMins,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'username' });
+    }
+
+    async function toggleLeaderboard() {
+      const sect = document.getElementById('leaderboardSection');
+      if (sect.style.display === 'block') {
+        sect.style.display = 'none';
+      } else {
+        sect.style.display = 'block';
+        fetchLeaderboard();
+      }
+    }
+
+    async function fetchLeaderboard() {
+      const { data, error } = await _supabase
+        .from('leaderboard')
+        .select('username, minutes')
+        .order('minutes', { ascending: false })
+        .limit(10);
+
+      if (data) {
+        const body = document.getElementById('leaderboardBody');
+        body.innerHTML = data.map((entry, index) => `
+          <tr class="${entry.username === currentUser ? 'current-user' : ''}">
+            <td class="rank-cell">#${index + 1}</td>
+            <td class="user-cell">${entry.username} ${entry.username === currentUser ? '<small>(You)</small>' : ''}</td>
+            <td class="mins-cell">${entry.minutes}m</td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    // Start background tracking every 1 minute
+    setInterval(trackMinutes, 60000);
+    trackMinutes();
 
     window.addEventListener("beforeunload", () => {
       sessionStorage.clear();
