@@ -451,20 +451,17 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
     const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // FIX: Optimized and robust Username Extraction
+    // FIX: Optimized and robust Username Extraction from Session
     const retrievedLogin = sessionStorage.getItem("usernamePassword");
     let currentUser = null; 
 
     if (retrievedLogin) {
       try {
-        if (retrievedLogin.trim().startsWith('{')) {
-          const userObj = JSON.parse(retrievedLogin);
-          // Set currentUser to the actual USERNAME for database operations
-          currentUser = userObj.username || userObj.user || "User";
-        } else {
-          currentUser = retrievedLogin.split(':')[0];
-        }
+        const userObj = JSON.parse(retrievedLogin);
+        // We use .username as the primary identifier consistent with logins.json
+        currentUser = userObj.username || userObj.user || "User";
       } catch (e) {
+        // Fallback for non-JSON strings
         currentUser = retrievedLogin.split(':')[0];
       }
     }
@@ -514,15 +511,20 @@
         body.innerHTML = data.map((entry, index) => {
             let rowName = entry.username;
             
-            // Cleanup: if entry in DB is old JSON, parse it to show the username
+            // Cleanup: if entry in DB is old JSON, parse it to show the actual username
             if (rowName && rowName.startsWith('{')) {
                 try {
                     const parsed = JSON.parse(rowName);
                     rowName = parsed.username || parsed.name || "Player";
                 } catch(e) { rowName = "Player"; }
             }
+            
+            // Final display safety: remove internal key names or system identifiers
+            if (!rowName || rowName === "name" || rowName === "undefined") {
+                rowName = "Admin / System";
+            }
 
-            const isMe = entry.username === currentUser;
+            const isMe = (entry.username === currentUser || rowName === currentUser);
 
             return `
               <tr class="${isMe ? 'current-user' : ''}">
@@ -532,6 +534,8 @@
               </tr>
             `;
         }).join('');
+      } else if (error) {
+        console.error("Leaderboard error:", error);
       }
     }
 
