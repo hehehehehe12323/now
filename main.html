@@ -194,7 +194,7 @@
       border-radius: 24px;
       border: 1px solid var(--border);
       padding: 2rem;
-      display: none;
+      display: block;
       animation: fadeIn 0.4s ease forwards;
     }
 
@@ -346,7 +346,6 @@
       </div>
     </div>
     <div class="nav-right">
-      <button class="btn btn-leaderboard" onclick="toggleLeaderboard()">Leaderboard</button>
       <button class="btn" onclick="saveData()">Save</button>
       <button class="btn" onclick="document.getElementById('file').click()">Load</button>
       <a href="https://docs.google.com/forms/d/e/1FAIpQLSfTZ5mk7aVxGnheE0Zo7kbVrV_XVCuTXSVMVElE5yYZbs5A6Q/viewform?usp=publish-editor" class="btn btn-danger" target="_blank" rel="noopener noreferrer">Report A Bug</a>
@@ -354,19 +353,11 @@
     </div>
   </nav>
 
-  <header class="hero">
-    <span class="version-badge">VERSION 1.5.8</span>
-    <h2>Your Library</h2>
-    <p style="color: var(--text-muted); max-width: 600px; margin: 1.5rem auto;">
-      Sync your data across devices and pick up where you left off.
-    </p>
-  </header>
-
-  <!-- Leaderboard Section -->
+  <!-- Leaderboard Section at top of page -->
   <section id="leaderboardSection" class="animate-in">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <h3 style="margin: 0; letter-spacing: -1px;">Global Leaderboard</h3>
-      <button class="btn" onclick="toggleLeaderboard()">Close</button>
+      <button class="btn" onclick="fetchLeaderboard()">Refresh</button>
     </div>
     <div id="leaderboardContent">
       <table class="leaderboard-table">
@@ -383,6 +374,14 @@
       </table>
     </div>
   </section>
+
+  <header class="hero">
+    <span class="version-badge">VERSION 1.5.8</span>
+    <h2>Your Library</h2>
+    <p style="color: var(--text-muted); max-width: 600px; margin: 1.5rem auto;">
+      Sync your data across devices and pick up where you left off.
+    </p>
+  </header>
 
   <section class="featured-section">
     <div id="gameOfTheDay" class="animate-in">
@@ -490,6 +489,7 @@
     }
 
     async function toggleLeaderboard() {
+      // Functional legacy - keep or remove as needed. Not used in UI now.
       const sect = document.getElementById('leaderboardSection');
       if (sect.style.display === 'block') {
         sect.style.display = 'none';
@@ -539,9 +539,10 @@
       }
     }
 
-    // Start background tracking every 1 minute
+    // Start background tracking and initial fetch
     setInterval(trackMinutes, 60000);
     trackMinutes();
+    fetchLeaderboard();
 
     window.addEventListener("beforeunload", () => {
       sessionStorage.clear();
