@@ -448,19 +448,19 @@
     // Supabase Initialization
     const supabaseUrl = 'https://lnlnuoylmumabscobtsl.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
-    const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    const { createClient } = supabase;
+    const _supabase = createClient(supabaseUrl, supabaseKey);
 
-    // FIX: Optimized and robust Username Extraction from Session
+    // Robust Username Extraction from Supabase Session
     const retrievedLogin = sessionStorage.getItem("usernamePassword");
     let currentUser = null; 
 
     if (retrievedLogin) {
       try {
         const userObj = JSON.parse(retrievedLogin);
-        // We use .username as the primary identifier consistent with logins.json
+        // Extracts 'username' from the profile object row
         currentUser = userObj.username || userObj.user || "User";
       } catch (e) {
-        // Fallback for non-JSON strings
         currentUser = retrievedLogin.split(':')[0];
       }
     }
@@ -477,7 +477,7 @@
         .from('leaderboard')
         .select('minutes')
         .eq('username', currentUser)
-        .single();
+        .maybeSingle();
       
       const nextMins = (data ? data.minutes : 0) + 1;
 
@@ -486,17 +486,6 @@
         minutes: nextMins,
         updated_at: new Date().toISOString()
       }, { onConflict: 'username' });
-    }
-
-    async function toggleLeaderboard() {
-      // Functional legacy - keep or remove as needed. Not used in UI now.
-      const sect = document.getElementById('leaderboardSection');
-      if (sect.style.display === 'block') {
-        sect.style.display = 'none';
-      } else {
-        sect.style.display = 'block';
-        fetchLeaderboard();
-      }
     }
 
     async function fetchLeaderboard() {
@@ -510,21 +499,7 @@
         const body = document.getElementById('leaderboardBody');
         body.innerHTML = data.map((entry, index) => {
             let rowName = entry.username;
-            
-            // Cleanup: if entry in DB is old JSON, parse it to show the actual username
-            if (rowName && rowName.startsWith('{')) {
-                try {
-                    const parsed = JSON.parse(rowName);
-                    rowName = parsed.username || parsed.name || "Player";
-                } catch(e) { rowName = "Player"; }
-            }
-            
-            // Final display safety: remove internal key names or system identifiers
-            if (!rowName || rowName === "name" || rowName === "undefined") {
-                rowName = "Admin / System";
-            }
-
-            const isMe = (entry.username === currentUser || rowName === currentUser);
+            const isMe = (rowName === currentUser);
 
             return `
               <tr class="${isMe ? 'current-user' : ''}">
@@ -534,12 +509,10 @@
               </tr>
             `;
         }).join('');
-      } else if (error) {
-        console.error("Leaderboard error:", error);
       }
     }
 
-    // Start background tracking and initial fetch
+    // Tracking Loop
     setInterval(trackMinutes, 60000);
     trackMinutes();
     fetchLeaderboard();
@@ -577,7 +550,7 @@
           if (zone) openZone(zone);
         }
       } catch (error) {
-        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center;">Connection error: ${error.message}</div>`;
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center;">Connection error</div>`;
       }
     }
 
@@ -604,11 +577,6 @@
 
     function displayZones(zonesToDisplay) {
       container.innerHTML = "";
-      if (!zonesToDisplay.length) {
-        container.innerHTML = "<div style='grid-column:1/-1; text-align:center;'>No games found matching your search. :(</div>";
-        return;
-      }
-
       zonesToDisplay.forEach((game, index) => {
         const card = document.createElement("div");
         card.className = "game-card animate-in";
@@ -616,7 +584,7 @@
         card.onclick = () => openZone(game);
 
         const img = document.createElement("img");
-        img.src = game.cover.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL);
+        img.src = game.cover.replace("{COVER_URL}", coverURL);
         img.loading = "lazy";
 
         const info = document.createElement("div");
@@ -633,13 +601,13 @@
     function displayGameOfTheDay() {
       const game = getGameOfTheDay();
       if (game) {
-        const cover = game.cover.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL);
+        const cover = game.cover.replace("{COVER_URL}", coverURL);
         featuredContainer.innerHTML = `
           <div class="gotd-banner" style="background-image: url('${cover}')"></div>
           <div class="gotd-info">
             <span class="version-badge" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #f59e0b; margin: 0 0 1rem 0;">FEATURED</span>
             <h3 style="font-size: 2rem; margin: 0 0 0.5rem 0;">${game.name}</h3>
-            <p style="color: var(--text-muted); margin: 0;">Hand-picked for you based on current community trends.</p>
+            <p style="color: var(--text-muted); margin: 0;">Hand-picked for you today.</p>
           </div>
         `;
         featuredContainer.onclick = () => openZone(game);
@@ -648,9 +616,10 @@
 
     function getGameOfTheDay() {
       if (!zones.length) return null;
-      const stableZones = [...zones].sort((a, b) => a.id - b.id);
-      const seed = new Date().getFullYear() * 10000 + (new Date().getMonth() + 1) * 100 + new Date().getDate();
-      return stableZones[seed % stableZones.length];
+      const seed = new Date().toDateString();
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+      return zones[Math.abs(hash) % zones.length];
     }
 
     function filterZones() {
@@ -659,23 +628,17 @@
     }
 
     function openZone(file) {
-      if (file.url.startsWith("http")) {
-        window.location.href = file.url;
-        return;
-      }
-      
-      const url = file.url.replace("{COVER_URL}", coverURL).replace("{HTML_URL}", htmlURL);
+      if (file.url.startsWith("http")) { window.location.href = file.url; return; }
+      const url = file.url.replace("{HTML_URL}", htmlURL);
       fetch(url).then(res => res.text()).then(html => {
         zoneViewer.style.display = "flex";
         document.body.style.overflow = "hidden";
-        
         zoneFrame.contentDocument.open();
         zoneFrame.contentDocument.write(html);
         zoneFrame.contentDocument.close();
-        
         document.getElementById('zoneName').textContent = file.name;
         document.getElementById('zoneId').textContent = `#${file.id}`;
-      }).catch(err => alert("Loading failed: " + err));
+      });
     }
 
     function closeZone() {
@@ -686,14 +649,12 @@
 
     function fullscreenZone() {
       if (zoneFrame.requestFullscreen) zoneFrame.requestFullscreen();
-      else if (zoneFrame.webkitRequestFullscreen) zoneFrame.webkitRequestFullscreen();
     }
 
     function aboutBlank() {
       const newWin = window.open("about:blank", "_blank");
       if (newWin) {
-        const html = zoneFrame.contentDocument.documentElement.outerHTML;
-        newWin.document.write(html);
+        newWin.document.write(zoneFrame.contentDocument.documentElement.outerHTML);
         newWin.document.close();
       }
     }
@@ -704,37 +665,23 @@
         let key = localStorage.key(i);
         storageObj[key] = localStorage.getItem(key);
       }
-      let data = JSON.stringify(storageObj, null, 2) + "\n\n|\n\n" + document.cookie;
+      let blob = new Blob([JSON.stringify(storageObj)], { type: "text/plain" });
       const link = document.createElement("a");
-      link.href = URL.createObjectURL(new Blob([data], { type: "text/plain" }));
-      link.download = `asteroid_save_${new Date().toISOString().split('T')[0]}.json`;
+      link.href = URL.createObjectURL(blob);
+      link.download = `asteroid_backup.json`;
       link.click();
     }
 
     function loadData(event) {
       const file = event.target.files[0];
-      if (!file) return;
       const reader = new FileReader();
       reader.onload = (e) => {
-        try {
-          const parts = e.target.result.split("\n\n|\n\n");
-          const parsed = JSON.parse(parts[0]);
-          for (let k in parsed) localStorage.setItem(k, parsed[k]);
-          if (parts[1]) parts[1].split("; ").forEach(c => document.cookie = c);
-          alert("Synchronization successful.");
-          location.reload();
-        } catch (err) { alert("Invalid data file."); }
+        const parsed = JSON.parse(e.target.result);
+        for (let k in parsed) localStorage.setItem(k, parsed[k]);
+        location.reload();
       };
       reader.readAsText(file);
     }
-
-    (function () {
-      let lastTime = Date.now();
-      setInterval(() => {
-        if (Date.now() - lastTime > 60000) location.reload();
-        lastTime = Date.now();
-      }, 10000);
-    })();
 
     listZones();
   </script>
