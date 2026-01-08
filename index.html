@@ -141,6 +141,14 @@
       transform: translateY(-2px);
     }
 
+    /* Registration specific styling */
+    #reg-fields { display: none; }
+    .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+    .checkbox-group input { width: auto; height: 18px; width: 18px; margin: 0; }
+    .checkbox-group label { text-transform: none; font-size: 0.9rem; color: var(--text-muted); letter-spacing: 0; margin: 0; }
+    .captcha-box { background: var(--bg-deep); border: 1px solid var(--border); padding: 1rem; border-radius: 12px; margin-bottom: 1rem; text-align: center; }
+    .captcha-box span { font-size: 1.5rem; font-weight: 800; color: var(--accent); letter-spacing: 5px; }
+
     button {
       width: 100%;
       padding: 1.2rem;
@@ -291,7 +299,7 @@
   <div class="hero-side">
     <div class="brand-content">
       <img src="asteroid.jpeg" alt="Asteroid" />
-      <h1>TEMPORARILY DOWN FOR MAINTENANCE</h1>
+      <h1>ASTEROID</h1>
     </div>
   </div>
 
@@ -302,6 +310,13 @@
     </div>
 
     <form id="login-form">
+      <div id="registration-only-fields">
+        <div class="input-group" id="fullname-group" style="display: none;">
+          <label>Full Name</label>
+          <input id="fullname" type="text" placeholder="First and Last Name" />
+        </div>
+      </div>
+
       <div class="input-group">
         <label>Username</label>
         <input id="username" type="text" placeholder="Enter username" required autocomplete="username" />
@@ -310,10 +325,22 @@
         <label>Password</label>
         <input id="password" type="password" placeholder="Enter password" required autocomplete="current-password" />
       </div>
+
+      <!-- Registration verification fields -->
+      <div id="reg-verif" style="display: none;">
+        <div class="input-group">
+          <label>Humanity Check</label>
+          <div class="captcha-box"><span id="captcha-text"></span></div>
+          <input id="captcha-input" type="text" placeholder="Type letters above" />
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="terms-check" />
+          <label for="terms-check">I agree to the <span style="color:var(--primary);cursor:pointer;" id="inline-terms-trigger">Terms & Conditions</span></label>
+        </div>
+      </div>
       
       <button type="submit" id="submit-btn" class="btn-primary">Sign In</button>
       
-      <!-- Changed link to a toggle button for instant registration -->
       <button type="button" id="auth-toggle" class="btn-link">Register Account</button>
       
       <button type="button" id="forgot-btn">Forgot password?</button>
@@ -361,11 +388,9 @@
   </div>
 
   <script type="module">
-    // --- SUPABASE CONFIGURATION ---
     const SUPABASE_URL = 'https://lnlnuoylmumabscobtsl.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
     
-    // Fixed initialization to prevent name collision crash
     const { createClient } = window.supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -380,9 +405,22 @@
       const submitBtn = document.getElementById("submit-btn");
       const formTitle = document.getElementById("form-title");
       const formSubtitle = document.getElementById("form-subtitle");
+      const fullnameGroup = document.getElementById("fullname-group");
+      const regVerif = document.getElementById("reg-verif");
+      const captchaText = document.getElementById("captcha-text");
+      const inlineTermsTrigger = document.getElementById("inline-terms-trigger");
 
       let isSignUpMode = false;
       let pendingMatch = null;
+      let currentCaptcha = "";
+
+      function generateCaptcha() {
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let res = "";
+        for(let i=0; i<6; i++) res += chars.charAt(Math.floor(Math.random() * chars.length));
+        currentCaptcha = res;
+        captchaText.textContent = res;
+      }
 
       function showMessage(text, isError = true) {
         formMessage.textContent = text;
@@ -391,15 +429,26 @@
 
       sessionStorage.clear();
 
-      // Toggle between Login and Register
       authToggle.addEventListener("click", () => {
         isSignUpMode = !isSignUpMode;
         formTitle.textContent = isSignUpMode ? "Register" : "Sign In";
         formSubtitle.textContent = isSignUpMode ? "Create an account to get started." : "Please enter your credentials to continue.";
         submitBtn.textContent = isSignUpMode ? "Create Account" : "Sign In";
         authToggle.textContent = isSignUpMode ? "Already have an account? Sign In" : "Register Account";
+        
+        fullnameGroup.style.display = isSignUpMode ? "block" : "none";
+        regVerif.style.display = isSignUpMode ? "block" : "none";
+        document.getElementById("fullname").required = isSignUpMode;
+        
+        if (isSignUpMode) generateCaptcha();
+        
         formMessage.className = "";
         formMessage.textContent = "";
+      });
+
+      inlineTermsTrigger.addEventListener("click", () => {
+        termsPopup.style.display = "flex";
+        closeTermsBtn.style.display = "block";
       });
 
       if (loginForm) {
@@ -407,10 +456,25 @@
           e.preventDefault();
           const userName = document.getElementById("username").value;
           const passWord = document.getElementById("password").value;
+          const fullName = document.getElementById("fullname").value;
 
           try {
             if (isSignUpMode) {
-              // --- REGISTRATION LOGIC ---
+              // Registration Validation
+              if (!fullName.includes(" ")) {
+                showMessage("Please enter your full First and Last name.", true);
+                return;
+              }
+              if (document.getElementById("captcha-input").value.toUpperCase() !== currentCaptcha) {
+                showMessage("Captcha incorrect. Please try again.", true);
+                generateCaptcha();
+                return;
+              }
+              if (!document.getElementById("terms-check").checked) {
+                showMessage("You must accept the Terms and Conditions.", true);
+                return;
+              }
+
               const { data: existingUser } = await db
                 .from('profiles')
                 .select('username')
@@ -424,16 +488,17 @@
 
               const { data: newUser, error } = await db
                 .from('profiles')
-                .insert([{ username: userName, password: passWord, is_banned: false, full_name: userName }])
+                .insert([{ username: userName, password: passWord, is_banned: false, full_name: fullName }])
                 .select()
                 .single();
 
               if (error) throw error;
 
+              localStorage.setItem(`agreed_terms_${userName}`, "true"); // Registering implies agreement via checkbox
               showMessage("Account created! Please Sign In.", false);
-              authToggle.click(); // Switch back to login mode
+              authToggle.click();
             } else {
-              // --- LOGIN LOGIC ---
+              // Login Logic
               const { data: user, error } = await db
                 .from('profiles')
                 .select('*')
@@ -452,7 +517,6 @@
                 return;
               }
 
-              // Normal flow: Check terms agreement
               if (localStorage.getItem(`agreed_terms_${userName}`) === "true") {
                 sessionStorage.setItem("usernamePassword", JSON.stringify(user));
                 window.location.href = "main.html";
@@ -488,19 +552,9 @@
         termsPopup.style.display = "none";
       });
 
-      // Existing UI logic
       if (sessionStorage.getItem("usernamePassword")) window.location.href = "main.html";
-      if (localStorage.getItem("inactivityLogout") === "true") {
-        showMessage("Session expired.", false);
-        localStorage.removeItem("inactivityLogout");
-      }
-      if (localStorage.getItem("refreshLogout") === "true") {
-        showMessage("Please sign in again.", false);
-        localStorage.removeItem("refreshLogout");
-      }
     })();
 
-    // Recovery Popup
     const forgotBtn = document.getElementById("forgot-btn");
     const popup = document.getElementById("popup");
     const closePopup = document.getElementById("close-popup");
