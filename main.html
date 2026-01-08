@@ -451,11 +451,25 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
     const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // Security & Auth
+    // Robust Name Extraction
     const retrievedLogin = sessionStorage.getItem("usernamePassword");
-    const currentUser = retrievedLogin ? retrievedLogin.split(':')[0] : null;
+    let currentUser = null;
 
-    if (!retrievedLogin) {
+    if (retrievedLogin) {
+      try {
+        if (retrievedLogin.startsWith('{')) {
+          const parts = retrievedLogin.split(/:(.+)/);
+          const userObj = JSON.parse(parts[0]);
+          currentUser = userObj.username || userObj.name || userObj.user;
+        } else {
+          currentUser = retrievedLogin.split(':')[0];
+        }
+      } catch (e) {
+        currentUser = retrievedLogin.split(':')[0].replace(/[^a-zA-Z0-9]/g, "");
+      }
+    }
+
+    if (!retrievedLogin || !currentUser) {
       window.location.href = "index.html";
     }
 
@@ -463,7 +477,6 @@
     async function trackMinutes() {
       if (!currentUser) return;
       
-      // Fetch current count to increment manually (upsert fallback)
       const { data } = await _supabase
         .from('leaderboard')
         .select('minutes')
@@ -498,13 +511,16 @@
 
       if (data) {
         const body = document.getElementById('leaderboardBody');
-        body.innerHTML = data.map((entry, index) => `
-          <tr class="${entry.username === currentUser ? 'current-user' : ''}">
-            <td class="rank-cell">#${index + 1}</td>
-            <td class="user-cell">${entry.username} ${entry.username === currentUser ? '<small>(You)</small>' : ''}</td>
-            <td class="mins-cell">${entry.minutes}m</td>
-          </tr>
-        `).join('');
+        body.innerHTML = data.map((entry, index) => {
+            const displayName = entry.username.startsWith('{') ? "Legacy User" : entry.username;
+            return `
+              <tr class="${entry.username === currentUser ? 'current-user' : ''}">
+                <td class="rank-cell">#${index + 1}</td>
+                <td class="user-cell">${displayName} ${entry.username === currentUser ? '<small>(You)</small>' : ''}</td>
+                <td class="mins-cell">${entry.minutes}m</td>
+              </tr>
+            `;
+        }).join('');
       }
     }
 
@@ -538,7 +554,6 @@
         await fetchPopularity();
         sortZones();
         
-        // Deep link check
         const search = new URLSearchParams(window.location.search);
         const id = search.get('id');
         if (id) {
@@ -615,9 +630,8 @@
       }
     }
 
-        function getGameOfTheDay() {
+    function getGameOfTheDay() {
       if (!zones.length) return null;
-      // Create a copy and sort by ID to ensure the index always points to the same game
       const stableZones = [...zones].sort((a, b) => a.id - b.id);
       const seed = new Date().getFullYear() * 10000 + (new Date().getMonth() + 1) * 100 + new Date().getDate();
       return stableZones[seed % stableZones.length];
@@ -698,7 +712,6 @@
       reader.readAsText(file);
     }
 
-    // Auto-refresh logic
     (function () {
       let lastTime = Date.now();
       setInterval(() => {
@@ -707,7 +720,6 @@
       }, 10000);
     })();
 
-    // Init
     listZones();
   </script>
 </body>
