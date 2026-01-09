@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Asteroid | 404 Not Found</title>
+  <link rel="icon" type="image/png" sizes="512x512" href="asteroid.jpeg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.5);
+      --accent: #10b981;
+      --bg-deep: #020617;
+      --bg-surface: #0f172a;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: rgba(255, 255, 255, 0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Left Side - Visuals */
+    .hero-side {
+      flex: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5rem;
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+      border-right: 1px solid var(--border);
+    }
+
+    .hero-side::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url('asteroid.jpeg') no-repeat center;
+      background-size: cover;
+      opacity: 0.03;
+      filter: grayscale(1);
+    }
+
+    .brand-content {
+      position: relative;
+      z-index: 2;
+      animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .brand-content img {
+      width: 100px;
+      height: 100px;
+      border-radius: 24px;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 50px var(--primary-glow);
+    }
+
+    .brand-content h1 {
+      font-size: 5rem;
+      font-weight: 800;
+      letter-spacing: -4px;
+      line-height: 1;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(to bottom right, #fff, var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Right Side - Content Panel */
+    .form-side {
+      width: 550px;
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5rem;
+      position: relative;
+      z-index: 10;
+      box-shadow: -20px 0 50px rgba(0,0,0,0.5);
+    }
+
+    .error-header { margin-bottom: 2.5rem; animation: fadeIn 1s ease forwards; }
+    .error-header h2 { font-size: 4rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--primary); }
+    .error-header h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; }
+    .error-header p { color: var(--text-muted); line-height: 1.6; font-size: 1.1rem; }
+
+    .btn-primary {
+      display: block;
+      width: 100%;
+      padding: 1.2rem;
+      border-radius: 16px;
+      background: var(--primary);
+      color: white;
+      text-align: center;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 1rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: #4f46e5;
+      transform: translateY(-3px);
+      box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3);
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 1024px) {
+      .hero-side { display: none; }
+      .form-side { width: 100%; padding: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero-side">
+    <div class="brand-content">
+      <img src="asteroid.jpeg" alt="Asteroid" />
+      <h1>ASTEROID</h1>
+    </div>
+  </div>
+
+  <div class="form-side">
+    <div class="error-header">
+      <h2>404</h2>
+      <h3>Lost in Space?</h3>
+      <p>It looks like the page you are looking for does not exist.</p>
+    </div>
+
+    <a href="https://asteroid-pixel.github.io" class="btn-primary">Return to Asteroid Login</a>
+  </div>
+
+</body>
+</html>
