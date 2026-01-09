@@ -75,7 +75,7 @@
 
     .nav-right { display: flex; gap: 0.75rem; align-items: center; }
 
-    /* PROFILE STYLES ADDED HERE */
+    /* PROFILE STYLES */
     .profile-container { position: relative; }
     .profile-trigger {
       width: 42px; height: 42px; border-radius: 50%;
@@ -84,7 +84,7 @@
       transition: all 0.2s; overflow: hidden;
     }
     .profile-trigger:hover { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
-    .profile-trigger img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-trigger img { width: 100%; height: 100%; object-fit: cover; display: none; }
     .profile-initial { font-weight: 800; font-size: 1.1rem; color: white; }
     
     .profile-menu {
@@ -109,6 +109,27 @@
     }
     .menu-link:hover { background: rgba(255,255,255,0.05); }
     .menu-link.logout { color: #ef4444; }
+
+    /* Settings Modal Styles */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px); z-index: 3000; display: none;
+      align-items: center; justify-content: center; padding: 2rem;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      width: 100%; max-width: 450px; border-radius: 24px; padding: 2.5rem;
+      animation: fadeIn 0.3s ease;
+    }
+    .modal-card h2 { margin: 0 0 1.5rem 0; letter-spacing: -1px; }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; }
+    .form-group input {
+      width: 100%; background: var(--bg-surface); border: 1px solid var(--border);
+      padding: 12px 16px; border-radius: 12px; color: white; font-family: inherit;
+    }
+    .form-group input:focus { outline: none; border-color: var(--primary); }
 
     /* Hero Section */
     .hero {
@@ -387,13 +408,14 @@
       
       <!-- PROFILE COMPONENT -->
       <div class="profile-container">
-        <div class="profile-trigger" onclick="toggleProfileMenu()">
+        <div class="profile-trigger" id="profileTrigger" onclick="toggleProfileMenu()">
           <span class="profile-initial" id="navInitial">?</span>
+          <img id="navPfp" src="" />
         </div>
         <div class="profile-menu" id="profileMenu">
           <div class="menu-header">
             <span class="menu-name" id="pMenuName">User</span>
-            <span class="menu-status">Level 1 Explorer</span>
+            <span class="menu-status">Explorer</span>
           </div>
           <div class="menu-stats">
             <span class="stat-label">Total Time Played</span>
@@ -401,13 +423,32 @@
           </div>
           <div class="menu-items">
             <a class="menu-link" onclick="location.reload()">Refresh Data</a>
-            <a class="menu-link">Settings</a>
+            <a class="menu-link" onclick="openSettings()">Settings</a>
             <a href="https://asteroid-pixel.github.io" class="menu-link logout">Log Out</a>
           </div>
         </div>
       </div>
     </div>
   </nav>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+        <h2>Profile Settings</h2>
+        <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="setFullName" placeholder="Enter full name...">
+        </div>
+        <div class="form-group">
+            <label>Profile Picture URL</label>
+            <input type="text" id="setPfpUrl" placeholder="https://example.com/photo.png">
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" style="flex: 1;" onclick="saveSettings()">Save Changes</button>
+            <button class="btn" onclick="closeSettings()">Cancel</button>
+        </div>
+    </div>
+  </div>
 
   <header class="hero">
     <span class="version-badge">VERSION 1.6.8</span>
@@ -526,16 +567,57 @@
       window.location.href = "index.html";
     }
 
-    // PROFILE LOGIC ADDED HERE
-    document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
-    document.getElementById('pMenuName').textContent = currentUser;
+    // PROFILE LOGIC
+    function loadProfile() {
+        const savedName = localStorage.getItem('asteroid_full_name');
+        const savedPfp = localStorage.getItem('asteroid_pfp');
+        
+        document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
+        document.getElementById('pMenuName').textContent = savedName || currentUser;
+        
+        const navPfp = document.getElementById('navPfp');
+        const navInitial = document.getElementById('navInitial');
+        
+        if (savedPfp) {
+            navPfp.src = savedPfp;
+            navPfp.style.display = 'block';
+            navInitial.style.display = 'none';
+        } else {
+            navPfp.style.display = 'none';
+            navInitial.style.display = 'block';
+        }
+    }
 
     function toggleProfileMenu() {
       document.getElementById('profileMenu').classList.toggle('active');
     }
+
+    function openSettings() {
+        document.getElementById('setFullName').value = localStorage.getItem('asteroid_full_name') || "";
+        document.getElementById('setPfpUrl').value = localStorage.getItem('asteroid_pfp') || "";
+        document.getElementById('settingsModal').classList.add('active');
+        document.getElementById('profileMenu').classList.remove('active');
+    }
+
+    function closeSettings() {
+        document.getElementById('settingsModal').classList.remove('active');
+    }
+
+    function saveSettings() {
+        const name = document.getElementById('setFullName').value;
+        const pfp = document.getElementById('setPfpUrl').value;
+        localStorage.setItem('asteroid_full_name', name);
+        localStorage.setItem('asteroid_pfp', pfp);
+        loadProfile();
+        closeSettings();
+    }
+
     window.addEventListener('click', (e) => {
       if (!e.target.closest('.profile-container')) document.getElementById('profileMenu').classList.remove('active');
+      if (e.target.id === 'settingsModal') closeSettings();
     });
+
+    loadProfile();
 
     async function trackMinutes() {
       if (!currentUser) return;
