@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -130,7 +132,6 @@
       padding: 12px 16px; border-radius: 12px; color: white; font-family: inherit;
     }
     .form-group input:focus { outline: none; border-color: var(--primary); }
-    .form-group input:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* Hero Section */
     .hero {
@@ -273,12 +274,10 @@
     .leaderboard-table td {
       padding: 1rem;
       border-bottom: 1px solid var(--border);
-      vertical-align: middle;
     }
 
     .rank-cell { font-weight: 800; width: 60px; }
-    .user-cell { font-weight: 600; display: flex; align-items: center; gap: 0.75rem; }
-    .user-cell img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: var(--primary); }
+    .user-cell { font-weight: 600; }
     .mins-cell { color: var(--accent); font-weight: 800; text-align: right; }
     .current-user { background: rgba(99, 102, 241, 0.1); }
 
@@ -418,7 +417,7 @@
         <div class="profile-menu" id="profileMenu">
           <div class="menu-header">
             <span class="menu-name" id="pMenuName">User</span>
-            <span class="menu-status" id="pMenuLevel">Level 1</span>
+            <span class="menu-status">Explorer</span>
           </div>
           <div class="menu-stats">
             <span class="stat-label">Total Time Played</span>
@@ -440,7 +439,7 @@
         <h2>Profile Settings</h2>
         <div class="form-group">
             <label>Full Name</label>
-            <input type="text" id="setFullName" disabled>
+            <input type="text" id="setFullName" placeholder="Enter full name...">
         </div>
         <div class="form-group">
             <label>Profile Picture URL</label>
@@ -570,13 +569,13 @@
       window.location.href = "index.html";
     }
 
-    // PROFILE LOGIC - Now strictly getting the PFP from LocalStorage as requested 
+    // PROFILE LOGIC
     function loadProfile() {
-        const savedName = currentUser;
+        const savedName = localStorage.getItem('asteroid_full_name');
         const savedPfp = localStorage.getItem('asteroid_pfp');
         
         document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
-        document.getElementById('pMenuName').textContent = savedName;
+        document.getElementById('pMenuName').textContent = savedName || currentUser;
         
         const navPfp = document.getElementById('navPfp');
         const navInitial = document.getElementById('navInitial');
@@ -596,8 +595,7 @@
     }
 
     function openSettings() {
-        // Name is disabled and automatically retrieved from currentUser
-        document.getElementById('setFullName').value = currentUser;
+        document.getElementById('setFullName').value = localStorage.getItem('asteroid_full_name') || "";
         document.getElementById('setPfpUrl').value = localStorage.getItem('asteroid_pfp') || "";
         document.getElementById('settingsModal').classList.add('active');
         document.getElementById('profileMenu').classList.remove('active');
@@ -608,28 +606,12 @@
     }
 
     function saveSettings() {
+        const name = document.getElementById('setFullName').value;
         const pfp = document.getElementById('setPfpUrl').value;
+        localStorage.setItem('asteroid_full_name', name);
         localStorage.setItem('asteroid_pfp', pfp);
-        // We still sync the URL to the table so it "displays on the leaderboard for all users"
-        syncUserDataToSupabase(pfp);
         loadProfile();
         closeSettings();
-    }
-
-    async function syncUserDataToSupabase(pfpUrl) {
-        if (!currentUser) return;
-        const { data } = await _supabase
-          .from('leaderboard')
-          .select('minutes')
-          .eq('username', currentUser)
-          .maybeSingle();
-        
-        await _supabase.from('leaderboard').upsert({ 
-          username: currentUser, 
-          minutes: data ? data.minutes : 0,
-          pfp_url: pfpUrl,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'username' });
     }
 
     window.addEventListener('click', (e) => {
@@ -644,58 +626,43 @@
       
       const { data } = await _supabase
         .from('leaderboard')
-        .select('minutes, pfp_url')
+        .select('minutes')
         .eq('username', currentUser)
         .maybeSingle();
       
       const nextMins = (data ? data.minutes : 0) + 1;
-      // Get PFP from localStorage to ensure it's up to date
-      const currentPfp = localStorage.getItem('asteroid_pfp') || (data ? data.pfp_url : '');
       
-      updateUILevelAndMins(nextMins);
+      // Update Menu Stats
+      document.getElementById('pMenuMins').textContent = nextMins + 'm';
 
       await _supabase.from('leaderboard').upsert({ 
         username: currentUser, 
         minutes: nextMins,
-        pfp_url: currentPfp,
         updated_at: new Date().toISOString()
       }, { onConflict: 'username' });
-    }
-
-    function updateUILevelAndMins(mins) {
-        document.getElementById('pMenuMins').textContent = mins + 'm';
-        // Requirement 4: 1 actual level for every 200 minutes
-        const level = Math.floor(mins / 200) + 1;
-        document.getElementById('pMenuLevel').textContent = `Level ${level}`;
     }
 
     async function fetchLeaderboard() {
       const { data, error } = await _supabase
         .from('leaderboard')
-        .select('username, minutes, pfp_url')
+        .select('username, minutes')
         .order('minutes', { ascending: false })
         .limit(10);
 
       if (data) {
-        // Requirement 3: Ensure profile shows all-time retrieval from leaderboard record
+        // Sync local profile minute count from DB fetch
         const me = data.find(u => u.username === currentUser);
-        if(me) updateUILevelAndMins(me.minutes);
+        if(me) document.getElementById('pMenuMins').textContent = me.minutes + 'm';
 
         const body = document.getElementById('leaderboardBody');
         body.innerHTML = data.map((entry, index) => {
-            const rowName = entry.username;
+            let rowName = entry.username;
             const isMe = (rowName === currentUser);
-            
-            // Requirement 2: Show PFP next to names on leaderboard
-            const pfp = entry.pfp_url ? `<img src="${entry.pfp_url}">` : `<div style="width:32px; height:32px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:0.7rem;">${rowName.charAt(0).toUpperCase()}</div>`;
 
             return `
               <tr class="${isMe ? 'current-user' : ''}">
                 <td class="rank-cell">#${index + 1}</td>
-                <td class="user-cell">
-                    ${pfp}
-                    <span>${rowName} ${isMe ? '<small>(You)</small>' : ''}</span>
-                </td>
+                <td class="user-cell">${rowName} ${isMe ? '<small>(You)</small>' : ''}</td>
                 <td class="mins-cell">${entry.minutes}m</td>
               </tr>
             `;
@@ -703,20 +670,10 @@
       }
     }
 
-    // Initial fetch to populate UI immediately
-    async function init() {
-        if (currentUser) {
-            const { data } = await _supabase.from('leaderboard').select('minutes').eq('username', currentUser).maybeSingle();
-            if (data) updateUILevelAndMins(data.minutes); // Sync "All Time" status
-        }
-        fetchLeaderboard();
-        listZones();
-    }
-
     // Tracking Loop
     setInterval(trackMinutes, 60000);
     trackMinutes();
-    init();
+    fetchLeaderboard();
 
     window.addEventListener("beforeunload", () => {
       sessionStorage.clear();
@@ -883,6 +840,8 @@
       };
       reader.readAsText(file);
     }
+
+    listZones();
   </script>
 </body>
 </html>
