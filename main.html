@@ -73,7 +73,42 @@
       -webkit-text-fill-color: transparent;
     }
 
-    .nav-right { display: flex; gap: 0.75rem; }
+    .nav-right { display: flex; gap: 0.75rem; align-items: center; }
+
+    /* PROFILE STYLES ADDED HERE */
+    .profile-container { position: relative; }
+    .profile-trigger {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--primary); display: flex; align-items: center;
+      justify-content: center; cursor: pointer; border: 2px solid var(--border);
+      transition: all 0.2s; overflow: hidden;
+    }
+    .profile-trigger:hover { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
+    .profile-trigger img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-initial { font-weight: 800; font-size: 1.1rem; color: white; }
+    
+    .profile-menu {
+      position: absolute; top: 130%; right: 0; width: 260px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      display: none; flex-direction: column; gap: 1rem; z-index: 1001;
+      animation: fadeIn 0.2s ease;
+    }
+    .profile-menu.active { display: flex; }
+    .menu-header { display: flex; flex-direction: column; gap: 0.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); }
+    .menu-name { font-weight: 800; font-size: 1.1rem; color: var(--text-main); }
+    .menu-status { font-size: 0.75rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
+    .menu-stats { background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: 12px; }
+    .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+    .stat-value { font-size: 1.1rem; font-weight: 800; color: var(--accent); display: block; }
+    .menu-items { display: flex; flex-direction: column; gap: 0.5rem; }
+    .menu-link { 
+      padding: 0.6rem 0.8rem; border-radius: 10px; text-decoration: none; 
+      color: var(--text-main); font-size: 0.9rem; font-weight: 600; 
+      transition: background 0.2s; cursor: pointer; display: block;
+    }
+    .menu-link:hover { background: rgba(255,255,255,0.05); }
+    .menu-link.logout { color: #ef4444; }
 
     /* Hero Section */
     .hero {
@@ -349,7 +384,28 @@
       <button class="btn" onclick="saveData()">Save</button>
       <button class="btn" onclick="document.getElementById('file').click()">Load</button>
       <a href="https://docs.google.com/forms/d/e/1FAIpQLSfTZ5mk7aVxGnheE0Zo7kbVrV_XVCuTXSVMVElE5yYZbs5A6Q/viewform?usp=publish-editor" class="btn btn-danger" target="_blank" rel="noopener noreferrer">Report A Bug</a>
-      <a href="https://asteroid-pixel.github.io" class="btn btn-primary">Log Out</a>
+      
+      <!-- PROFILE COMPONENT -->
+      <div class="profile-container">
+        <div class="profile-trigger" onclick="toggleProfileMenu()">
+          <span class="profile-initial" id="navInitial">?</span>
+        </div>
+        <div class="profile-menu" id="profileMenu">
+          <div class="menu-header">
+            <span class="menu-name" id="pMenuName">User</span>
+            <span class="menu-status">Level 1 Explorer</span>
+          </div>
+          <div class="menu-stats">
+            <span class="stat-label">Total Time Played</span>
+            <span class="stat-value" id="pMenuMins">0m</span>
+          </div>
+          <div class="menu-items">
+            <a class="menu-link" onclick="location.reload()">Refresh Data</a>
+            <a class="menu-link">Settings</a>
+            <a href="https://asteroid-pixel.github.io" class="menu-link logout">Log Out</a>
+          </div>
+        </div>
+      </div>
     </div>
   </nav>
 
@@ -454,14 +510,12 @@
     const { createClient } = supabase;
     const _supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Robust Username Extraction from Supabase Session
     const retrievedLogin = sessionStorage.getItem("usernamePassword");
     let currentUser = null; 
 
     if (retrievedLogin) {
       try {
         const userObj = JSON.parse(retrievedLogin);
-        // Extracts 'username' from the profile object row
         currentUser = userObj.username || userObj.user || "User";
       } catch (e) {
         currentUser = retrievedLogin.split(':')[0];
@@ -472,7 +526,17 @@
       window.location.href = "index.html";
     }
 
-    // Leaderboard Logic
+    // PROFILE LOGIC ADDED HERE
+    document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
+    document.getElementById('pMenuName').textContent = currentUser;
+
+    function toggleProfileMenu() {
+      document.getElementById('profileMenu').classList.toggle('active');
+    }
+    window.addEventListener('click', (e) => {
+      if (!e.target.closest('.profile-container')) document.getElementById('profileMenu').classList.remove('active');
+    });
+
     async function trackMinutes() {
       if (!currentUser) return;
       
@@ -483,6 +547,9 @@
         .maybeSingle();
       
       const nextMins = (data ? data.minutes : 0) + 1;
+      
+      // Update Menu Stats
+      document.getElementById('pMenuMins').textContent = nextMins + 'm';
 
       await _supabase.from('leaderboard').upsert({ 
         username: currentUser, 
@@ -499,6 +566,10 @@
         .limit(10);
 
       if (data) {
+        // Sync local profile minute count from DB fetch
+        const me = data.find(u => u.username === currentUser);
+        if(me) document.getElementById('pMenuMins').textContent = me.minutes + 'm';
+
         const body = document.getElementById('leaderboardBody');
         body.innerHTML = data.map((entry, index) => {
             let rowName = entry.username;
