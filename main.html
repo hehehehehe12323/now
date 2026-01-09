@@ -130,6 +130,7 @@
       padding: 12px 16px; border-radius: 12px; color: white; font-family: inherit;
     }
     .form-group input:focus { outline: none; border-color: var(--primary); }
+    .form-group input:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* Hero Section */
     .hero {
@@ -275,7 +276,8 @@
     }
 
     .rank-cell { font-weight: 800; width: 60px; }
-    .user-cell { font-weight: 600; }
+    .user-cell { font-weight: 600; display: flex; align-items: center; gap: 12px; }
+    .leaderboard-pfp { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: var(--primary); flex-shrink: 0; }
     .mins-cell { color: var(--accent); font-weight: 800; text-align: right; }
     .current-user { background: rgba(99, 102, 241, 0.1); }
 
@@ -436,12 +438,16 @@
     <div class="modal-card">
         <h2>Profile Settings</h2>
         <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" id="setFullName" placeholder="Enter full name...">
+            <label>Full Name (Verified)</label>
+            <input type="text" id="setFullName" disabled>
         </div>
         <div class="form-group">
             <label>Profile Picture URL</label>
             <input type="text" id="setPfpUrl" placeholder="https://example.com/photo.png">
+        </div>
+        <div class="form-group">
+            <label>Upload Profile Picture</label>
+            <input type="file" id="setPfpFile" accept="image/*" onchange="handlePfpFile(event)">
         </div>
         <div style="display: flex; gap: 10px;">
             <button class="btn btn-primary" style="flex: 1;" onclick="saveSettings()">Save Changes</button>
@@ -568,23 +574,33 @@
     }
 
     // PROFILE LOGIC
-    function loadProfile() {
-        const savedName = localStorage.getItem('asteroid_full_name');
-        const savedPfp = localStorage.getItem('asteroid_pfp');
+    let lastUploadedPfp = "";
+
+    async function loadProfile() {
+        if (!currentUser) return;
         
-        document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
-        document.getElementById('pMenuName').textContent = savedName || currentUser;
-        
-        const navPfp = document.getElementById('navPfp');
-        const navInitial = document.getElementById('navInitial');
-        
-        if (savedPfp) {
-            navPfp.src = savedPfp;
-            navPfp.style.display = 'block';
-            navInitial.style.display = 'none';
-        } else {
-            navPfp.style.display = 'none';
-            navInitial.style.display = 'block';
+        const { data } = await _supabase
+            .from('leaderboard')
+            .select('full_name, pfp, minutes')
+            .eq('username', currentUser)
+            .maybeSingle();
+
+        if (data) {
+            document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
+            document.getElementById('pMenuName').textContent = data.full_name || currentUser;
+            document.getElementById('pMenuMins').textContent = (data.minutes || 0) + 'm';
+            
+            const navPfp = document.getElementById('navPfp');
+            const navInitial = document.getElementById('navInitial');
+            
+            if (data.pfp) {
+                navPfp.src = data.pfp;
+                navPfp.style.display = 'block';
+                navInitial.style.display = 'none';
+            } else {
+                navPfp.style.display = 'none';
+                navInitial.style.display = 'block';
+            }
         }
     }
 
@@ -592,9 +608,12 @@
       document.getElementById('profileMenu').classList.toggle('active');
     }
 
-    function openSettings() {
-        document.getElementById('setFullName').value = localStorage.getItem('asteroid_full_name') || "";
-        document.getElementById('setPfpUrl').value = localStorage.getItem('asteroid_pfp') || "";
+    async function openSettings() {
+        const { data } = await _supabase.from('leaderboard').select('full_name, pfp').eq('username', currentUser).maybeSingle();
+        if (data) {
+            document.getElementById('setFullName').value = data.full_name || "";
+            document.getElementById('setPfpUrl').value = data.pfp || "";
+        }
         document.getElementById('settingsModal').classList.add('active');
         document.getElementById('profileMenu').classList.remove('active');
     }
@@ -603,13 +622,30 @@
         document.getElementById('settingsModal').classList.remove('active');
     }
 
-    function saveSettings() {
-        const name = document.getElementById('setFullName').value;
-        const pfp = document.getElementById('setPfpUrl').value;
-        localStorage.setItem('asteroid_full_name', name);
-        localStorage.setItem('asteroid_pfp', pfp);
-        loadProfile();
+    function handlePfpFile(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                lastUploadedPfp = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    async function saveSettings() {
+        const pfpUrlInput = document.getElementById('setPfpUrl').value;
+        const pfpToSave = lastUploadedPfp || pfpUrlInput;
+
+        await _supabase.from('leaderboard').upsert({ 
+            username: currentUser, 
+            pfp: pfpToSave,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'username' });
+
+        await loadProfile();
         closeSettings();
+        fetchLeaderboard();
     }
 
     window.addEventListener('click', (e) => {
@@ -630,7 +666,6 @@
       
       const nextMins = (data ? data.minutes : 0) + 1;
       
-      // Update Menu Stats
       document.getElementById('pMenuMins').textContent = nextMins + 'm';
 
       await _supabase.from('leaderboard').upsert({ 
@@ -641,26 +676,25 @@
     }
 
     async function fetchLeaderboard() {
-      const { data, error } = await _supabase
+      const { data } = await _supabase
         .from('leaderboard')
-        .select('username, minutes')
+        .select('username, minutes, pfp')
         .order('minutes', { ascending: false })
         .limit(10);
 
       if (data) {
-        // Sync local profile minute count from DB fetch
-        const me = data.find(u => u.username === currentUser);
-        if(me) document.getElementById('pMenuMins').textContent = me.minutes + 'm';
-
         const body = document.getElementById('leaderboardBody');
         body.innerHTML = data.map((entry, index) => {
-            let rowName = entry.username;
-            const isMe = (rowName === currentUser);
+            const isMe = (entry.username === currentUser);
+            const pfpHtml = entry.pfp ? `<img src="${entry.pfp}" class="leaderboard-pfp">` : `<div class="leaderboard-pfp" style="display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;">${entry.username.charAt(0).toUpperCase()}</div>`;
 
             return `
               <tr class="${isMe ? 'current-user' : ''}">
                 <td class="rank-cell">#${index + 1}</td>
-                <td class="user-cell">${rowName} ${isMe ? '<small>(You)</small>' : ''}</td>
+                <td class="user-cell">
+                   ${pfpHtml}
+                   <span>${entry.username} ${isMe ? '<small>(You)</small>' : ''}</span>
+                </td>
                 <td class="mins-cell">${entry.minutes}m</td>
               </tr>
             `;
@@ -698,13 +732,6 @@
         zones = await response.json();
         await fetchPopularity();
         sortZones();
-        
-        const search = new URLSearchParams(window.location.search);
-        const id = search.get('id');
-        if (id) {
-          const zone = zones.find(z => z.id + '' == id + '');
-          if (zone) openZone(zone);
-        }
       } catch (error) {
         container.innerHTML = `<div style="grid-column: 1/-1; text-align: center;">Connection error</div>`;
       }
@@ -718,7 +745,7 @@
           const idMatch = file.name.match(/\/(\d+)\.html$/);
           if (idMatch) popularityData[parseInt(idMatch[1])] = file.hits.total;
         });
-      } catch (e) { console.warn("Popularity metrics offline"); }
+      } catch (e) { }
     }
 
     function sortZones() {
@@ -726,7 +753,6 @@
       if (sortBy === 'name') zones.sort((a, b) => a.name.localeCompare(b.name));
       else if (sortBy === 'id') zones.sort((a, b) => a.id - b.id);
       else if (sortBy === 'popular') zones.sort((a, b) => (popularityData[b.id] || 0) - (popularityData[a.id] || 0));
-      
       displayZones(zones);
       displayGameOfTheDay();
     }
@@ -738,17 +764,7 @@
         card.className = "game-card animate-in";
         card.style.animationDelay = `${index * 0.02}s`;
         card.onclick = () => openZone(game);
-
-        const img = document.createElement("img");
-        img.src = game.cover.replace("{COVER_URL}", coverURL);
-        img.loading = "lazy";
-
-        const info = document.createElement("div");
-        info.className = "game-info";
-        info.innerHTML = `<h3>${game.name}</h3>`;
-
-        card.appendChild(img);
-        card.appendChild(info);
+        card.innerHTML = `<img src="${game.cover.replace("{COVER_URL}", coverURL)}" loading="lazy"><div class="game-info"><h3>${game.name}</h3></div>`;
         container.appendChild(card);
       });
       document.getElementById("zoneCount").textContent = `${zonesToDisplay.length} Games Available`;
@@ -764,8 +780,7 @@
             <span class="version-badge" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #f59e0b; margin: 0 0 1rem 0;">FEATURED</span>
             <h3 style="font-size: 2rem; margin: 0 0 0.5rem 0;">${game.name}</h3>
             <p style="color: var(--text-muted); margin: 0;">Hand-picked for you today.</p>
-          </div>
-        `;
+          </div>`;
         featuredContainer.onclick = () => openZone(game);
       }
     }
@@ -803,9 +818,7 @@
       zoneFrame.src = "about:blank";
     }
 
-    function fullscreenZone() {
-      if (zoneFrame.requestFullscreen) zoneFrame.requestFullscreen();
-    }
+    function fullscreenZone() { if (zoneFrame.requestFullscreen) zoneFrame.requestFullscreen(); }
 
     function aboutBlank() {
       const newWin = window.open("about:blank", "_blank");
