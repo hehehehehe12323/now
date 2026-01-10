@@ -634,29 +634,61 @@
       window.location.href = "index.html";
     }
 
+    // MODERATION LOGIC
+    function getFuzzyText(text) {
+        return text.toLowerCase()
+            .replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a')
+            .replace(/@/g, 'a').replace(/\$/g, 's').replace(/5/g, 's').replace(/7/g, 't')
+            .replace(/8/g, 'b').replace(/!/g, 'i');
+    }
+
+    function recordViolation() {
+        let violations = parseInt(localStorage.getItem('asteroid_violations') || "0") + 1;
+        localStorage.setItem('asteroid_violations', violations);
+
+        if (violations === 1) {
+            const expiry = Date.now() + (10 * 60 * 1000);
+            localStorage.setItem('asteroid_ban_expiry', expiry);
+            localStorage.setItem('asteroid_ban_type', 'chat');
+            alert("SYSTEM WARNING:\nThis is your 1st violation of the community policy. You have been banned from chatting for 10 minutes.");
+        } else if (violations >= 2) {
+            const expiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
+            localStorage.setItem('asteroid_ban_expiry', expiry);
+            localStorage.setItem('asteroid_ban_type', 'site');
+            alert("SYSTEM ALERT:\nThis is your second violation. You are now banned from the whole site for 1 week.");
+            location.reload(); 
+        }
+    }
+
+    function checkActiveBan() {
+        const expiry = localStorage.getItem('asteroid_ban_expiry');
+        const type = localStorage.getItem('asteroid_ban_type');
+        if (expiry && Date.now() < parseInt(expiry)) {
+            const mins = Math.ceil((parseInt(expiry) - Date.now()) / 60000);
+            if (type === 'chat') {
+                alert(`You are currently chat-banned for policy violations. Remaining: ${mins}m`);
+                return 'chat';
+            }
+            if (type === 'site') {
+                document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background: #020617; color: white; text-align: center; font-family: sans-serif; padding: 2rem;">
+                  <h1 style="color: #ef4444; font-size: 3rem; margin-bottom: 0;">SITE ACCESS REVOKED</h1>
+                  <p style="font-size: 1.2rem; margin-top: 1rem;">You are banned from the whole site due to multiple violations.</p>
+                  <p style="color: var(--text-muted);">Ban remaining: ${mins} minutes</p>
+                </div>`;
+                return 'site';
+            }
+        }
+        return false;
+    }
+
     // CHAT LOGIC
     let currentReplyToId = null;
     let allMessages = [];
     let chatChannel = null;
     let typingTimeout = null;
 
-    // Helper to clean messages using CensorCore
-    function applyCensor(text) {
-      if (!window.censor || !censor.isReady()) return text;
-      const analysis = censor.analyze(text);
-      if (!analysis.blocked) return text;
-      
-      let cleaned = text;
-      analysis.matches.forEach(match => {
-        // Build regex for the specific word/phrase and mask it
-        const escaped = match.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const reg = new RegExp("\\b" + escaped + "\\b", "gi");
-        cleaned = cleaned.replace(reg, '*'.repeat(match.text.length));
-      });
-      return cleaned;
-    }
-
     async function openChat() {
+      if (checkActiveBan() === 'chat') return;
       document.getElementById('chatViewer').style.display = "flex";
       document.body.style.overflow = "hidden";
       await fetchMessages();
@@ -685,24 +717,18 @@
         const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const parentMsg = msg.parent_id ? allMessages.find(m => m.id === msg.parent_id) : null;
         
-        // Censor text using the correct library reference
-        const filteredContent = applyCensor(msg.content);
-        const filteredParent = parentMsg ? applyCensor(parentMsg.content) : '';
-
         return `
           <div class="message ${isOwn ? 'own' : ''}">
             <div class="msg-header">
               <span class="msg-user">${msg.username}</span>
               <span class="msg-time">${time}</span>
             </div>
-            ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${filteredParent.substring(0, 30)}...</div>` : ''}
-            <div class="msg-content">${filteredContent}</div>
+            ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${parentMsg.content.substring(0, 30)}...</div>` : ''}
+            <div class="msg-content">${msg.content}</div>
             <span class="msg-reply-link" onclick="setReply(${msg.id}, '${msg.username}')">Reply</span>
           </div>
         `;
       }).join('');
-      
-      // Auto-scroll logic: Older go up, newest at bottom
       body.scrollTop = body.scrollHeight;
     }
 
@@ -729,9 +755,21 @@
     }
 
     async function postMessage() {
+      if (checkActiveBan() === 'chat') return;
+
       const input = document.getElementById('chatInput');
       let content = input.value.trim();
       if (!content) return;
+
+      // Fuzzy check
+      const fuzzyText = getFuzzyText(content);
+      const isBlockedRaw = window.censor && censor.isReady() && censor.isBlocked(content);
+      const isBlockedFuzzy = window.censor && censor.isReady() && censor.isBlocked(fuzzyText);
+
+      if (isBlockedRaw || isBlockedFuzzy) {
+          content = "Message blocked due to policy violations";
+          recordViolation();
+      }
 
       const { error } = await _supabase.from('messages').insert({
         username: currentUser,
@@ -766,17 +804,15 @@
             }
           }
           const indicator = document.getElementById('typingIndicator');
-          if (typers.length > 0) {
-            indicator.innerText = `${typers.join(', ')} ${typers.length > 1 ? 'are' : 'is'} typing...`;
-          } else {
-            indicator.innerText = '';
-          }
+          indicator.innerText = typers.length > 0 ? `${typers.join(', ')} ${typers.length > 1 ? 'are' : 'is'} typing...` : '';
         })
         .subscribe();
     }
 
     // PROFILE LOGIC
     function loadProfile() {
+        if (checkActiveBan() === 'site') return;
+
         const savedName = localStorage.getItem('asteroid_full_name');
         const savedPfp = localStorage.getItem('asteroid_pfp');
         
@@ -828,17 +864,10 @@
     loadProfile();
 
     async function trackMinutes() {
-      if (!currentUser) return;
+      if (!currentUser || checkActiveBan() === 'site') return;
       
-      const { data } = await _supabase
-        .from('leaderboard')
-        .select('minutes')
-        .eq('username', currentUser)
-        .maybeSingle();
-      
+      const { data } = await _supabase.from('leaderboard').select('minutes').eq('username', currentUser).maybeSingle();
       const nextMins = (data ? data.minutes : 0) + 1;
-      
-      // Update Menu Stats
       document.getElementById('pMenuMins').textContent = nextMins + 'm';
 
       await _supabase.from('leaderboard').upsert({ 
@@ -856,7 +885,6 @@
         .limit(10);
 
       if (data) {
-        // Sync local profile minute count from DB fetch
         const me = data.find(u => u.username === currentUser);
         if(me) document.getElementById('pMenuMins').textContent = me.minutes + 'm';
 
@@ -876,7 +904,6 @@
       }
     }
 
-    // Tracking Loop
     setInterval(trackMinutes, 60000);
     trackMinutes();
     fetchLeaderboard();
@@ -906,13 +933,6 @@
         zones = await response.json();
         await fetchPopularity();
         sortZones();
-        
-        const search = new URLSearchParams(window.location.search);
-        const id = search.get('id');
-        if (id) {
-          const zone = zones.find(z => z.id + '' == id + '');
-          if (zone) openZone(zone);
-        }
       } catch (error) {
         container.innerHTML = `<div style="grid-column: 1/-1; text-align: center;">Connection error</div>`;
       }
@@ -946,17 +966,7 @@
         card.className = "game-card animate-in";
         card.style.animationDelay = `${index * 0.02}s`;
         card.onclick = () => openZone(game);
-
-        const img = document.createElement("img");
-        img.src = game.cover.replace("{COVER_URL}", coverURL);
-        img.loading = "lazy";
-
-        const info = document.createElement("div");
-        info.className = "game-info";
-        info.innerHTML = `<h3>${game.name}</h3>`;
-
-        card.appendChild(img);
-        card.appendChild(info);
+        card.innerHTML = `<img src="${game.cover.replace("{COVER_URL}", coverURL)}"><div class="game-info"><h3>${game.name}</h3></div>`;
         container.appendChild(card);
       });
       document.getElementById("zoneCount").textContent = `${zonesToDisplay.length} Games Available`;
@@ -965,9 +975,8 @@
     function displayGameOfTheDay() {
       const game = getGameOfTheDay();
       if (game) {
-        const cover = game.cover.replace("{COVER_URL}", coverURL);
         featuredContainer.innerHTML = `
-          <div class="gotd-banner" style="background-image: url('${cover}')"></div>
+          <div class="gotd-banner" style="background-image: url('${game.cover.replace("{COVER_URL}", coverURL)}')"></div>
           <div class="gotd-info">
             <span class="version-badge" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #f59e0b; margin: 0 0 1rem 0;">FEATURED</span>
             <h3 style="font-size: 2rem; margin: 0 0 0.5rem 0;">${game.name}</h3>
@@ -986,15 +995,11 @@
       return zones[Math.abs(hash) % zones.length];
     }
 
-    function filterZones() {
-      const query = searchBar.value.toLowerCase();
-      displayZones(zones.filter(z => z.name.toLowerCase().includes(query)));
-    }
+    function filterZones() { displayZones(zones.filter(z => z.name.toLowerCase().includes(searchBar.value.toLowerCase()))); }
 
     function openZone(file) {
       if (file.url.startsWith("http")) { window.location.href = file.url; return; }
-      const url = file.url.replace("{HTML_URL}", htmlURL);
-      fetch(url).then(res => res.text()).then(html => {
+      fetch(file.url.replace("{HTML_URL}", htmlURL)).then(res => res.text()).then(html => {
         zoneViewer.style.display = "flex";
         document.body.style.overflow = "hidden";
         zoneFrame.contentDocument.open();
@@ -1005,23 +1010,9 @@
       });
     }
 
-    function closeZone() {
-      zoneViewer.style.display = "none";
-      document.body.style.overflow = "auto";
-      zoneFrame.src = "about:blank";
-    }
-
-    function fullscreenZone() {
-      if (zoneFrame.requestFullscreen) zoneFrame.requestFullscreen();
-    }
-
-    function aboutBlank() {
-      const newWin = window.open("about:blank", "_blank");
-      if (newWin) {
-        newWin.document.write(zoneFrame.contentDocument.documentElement.outerHTML);
-        newWin.document.close();
-      }
-    }
+    function closeZone() { zoneViewer.style.display = "none"; document.body.style.overflow = "auto"; zoneFrame.src = "about:blank"; }
+    function fullscreenZone() { if (zoneFrame.requestFullscreen) zoneFrame.requestFullscreen(); }
+    function aboutBlank() { const nw = window.open("about:blank", "_blank"); if (nw) { nw.document.write(zoneFrame.contentDocument.documentElement.outerHTML); nw.document.close(); } }
 
     function saveData() {
       let storageObj = {};
@@ -1037,14 +1028,13 @@
     }
 
     function loadData(event) {
-      const file = event.target.files[0];
       const reader = new FileReader();
       reader.onload = (e) => {
         const parsed = JSON.parse(e.target.result);
         for (let k in parsed) localStorage.setItem(k, parsed[k]);
         location.reload();
       };
-      reader.readAsText(file);
+      reader.readAsText(event.target.files[0]);
     }
 
     listZones();
