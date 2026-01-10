@@ -10,6 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
   <!-- Supabase Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- CensorCore Library -->
+  <script src="https://derrickrichard.github.io/CensorCore-Library/CensorCore.js"></script>
   <style>
     :root {
       --primary: #6366f1;
@@ -136,8 +138,15 @@
       position: fixed; inset: 0; background: var(--bg-deep); z-index: 2000;
       display: none; flex-direction: column;
     }
-    .chat-container { flex: 1; display: flex; flex-direction: column; max-width: 900px; margin: 0 auto; width: 100%; position: relative; }
-    #chatBody { flex: 1; overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+    .chat-container { flex: 1; display: flex; flex-direction: column; max-width: 900px; margin: 0 auto; width: 100%; position: relative; overflow: hidden; }
+    #chatBody { flex: 1; overflow-y: auto; padding: 2rem; display: flex; flex-direction: column; gap: 1rem; scroll-behavior: smooth; }
+    
+    .typing-indicator { 
+      padding: 0.5rem 2rem; font-size: 0.75rem; color: var(--accent); font-weight: 700; 
+      background: var(--bg-surface); border-top: 1px solid var(--border);
+      min-height: 30px; display: flex; align-items: center;
+    }
+
     .message { background: var(--bg-card); padding: 1rem; border-radius: 16px; border: 1px solid var(--border); max-width: 80%; align-self: flex-start; }
     .message.own { align-self: flex-end; background: var(--primary); border-color: var(--primary-glow); }
     .msg-header { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.75rem; margin-bottom: 0.5rem; }
@@ -576,13 +585,16 @@
     </div>
     <div class="chat-container">
       <div id="chatBody"></div>
+      <div id="typingIndicator" class="typing-indicator"></div>
       <div class="chat-input-area">
         <div id="replyPreview" class="reply-preview">
           <span id="replyText">Replying to...</span>
           <span style="cursor:pointer; font-weight: 800;" onclick="cancelReply()">&times;</span>
         </div>
         <div class="chat-controls">
-          <input type="text" id="chatInput" placeholder="Type a message..." maxlength="500" onkeypress="if(event.key === 'Enter') postMessage()">
+          <input type="text" id="chatInput" placeholder="Type a message..." maxlength="500" 
+                 onkeypress="if(event.key === 'Enter') postMessage()"
+                 oninput="handleTyping()">
           <button class="btn btn-primary" onclick="postMessage()">Send</button>
         </div>
       </div>
@@ -625,17 +637,23 @@
     // CHAT LOGIC
     let currentReplyToId = null;
     let allMessages = [];
+    let chatChannel = null;
+    let typingTimeout = null;
 
     async function openChat() {
       document.getElementById('chatViewer').style.display = "flex";
       document.body.style.overflow = "hidden";
       await fetchMessages();
       subscribeMessages();
+      
+      // Focus input
+      document.getElementById('chatInput').focus();
     }
 
     function closeChat() {
       document.getElementById('chatViewer').style.display = "none";
       document.body.style.overflow = "auto";
+      if(chatChannel) chatChannel.unsubscribe();
     }
 
     async function fetchMessages() {
@@ -653,6 +671,10 @@
         const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const parentMsg = msg.parent_id ? allMessages.find(m => m.id === msg.parent_id) : null;
         
+        // Use CensorCore library if available
+        let filteredContent = msg.content;
+        if(window.Censor) filteredContent = Censor.clean(msg.content);
+
         return `
           <div class="message ${isOwn ? 'own' : ''}">
             <div class="msg-header">
@@ -660,11 +682,13 @@
               <span class="msg-time">${time}</span>
             </div>
             ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${parentMsg.content.substring(0, 30)}...</div>` : ''}
-            <div class="msg-content">${msg.content}</div>
+            <div class="msg-content">${filteredContent}</div>
             <span class="msg-reply-link" onclick="setReply(${msg.id}, '${msg.username}')">Reply</span>
           </div>
         `;
       }).join('');
+      
+      // Auto-scroll to bottom
       body.scrollTop = body.scrollHeight;
     }
 
@@ -681,10 +705,30 @@
       document.getElementById('replyPreview').style.display = 'none';
     }
 
+    function handleTyping() {
+      if (!chatChannel) return;
+      
+      chatChannel.track({
+        user: currentUser,
+        isTyping: true
+      });
+
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        chatChannel.track({
+          user: currentUser,
+          isTyping: false
+        });
+      }, 2000);
+    }
+
     async function postMessage() {
       const input = document.getElementById('chatInput');
-      const content = input.value.trim();
+      let content = input.value.trim();
       if (!content) return;
+
+      // Clean message before sending
+      if(window.Censor) content = Censor.clean(content);
 
       const { error } = await _supabase.from('messages').insert({
         username: currentUser,
@@ -695,15 +739,35 @@
       if (!error) {
         input.value = "";
         cancelReply();
+        chatChannel.track({ user: currentUser, isTyping: false });
       }
     }
 
     function subscribeMessages() {
-      _supabase
-        .channel('messages_channel')
+      chatChannel = _supabase.channel('global_chat_room', {
+        config: { presence: { key: currentUser } }
+      });
+
+      chatChannel
         .on('postgres_changes', { event: 'INSERT', table: 'messages', schema: 'public' }, payload => {
           allMessages.push(payload.new);
           renderMessages();
+        })
+        .on('presence', { event: 'sync' }, () => {
+          const newState = chatChannel.presenceState();
+          const typers = [];
+          for (const id in newState) {
+            const userState = newState[id][0];
+            if (userState.isTyping && userState.user !== currentUser) {
+              typers.push(userState.user);
+            }
+          }
+          const indicator = document.getElementById('typingIndicator');
+          if (typers.length > 0) {
+            indicator.innerText = `${typers.join(', ')} ${typers.length > 1 ? 'are' : 'is'} typing...`;
+          } else {
+            indicator.innerText = '';
+          }
         })
         .subscribe();
     }
