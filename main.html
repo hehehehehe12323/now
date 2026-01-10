@@ -10,8 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
   <!-- Supabase Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- CensorCore Library -->
-  <script src="https://derrickrichard.github.io/CensorCore-Library/CensorCore.js"></script>
+  <!-- CORRECT CensorCore Library Installation -->
+  <script src="https://cdn.jsdelivr.net/gh/DerrickRichard/CensorCore-Library@latest/CensorCore.js"></script>
   <style>
     :root {
       --primary: #6366f1;
@@ -144,7 +144,7 @@
     .typing-indicator { 
       padding: 0.5rem 2rem; font-size: 0.75rem; color: var(--accent); font-weight: 700; 
       background: var(--bg-surface); border-top: 1px solid var(--border);
-      min-height: 30px; display: flex; align-items: center;
+      min-height: 34px; display: flex; align-items: center;
     }
 
     .message { background: var(--bg-card); padding: 1rem; border-radius: 16px; border: 1px solid var(--border); max-width: 80%; align-self: flex-start; }
@@ -640,13 +640,27 @@
     let chatChannel = null;
     let typingTimeout = null;
 
+    // Helper to clean messages using CensorCore
+    function applyCensor(text) {
+      if (!window.censor || !censor.isReady()) return text;
+      const analysis = censor.analyze(text);
+      if (!analysis.blocked) return text;
+      
+      let cleaned = text;
+      analysis.matches.forEach(match => {
+        // Build regex for the specific word/phrase and mask it
+        const escaped = match.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const reg = new RegExp("\\b" + escaped + "\\b", "gi");
+        cleaned = cleaned.replace(reg, '*'.repeat(match.text.length));
+      });
+      return cleaned;
+    }
+
     async function openChat() {
       document.getElementById('chatViewer').style.display = "flex";
       document.body.style.overflow = "hidden";
       await fetchMessages();
       subscribeMessages();
-      
-      // Focus input
       document.getElementById('chatInput').focus();
     }
 
@@ -657,7 +671,7 @@
     }
 
     async function fetchMessages() {
-      const { data, error } = await _supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(50);
+      const { data, error } = await _supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(100);
       if (data) {
         allMessages = data;
         renderMessages();
@@ -671,9 +685,9 @@
         const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const parentMsg = msg.parent_id ? allMessages.find(m => m.id === msg.parent_id) : null;
         
-        // Use CensorCore library if available
-        let filteredContent = msg.content;
-        if(window.Censor) filteredContent = Censor.clean(msg.content);
+        // Censor text using the correct library reference
+        const filteredContent = applyCensor(msg.content);
+        const filteredParent = parentMsg ? applyCensor(parentMsg.content) : '';
 
         return `
           <div class="message ${isOwn ? 'own' : ''}">
@@ -681,14 +695,14 @@
               <span class="msg-user">${msg.username}</span>
               <span class="msg-time">${time}</span>
             </div>
-            ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${parentMsg.content.substring(0, 30)}...</div>` : ''}
+            ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${filteredParent.substring(0, 30)}...</div>` : ''}
             <div class="msg-content">${filteredContent}</div>
             <span class="msg-reply-link" onclick="setReply(${msg.id}, '${msg.username}')">Reply</span>
           </div>
         `;
       }).join('');
       
-      // Auto-scroll to bottom
+      // Auto-scroll logic: Older go up, newest at bottom
       body.scrollTop = body.scrollHeight;
     }
 
@@ -707,18 +721,10 @@
 
     function handleTyping() {
       if (!chatChannel) return;
-      
-      chatChannel.track({
-        user: currentUser,
-        isTyping: true
-      });
-
+      chatChannel.track({ user: currentUser, isTyping: true });
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
-        chatChannel.track({
-          user: currentUser,
-          isTyping: false
-        });
+        chatChannel.track({ user: currentUser, isTyping: false });
       }, 2000);
     }
 
@@ -726,9 +732,6 @@
       const input = document.getElementById('chatInput');
       let content = input.value.trim();
       if (!content) return;
-
-      // Clean message before sending
-      if(window.Censor) content = Censor.clean(content);
 
       const { error } = await _supabase.from('messages').insert({
         username: currentUser,
@@ -757,9 +760,9 @@
           const newState = chatChannel.presenceState();
           const typers = [];
           for (const id in newState) {
-            const userState = newState[id][0];
-            if (userState.isTyping && userState.user !== currentUser) {
-              typers.push(userState.user);
+            const userStateList = newState[id];
+            if (userStateList && userStateList[0].isTyping && userStateList[0].user !== currentUser) {
+              typers.push(userStateList[0].user);
             }
           }
           const indicator = document.getElementById('typingIndicator');
