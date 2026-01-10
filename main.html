@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
   <!-- Supabase Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- CORRECT CensorCore Library Installation -->
+  <!-- CensorCore Library -->
   <script src="https://cdn.jsdelivr.net/gh/DerrickRichard/CensorCore-Library@latest/CensorCore.js"></script>
   <style>
     :root {
@@ -155,6 +155,14 @@
     .msg-time { color: var(--text-muted); }
     .message.own .msg-time { color: white; opacity: 0.6; }
     .msg-content { word-break: break-word; }
+    .message.blocked-content .msg-content { color: #ef4444; font-style: italic; }
+    
+    .message.system { 
+        align-self: center; background: rgba(239, 68, 68, 0.1); border: 1px dashed #ef4444; 
+        max-width: 90%; font-size: 0.85rem; color: #ef4444; text-align: center;
+    }
+    .system-title { font-weight: 800; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+
     .msg-reply-link { cursor: pointer; color: var(--primary); font-size: 0.7rem; font-weight: 700; margin-top: 0.5rem; display: inline-block; }
     .message.own .msg-reply-link { color: white; opacity: 0.8; }
     .msg-parent { background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.8rem; border-left: 3px solid var(--accent); }
@@ -642,6 +650,15 @@
             .replace(/8/g, 'b').replace(/!/g, 'i');
     }
 
+    function addSystemMessage(title, text) {
+        const body = document.getElementById('chatBody');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message system';
+        msgDiv.innerHTML = `<span class="system-title">${title}</span>${text}`;
+        body.appendChild(msgDiv);
+        body.scrollTop = body.scrollHeight;
+    }
+
     function recordViolation() {
         let violations = parseInt(localStorage.getItem('asteroid_violations') || "0") + 1;
         localStorage.setItem('asteroid_violations', violations);
@@ -650,7 +667,7 @@
             const expiry = Date.now() + (10 * 60 * 1000);
             localStorage.setItem('asteroid_ban_expiry', expiry);
             localStorage.setItem('asteroid_ban_type', 'chat');
-            alert("SYSTEM WARNING:\nThis is your 1st violation of the community policy. You have been banned from chatting for 10 minutes.");
+            addSystemMessage("System Warning", "This is your 1st violation of the community policy. You have been banned from chatting for 10 minutes.");
         } else if (violations >= 2) {
             const expiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
             localStorage.setItem('asteroid_ban_expiry', expiry);
@@ -660,13 +677,13 @@
         }
     }
 
-    function checkActiveBan() {
+    function checkActiveBan(silent = false) {
         const expiry = localStorage.getItem('asteroid_ban_expiry');
         const type = localStorage.getItem('asteroid_ban_type');
         if (expiry && Date.now() < parseInt(expiry)) {
             const mins = Math.ceil((parseInt(expiry) - Date.now()) / 60000);
             if (type === 'chat') {
-                alert(`You are currently chat-banned for policy violations. Remaining: ${mins}m`);
+                if (!silent) addSystemMessage("Account Restricted", `You are currently chat-banned for policy violations. Remaining: ${mins}m`);
                 return 'chat';
             }
             if (type === 'site') {
@@ -688,7 +705,7 @@
     let typingTimeout = null;
 
     async function openChat() {
-      if (checkActiveBan() === 'chat') return;
+      if (checkActiveBan(true) === 'site') return; 
       document.getElementById('chatViewer').style.display = "flex";
       document.body.style.overflow = "hidden";
       await fetchMessages();
@@ -714,11 +731,12 @@
       const body = document.getElementById('chatBody');
       body.innerHTML = allMessages.map(msg => {
         const isOwn = msg.username === currentUser;
+        const isBlockedStr = msg.content === "Message blocked due to policy violations";
         const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const parentMsg = msg.parent_id ? allMessages.find(m => m.id === msg.parent_id) : null;
         
         return `
-          <div class="message ${isOwn ? 'own' : ''}">
+          <div class="message ${isOwn ? 'own' : ''} ${isBlockedStr ? 'blocked-content' : ''}">
             <div class="msg-header">
               <span class="msg-user">${msg.username}</span>
               <span class="msg-time">${time}</span>
@@ -755,18 +773,16 @@
     }
 
     async function postMessage() {
-      if (checkActiveBan() === 'chat') return;
+      if (checkActiveBan() === 'chat') return; 
 
       const input = document.getElementById('chatInput');
       let content = input.value.trim();
       if (!content) return;
 
-      // Fuzzy check
       const fuzzyText = getFuzzyText(content);
-      const isBlockedRaw = window.censor && censor.isReady() && censor.isBlocked(content);
-      const isBlockedFuzzy = window.censor && censor.isReady() && censor.isBlocked(fuzzyText);
+      const isBlocked = window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
 
-      if (isBlockedRaw || isBlockedFuzzy) {
+      if (isBlocked) {
           content = "Message blocked due to policy violations";
           recordViolation();
       }
@@ -811,7 +827,7 @@
 
     // PROFILE LOGIC
     function loadProfile() {
-        if (checkActiveBan() === 'site') return;
+        if (checkActiveBan(true) === 'site') return;
 
         const savedName = localStorage.getItem('asteroid_full_name');
         const savedPfp = localStorage.getItem('asteroid_pfp');
@@ -864,7 +880,7 @@
     loadProfile();
 
     async function trackMinutes() {
-      if (!currentUser || checkActiveBan() === 'site') return;
+      if (!currentUser || checkActiveBan(true) === 'site') return;
       
       const { data } = await _supabase.from('leaderboard').select('minutes').eq('username', currentUser).maybeSingle();
       const nextMins = (data ? data.minutes : 0) + 1;
