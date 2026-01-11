@@ -2267,6 +2267,41 @@
     }
 
     listZones();
+
+    // --- INACTIVITY LOGOUT SYSTEM ---
+const IDLE_LIMIT = 3 * 60 * 1000; // 3 Minutes
+let lastActivity = Date.now();
+
+function logoutUser() {
+    sessionStorage.removeItem("usernamePassword");
+    // Change this URL if your landing page is different
+    window.location.href = "https://asteroid-pixel.github.io"; 
+}
+
+function resetIdleTimer() {
+    lastActivity = Date.now();
+}
+
+function checkIdleStatus() {
+    const diff = Date.now() - lastActivity;
+    if (diff >= IDLE_LIMIT) {
+        logoutUser();
+    }
+}
+
+// Event listeners for REAL activity (Excludes mouse movement)
+['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+    document.addEventListener(evt, resetIdleTimer, true);
+});
+
+// Check every 10 seconds
+setInterval(checkIdleStatus, 10000);
+
+// Instant logout if they return to the tab after being away for 3+ mins
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) checkIdleStatus();
+});
+// --------------------------------
   </script>
 </body>
 </html>
