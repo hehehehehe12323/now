@@ -363,6 +363,10 @@
       border-radius: 16px;
     }
 
+    /* Mod Application Modal Specific Styles */
+    #modApplyModal .modal-card { text-align: center; max-width: 500px; padding: 3rem; }
+    .mod-apply-btn { display: inline-block; margin-top: 1.5rem; width: 100%; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; }
+
     /* Hero Section */
     .hero {
       max-width: 1200px;
@@ -712,6 +716,17 @@
                 </tbody>
             </table>
         </div>
+    </div>
+  </div>
+
+  <!-- Mod Application Modal (Shows next 3 visits) -->
+  <div class="modal-overlay" id="modApplyModal">
+    <div class="modal-card">
+        <h2 style="color: var(--accent); letter-spacing: -1px;">Join the Team!</h2>
+        <p style="margin: 1.5rem 0;">We are looking for dedicated volunteers to help moderate the Asteroid community. If you're passionate about keeping our platform safe and fun, we'd love for you to apply!</p>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdNhfTyWGN2bN2DR_R9z4v3JLCYfLs3C8SZpvX08x0ZWBlJqQ/viewform?usp=dialog" 
+           target="_blank" class="btn btn-primary mod-apply-btn" onclick="closeModApply()">Apply for Moderator</a>
+        <button class="btn" style="margin-top: 10px; width: 100%;" onclick="closeModApply()">Maybe Later</button>
     </div>
   </div>
 
@@ -1349,10 +1364,25 @@
         _supabase.from('profiles').upsert({ username: currentUser, full_name: name }, { onConflict: 'username' });
     }
 
+    // MOD APPLICATION POPUP LOGIC
+    function showModApplyPopup() {
+        if (isModUser) return; // Don't show to existing mods
+        let count = parseInt(localStorage.getItem('asteroid_mod_apply_shown') || "0");
+        if (count < 3) {
+            document.getElementById('modApplyModal').classList.add('active');
+            localStorage.setItem('asteroid_mod_apply_shown', (count + 1).toString());
+        }
+    }
+
+    function closeModApply() {
+        document.getElementById('modApplyModal').classList.remove('active');
+    }
+
     window.addEventListener('click', (e) => {
       if (!e.target.closest('.profile-container')) document.getElementById('profileMenu').classList.remove('active');
       if (e.target.id === 'settingsModal') closeSettings();
       if (e.target.id === 'modModal') closeModPanel();
+      if (e.target.id === 'modApplyModal') closeModApply();
     });
 
     loadProfile();
@@ -1420,6 +1450,9 @@
     
     trackMinutes();
     fetchLeaderboard();
+
+    // Show popup 2 seconds after loading
+    setTimeout(showModApplyPopup, 2000);
 
     window.addEventListener("beforeunload", () => {
       sessionStorage.clear();
