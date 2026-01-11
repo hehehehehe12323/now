@@ -12,6 +12,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- CensorCore Library -->
   <script src="https://cdn.jsdelivr.net/gh/DerrickRichard/CensorCore-Library@latest/CensorCore.js"></script>
+  <!-- Marked.js Tool -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     :root {
       --primary: #6366f1;
@@ -262,6 +264,36 @@
       word-break: break-word; 
       font-size: 0.95rem; 
       line-height: 1.5;
+    }
+
+    /* Markdown Element Specifics */
+    .msg-content p { margin: 0 0 0.5rem 0; }
+    .msg-content p:last-child { margin: 0; }
+    .msg-content code { 
+      background: rgba(0, 0, 0, 0.3); 
+      padding: 2px 5px; 
+      border-radius: 4px; 
+      font-family: monospace; 
+      font-size: 0.85em;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .msg-content pre {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 1rem;
+      border-radius: 10px;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+      border: 1px solid var(--border);
+    }
+    .msg-content pre code { background: none; padding: 0; border: none; }
+    .msg-content a { color: var(--accent); text-decoration: underline; }
+    .message.own .msg-content a { color: #fff; }
+    .msg-content blockquote {
+      margin: 0.5rem 0;
+      padding-left: 1rem;
+      border-left: 3px solid var(--accent);
+      color: var(--text-muted);
+      font-style: italic;
     }
 
     .message.system { 
@@ -885,6 +917,15 @@
   </footer>
 
   <script>
+    // Configure Marked.js for Discord-like behavior (gfm, line breaks)
+    marked.setOptions({
+      gfm: true,
+      breaks: true,
+      headerIds: false,
+      mangle: false,
+      sanitize: false
+    });
+
     // Supabase Initialization
     const supabaseUrl = 'https://lnlnuoylmumabscobtsl.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
@@ -1211,6 +1252,9 @@
         const isAdminSender = msg.username === 'Derrick';
         const isModSender = modUsernames.has(msg.username) && !isAdminSender;
         
+        // Use Marked to parse content if it's not the "blocked" string
+        const parsedContent = isBlockedStr ? msg.content : marked.parse(msg.content);
+
         return `
           <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''}">
             <div class="msg-header">
@@ -1223,7 +1267,7 @@
               <span class="msg-time">${time}</span>
             </div>
             ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${parentMsg.content.substring(0, 30)}...</div>` : ''}
-            <div class="msg-content">${msg.content}</div>
+            <div class="msg-content">${parsedContent}</div>
             <div class="msg-footer">
                 <span class="msg-link" onclick="setReply(${msg.id}, '${msg.username}')">Reply</span>
                 ${(isModUser && !isOwn) ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
@@ -1549,11 +1593,6 @@
 
     // Trigger Popup Dice Roll after 2 seconds
     setTimeout(checkModApplyPopup, 2000);
-
-    window.addEventListener("beforeunload", () => {
-      sessionStorage.clear();
-      localStorage.setItem("refreshLogout", "true");
-    });
 
     const container = document.getElementById('container');
     const featuredContainer = document.getElementById('gameOfTheDay');
