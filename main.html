@@ -756,6 +756,19 @@
             <h2>Mod Controls</h2>
             <button class="btn btn-danger" onclick="closeModPanel()">Close</button>
         </div>
+
+        <!-- COLLAPSIBLE MOD DOCUMENTATION -->
+        <details style="margin-bottom: 1.5rem; background: var(--bg-surface); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); cursor: pointer;">
+            <summary style="font-weight: 800; color: var(--accent); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Staff Guidelines & Documentation</summary>
+            <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                <p><b style="color:white">Site Ban:</b> Revokes all site access. Use for severe violations, hacking, or repeat offenders.</p>
+                <p><b style="color:white">Suspend Chat:</b> Prevents sending messages but allows site use. Use for toxicity, spam, or swearing.</p>
+                <p><b style="color:white">DMs:</b> Use to privately warn users or discuss moderation issues without alerting the whole room.</p>
+                <p><b style="color:white">Delete Message:</b> Use in chat to remove policy-violating content immediately.</p>
+                <p><b style="color:white">Broadcast:</b> System-wide alerts only. Use sparingly for urgent news or global warnings.</p>
+                <p style="font-style: italic; border-top: 1px solid var(--border); padding-top: 10px; margin-top: 10px;">Note: Actions are logged to ensure staff accountability.</p>
+            </div>
+        </details>
         
         <!-- BROADCAST SECTION (Admin Only) -->
         <div id="adminBroadcastSection" class="admin-broadcast-section" style="display:none;">
