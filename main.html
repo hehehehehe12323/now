@@ -526,10 +526,10 @@
                 <thead>
                     <tr>
                         <th>Username</th>
-                        <th>Full Name</th>
                         <th>Time (m)</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th>Site Status</th>
+                        <th>Chat Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="modUserBody">
@@ -718,7 +718,7 @@
         }
     }
 
-    // UPDATED BAN CHECK USING is_banned, ban_until
+    // UPDATED BAN CHECK USING is_banned, ban_until + remote chat bans
     async function checkActiveBan(silent = false) {
         // Local violations check
         const expiry = localStorage.getItem('asteroid_ban_expiry');
@@ -730,35 +730,52 @@
                 return 'chat';
             }
             if (type === 'site') {
-                renderBanScreen(mins);
+                renderBanScreen(mins, "Violation of Community Policy");
                 return 'site';
             }
         }
 
         // Supabase DB check
-        const { data } = await _supabase.from('profiles').select('is_banned, ban_until').eq('username', currentUser).maybeSingle();
-        if (data && data.is_banned) {
-            // Permanent ban OR time not yet expired
-            if (!data.ban_until) {
-                renderBanScreen("PERMANENT");
-                return 'site';
+        const { data } = await _supabase.from('profiles').select('is_banned, ban_until, ban_reason, is_chat_banned, chat_ban_until, chat_ban_reason').eq('username', currentUser).maybeSingle();
+        if (data) {
+            // Check Site Ban
+            if (data.is_banned) {
+                if (!data.ban_until) {
+                    renderBanScreen("PERMANENT", data.ban_reason);
+                    return 'site';
+                }
+                const serverExpiry = new Date(data.ban_until).getTime();
+                if (Date.now() < serverExpiry) {
+                    const mins = Math.ceil((serverExpiry - Date.now()) / 60000);
+                    renderBanScreen(mins, data.ban_reason);
+                    return 'site';
+                }
             }
-            const serverExpiry = new Date(data.ban_until).getTime();
-            if (Date.now() < serverExpiry) {
-                const mins = Math.ceil((serverExpiry - Date.now()) / 60000);
-                renderBanScreen(mins);
-                return 'site';
+            // Check Chat Ban
+            if (data.is_chat_banned) {
+                if (!data.chat_ban_until) {
+                    if (!silent) addSystemMessage("Chat Privileges Revoked", `Permanent. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
+                    return 'chat';
+                }
+                const chatExpiry = new Date(data.chat_ban_until).getTime();
+                if (Date.now() < chatExpiry) {
+                    const mins = Math.ceil((chatExpiry - Date.now()) / 60000);
+                    if (!silent) addSystemMessage("Chat Suspended", `Remaining: ${mins}m. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
+                    return 'chat';
+                }
             }
         }
 
         return false;
     }
 
-    function renderBanScreen(mins) {
+    function renderBanScreen(mins, reason) {
         const timeText = (mins === "PERMANENT") ? "Indefinite Ban" : `Remaining Ban: ${mins} minutes`;
+        const reasonText = reason ? `<p style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; font-size: 0.9rem; border-left: 4px solid #ef4444;"><b>Reason:</b> ${reason}</p>` : "";
         document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background: #020617; color: white; text-align: center; font-family: sans-serif; padding: 2rem;">
                   <h1 style="color: #ef4444; font-size: 3rem; margin-bottom: 0;">SITE ACCESS REVOKED</h1>
                   <p style="font-size: 1.2rem; margin-top: 1rem;">You are banned from Asteroid due to community violations.</p>
+                  ${reasonText}
                   <p style="color: var(--text-muted); opacity:0.8;">${timeText}</p>
                   <button class="btn" style="margin-top: 2rem;" onclick="location.reload()">Check Status</button>
                 </div>`;
@@ -796,6 +813,8 @@
                     full_name: p.full_name,
                     is_banned: p.is_banned,
                     ban_until: p.ban_until,
+                    is_chat_banned: p.is_chat_banned,
+                    chat_ban_until: p.chat_ban_until,
                     minutes: lb ? lb.minutes : 0
                 };
             }).sort((a,b) => b.minutes - a.minutes);
@@ -807,21 +826,24 @@
     function renderModList(users) {
         const body = document.getElementById('modUserBody');
         body.innerHTML = users.map(u => {
-            // Check if user is effectively banned right now
-            const isActuallyBanned = u.is_banned && (!u.ban_until || new Date(u.ban_until) > new Date());
-            const statusClass = isActuallyBanned ? 'status-banned' : 'status-active';
-            const statusText = isActuallyBanned ? 'Banned' : 'Active';
+            const isSiteBanned = u.is_banned && (!u.ban_until || new Date(u.ban_until) > new Date());
+            const isChatBanned = u.is_chat_banned && (!u.chat_ban_until || new Date(u.chat_ban_until) > new Date());
             
             return `
                 <tr>
                     <td>${u.username}</td>
-                    <td>${u.full_name || '---'}</td>
                     <td>${u.minutes}m</td>
-                    <td class="${statusClass}">${statusText}</td>
+                    <td class="${isSiteBanned ? 'status-banned' : 'status-active'}">${isSiteBanned ? 'Banned' : 'Active'}</td>
+                    <td class="${isChatBanned ? 'status-banned' : 'status-active'}">${isChatBanned ? 'Suspended' : 'Active'}</td>
                     <td>
-                        <button class="btn ${isActuallyBanned ? '' : 'btn-danger'}" style="padding: 5px 10px; font-size: 0.7rem;" onclick="handleModBan('${u.username}', ${isActuallyBanned})">
-                            ${isActuallyBanned ? 'Unban' : 'Ban'}
-                        </button>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn ${isSiteBanned ? '' : 'btn-danger'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
+                                ${isSiteBanned ? 'Unban Site' : 'Ban Site'}
+                            </button>
+                            <button class="btn ${isChatBanned ? '' : 'btn-primary'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
+                                ${isChatBanned ? 'Lift Chat' : 'Suspend Chat'}
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -837,34 +859,49 @@
         renderModList(filtered);
     }
 
-    // MODERATING INDIVIDUAL USERS
+    // MODERATING SITE BANS
     async function handleModBan(user, isCurrentlyBanned) {
         if (isCurrentlyBanned) {
-            if (confirm(`Unban ${user}?`)) {
-                const { error } = await _supabase.from('profiles').update({ 
-                    is_banned: false, 
-                    ban_until: null,
-                    ban_reason: null 
-                }).eq('username', user);
-                
-                if (error) alert("Database Error: " + error.message);
+            if (confirm(`Unban ${user} from site?`)) {
+                const { error } = await _supabase.from('profiles').update({ is_banned: false, ban_until: null, ban_reason: null }).eq('username', user);
+                if (error) alert(error.message);
                 fetchModUsers();
             }
         } else {
-            const dur = prompt(`Enter ban duration for ${user} (minutes, leave blank for permanent):`, "1440");
+            const dur = prompt(`Ban ${user} from Site.\n\nEnter duration in minutes (or leave blank for permanent):`, "1440");
             if (dur !== null) {
+                const reason = prompt("Enter Ban Reason:", "Violation of site policy");
+                if (reason === null) return;
+
                 let expiry = null;
-                if (dur.trim() !== "" && !isNaN(dur)) {
-                    expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
-                }
+                if (dur.trim() !== "" && !isNaN(dur)) expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
                 
-                const { error } = await _supabase.from('profiles').update({ 
-                    is_banned: true, 
-                    ban_until: expiry,
-                    ban_reason: "Moderator Action" 
-                }).eq('username', user);
+                const { error } = await _supabase.from('profiles').update({ is_banned: true, ban_until: expiry, ban_reason: reason }).eq('username', user);
+                if (error) alert(error.message);
+                fetchModUsers();
+            }
+        }
+    }
+
+    // MODERATING CHAT SUSPENSIONS
+    async function handleModChatBan(user, isCurrentlyBanned) {
+        if (isCurrentlyBanned) {
+            if (confirm(`Lift chat suspension for ${user}?`)) {
+                const { error } = await _supabase.from('profiles').update({ is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null }).eq('username', user);
+                if (error) alert(error.message);
+                fetchModUsers();
+            }
+        } else {
+            const dur = prompt(`Suspend ${user}'s Chat Privileges.\n\nEnter duration in minutes (or leave blank for permanent):`, "60");
+            if (dur !== null) {
+                const reason = prompt("Enter Suspension Reason:", "Inappropriate language/behavior");
+                if (reason === null) return;
+
+                let expiry = null;
+                if (dur.trim() !== "" && !isNaN(dur)) expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
                 
-                if (error) alert("Database Error: " + error.message);
+                const { error } = await _supabase.from('profiles').update({ is_chat_banned: true, chat_ban_until: expiry, chat_ban_reason: reason }).eq('username', user);
+                if (error) alert(error.message);
                 fetchModUsers();
             }
         }
