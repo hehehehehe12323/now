@@ -2700,6 +2700,7 @@
                     }
                     if (payload.new.username !== currentUser) {
                         if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'staff') {
+                          unreadCount++;
                           const badge = document.getElementById('unreadBadge');
                           const lowerContent = (payload.new.content || "").toLowerCase();
                           const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
@@ -2707,10 +2708,12 @@
                                           (lowerContent.includes("@staff") && isModUser) ||
                                           (lowerContent.includes("@mod") && isModUser);
                           
-                          if (isTagged) {
+                          if (isTagged || badge.innerText === "@") {
                               badge.innerText = "@";
-                              badge.style.display = "inline-block";
+                          } else {
+                              badge.innerText = unreadCount;
                           }
+                          badge.style.display = "inline-block";
                         } else {
                           updateLastSeen();
                         }
@@ -3053,6 +3056,9 @@
         }
         if (!e.target.closest('.chat-tools-container')) {
           document.getElementById('toolsMenu').classList.remove('active');
+        }
+        if (e.target.classList.contains('modal-overlay')) {
+          e.target.classList.remove('active');
         }
     });
 
