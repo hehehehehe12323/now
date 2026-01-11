@@ -1029,7 +1029,7 @@
       <div>
         <span style="font-weight: 800; font-size: 1.2rem;">Asteroid Chat</span>
         <span style="color: var(--text-muted); margin-left: 10px; font-size: 0.9rem;">Automated Moderation</span>
-        <div class="online-stats" id="chatOnlineStats" onclick="showOnlineList('chat')" style="margin-left: 12px; vertical-align: middle;">Users Online: 0 | Mods Online: 0</div>
+        <div class="online-stats" id="chatOnlineStats" onclick="showOnlineList('chat')" style="margin-left: 12px; vertical-align: middle;">Users Online: 0 | Staff Online: 0</div>
       </div>
       <button class="btn btn-danger" onclick="closeChat()">Close</button>
     </div>
@@ -1158,7 +1158,7 @@
             });
         }
 
-        target.innerHTML = `Users Online: ${uniqueUsers.size} | Mods Online: ${uniqueMods.size}`;
+        target.innerHTML = `Users Online: ${uniqueUsers.size} | Staff Online: ${uniqueMods.size}`;
         if (isModUser) target.classList.add('staff-clickable');
         else target.classList.remove('staff-clickable');
     }
@@ -1427,7 +1427,7 @@
                     <button class="btn ${isSiteBanned ? '' : 'btn-danger'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
                         ${isSiteBanned ? 'Unban Site' : 'Ban Site'}
                     </button>
-                    <button class="btn ${isChatBanned ? '' : 'btn-primary'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isCurrentlyBanned})">
+                    <button class="btn ${isChatBanned ? '' : 'btn-primary'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
                         ${isChatBanned ? 'Lift Chat' : 'Suspend Chat'}
                     </button>`;
                 
@@ -1697,6 +1697,9 @@
         const isModSender = modUsernames.has(msg.username) && !isAdminSender;
         const parsedContent = isBlockedStr ? msg.content : (window.marked ? marked.parse(msg.content) : msg.content);
 
+        // NEW: Only show DM link for mods, OR for users if message is a PM from staff to them.
+        const canDM = (isModUser || (isPM && (isModSender || isAdminSender) && msg.recipient === currentUser));
+
         return `
           <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''} ${activeChannel === 'staff' ? 'staff-msg' : ''}">
             <div class="msg-header">
@@ -1712,7 +1715,7 @@
             <div class="msg-content">${parsedContent}</div>
             <div class="msg-footer">
                 <span class="msg-link" onclick="setReply('${msg.id}', '${msg.username}')">Reply</span>
-                ${(isModUser && !isOwn && activeChannel === 'global') ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
+                ${(canDM && !isOwn && activeChannel === 'global') ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
                 ${isModUser ? `<span class="msg-link delete" onclick="deleteMessage('${msg.id}')">Delete</span>` : ''}
             </div>
           </div>
@@ -1761,6 +1764,16 @@
       const input = document.getElementById('chatInput');
       let content = input.value.trim();
       if (!content) return;
+
+      // NEW: Block users from initiating DMs to non-staff members
+      if (currentRecipient && !isModUser) {
+          const isTargetStaff = modUsernames.has(currentRecipient) || currentRecipient === 'Derrick';
+          if (!isTargetStaff) {
+              addSystemMessage("Error", "You can only send private messages as a reply to staff members.");
+              cancelReply();
+              return;
+          }
+      }
 
       const fuzzyText = getFuzzyText(content);
       const isBlocked = (activeChannel === 'global') && window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
