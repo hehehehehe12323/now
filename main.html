@@ -169,7 +169,7 @@
 
     /* RAP SHEET OVERLAY */
     #userProfileOverlay {
-        position: absolute; inset: 0; background: var(--bg-card); z-index: 10;
+        position: absolute; inset: 0; background: var(--bg-card); z-index: 20;
         display: none; flex-direction: column; padding: 2rem; animation: fadeIn 0.2s ease;
     }
     .rap-sheet-list { flex: 1; overflow-y: auto; margin: 1rem 0; padding: 1rem; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); }
@@ -177,6 +177,19 @@
     .violation-type { font-weight: 800; text-transform: uppercase; font-size: 0.7rem; display: block; }
     .type-warning { color: #f59e0b; }
     .type-ban { color: #ef4444; }
+
+    /* CHATROOM CHANNEL BAR (Staff Chat UI) */
+    .chat-channels {
+        display: flex; gap: 10px; padding: 0.8rem 6rem;
+        background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border);
+    }
+    .channel-btn {
+        padding: 6px 15px; border-radius: 100px; font-size: 0.75rem; font-weight: 800;
+        text-transform: uppercase; cursor: pointer; border: 1px solid var(--border);
+        color: var(--text-muted); transition: all 0.2s;
+    }
+    .channel-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .channel-btn.staff-channel.active { background: #ef4444; border-color: #ef4444; }
 
     /* CHATROOM RE-STYLING */
     @keyframes messageSlideIn {
@@ -959,6 +972,13 @@
       <button class="btn btn-danger" onclick="closeChat()">Close</button>
     </div>
     <div class="chat-container">
+      
+      <!-- CHANNEL BAR FOR STAFF -->
+      <div id="chatChannelBar" class="chat-channels" style="display: none;">
+          <div id="chanGlobal" class="channel-btn active" onclick="switchChatChannel('global')"># Global-Chat</div>
+          <div id="chanStaff" class="channel-btn staff-channel" onclick="switchChatChannel('staff')"># Staff-Room</div>
+      </div>
+
       <div id="chatBody"></div>
       <div id="typingIndicator" class="typing-indicator"></div>
       <div class="chat-input-area">
@@ -1362,7 +1382,10 @@
     let currentReplyToId = null;
     let currentRecipient = null;
     let allMessages = [];
+    let staffMessages = [];
+    let activeChannel = 'global'; // 'global' or 'staff'
     let chatChannel = null;
+    let staffChannelSub = null;
     let typingTimeout = null;
     let unreadCount = 0;
 
@@ -1370,25 +1393,42 @@
       const ban = await checkActiveBan(true);
       if (ban === 'site') return; 
 
-      // Reset unread count when opening
       unreadCount = 0;
       document.getElementById('unreadBadge').style.display = "none";
-
       document.getElementById('chatViewer').style.display = "flex";
       document.body.style.overflow = "hidden";
-      await fetchMessages();
-      subscribeMessages();
-      document.getElementById('chatInput').focus();
+
+      // Show Channel Switcher if Mod
+      if (isModUser) {
+          document.getElementById('chatChannelBar').style.display = 'flex';
+      } else {
+          document.getElementById('chatChannelBar').style.display = 'none';
+      }
+
+      switchChatChannel('global');
+    }
+
+    function switchChatChannel(channel) {
+        activeChannel = channel;
+        document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+        if(channel === 'global') {
+            document.getElementById('chanGlobal').classList.add('active');
+            fetchMessages();
+            subscribeMessages();
+        } else {
+            document.getElementById('chanStaff').classList.add('active');
+            fetchStaffMessages();
+            subscribeStaffMessages();
+        }
     }
 
     function closeChat() {
       document.getElementById('chatViewer').style.display = "none";
       document.body.style.overflow = "auto";
-      // DISABLED: if(chatChannel) chatChannel.unsubscribe(); // CONNECTION KEPT ALIVE FOR UNREAD UPDATES
     }
 
     async function fetchMessages() {
-      const { data, error } = await _supabase.from('messages')
+      const { data } = await _supabase.from('messages')
         .select('*')
         .or(`recipient.is.null,recipient.eq.${currentUser},username.eq.${currentUser}`)
         .order('created_at', { ascending: true })
@@ -1399,34 +1439,50 @@
       }
     }
 
+    async function fetchStaffMessages() {
+        const { data, error } = await _supabase.from('staff_messages')
+            .select('*')
+            .order('created_at', { ascending: true })
+            .limit(100);
+        if (data) {
+            staffMessages = data;
+            renderMessages();
+        } else if (error) {
+            console.error("Staff access denied.");
+        }
+    }
+
     async function deleteMessage(id) {
-        if (!isModUser) return; // Defensive check
+        if (!isModUser) return;
         if (!confirm("Delete this message permanently?")) return;
         
-        const msgToDelete = allMessages.find(m => m.id === id);
-        const { error } = await _supabase.from('messages').delete().eq('id', id);
+        const table = (activeChannel === 'global') ? 'messages' : 'staff_messages';
+        const msgList = (activeChannel === 'global') ? allMessages : staffMessages;
+        const msgToDelete = msgList.find(m => m.id === id);
+
+        const { error } = await _supabase.from(table).delete().eq('id', id);
         if (error) { alert(error.message); } else {
-            logModAction("Deleted Message", msgToDelete.username, `Deleted message ID ${id}: "${msgToDelete.content.substring(0, 30)}..."`);
+            logModAction("Deleted Message", msgToDelete.username, `Deleted ${activeChannel} message ID ${id}.`);
         }
     }
 
     function renderMessages() {
       const body = document.getElementById('chatBody');
-      body.innerHTML = allMessages.map(msg => {
+      const messagesToRender = (activeChannel === 'global') ? allMessages : staffMessages;
+
+      body.innerHTML = messagesToRender.map(msg => {
         const isOwn = msg.username === currentUser;
         const isBlockedStr = msg.content === "Message blocked due to policy violations";
         const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const parentMsg = msg.parent_id ? allMessages.find(m => m.id === msg.parent_id) : null;
-        const isPM = msg.recipient !== null;
+        const parentMsg = msg.parent_id ? messagesToRender.find(m => m.id === msg.parent_id) : null;
+        const isPM = (activeChannel === 'global') ? msg.recipient !== null : false;
         
         const isAdminSender = msg.username === 'Derrick';
         const isModSender = modUsernames.has(msg.username) && !isAdminSender;
-        
-        // Use Marked to parse content if it's not the "blocked" string
         const parsedContent = isBlockedStr ? msg.content : marked.parse(msg.content);
 
         return `
-          <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''}">
+          <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''} ${activeChannel === 'staff' ? 'staff-msg' : ''}">
             <div class="msg-header">
               <span class="msg-user">
                 ${msg.username} 
@@ -1440,7 +1496,7 @@
             <div class="msg-content">${parsedContent}</div>
             <div class="msg-footer">
                 <span class="msg-link" onclick="setReply(${msg.id}, '${msg.username}')">Reply</span>
-                ${(isModUser && !isOwn) ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
+                ${(isModUser && !isOwn && activeChannel === 'global') ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
                 ${isModUser ? `<span class="msg-link delete" onclick="deleteMessage(${msg.id})">Delete</span>` : ''}
             </div>
           </div>
@@ -1474,7 +1530,7 @@
     }
 
     function handleTyping() {
-      if (!chatChannel) return;
+      if (!chatChannel || activeChannel !== 'global') return;
       chatChannel.track({ user: currentUser, isTyping: true });
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
@@ -1491,32 +1547,35 @@
       if (!content) return;
 
       const fuzzyText = getFuzzyText(content);
-      const isBlocked = window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
+      const isBlocked = (activeChannel === 'global') && window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
 
       if (isBlocked) {
           content = "Message blocked due to policy violations";
           recordViolation();
       }
 
-      const { error } = await _supabase.from('messages').insert({
-        username: currentUser,
-        content: content,
-        parent_id: currentReplyToId,
-        recipient: currentRecipient
-      });
-
-      if (!error) {
-        input.value = "";
-        cancelReply();
-        chatChannel.track({ user: currentUser, isTyping: false });
+      if (activeChannel === 'global') {
+          await _supabase.from('messages').insert({
+            username: currentUser,
+            content: content,
+            parent_id: currentReplyToId,
+            recipient: currentRecipient
+          });
+      } else {
+          // Staff messages don't support private DMs or parent replies for simplicity
+          await _supabase.from('staff_messages').insert({
+              username: currentUser,
+              content: content
+          });
       }
+
+      input.value = "";
+      cancelReply();
     }
 
     function subscribeMessages() {
-      if (chatChannel) return; // Guard for double subscription
-      chatChannel = _supabase.channel('global_chat_room', {
-        config: { presence: { key: currentUser } }
-      });
+      if (chatChannel) return;
+      chatChannel = _supabase.channel('global_chat_room', { config: { presence: { key: currentUser } } });
 
       chatChannel
         .on('postgres_changes', { event: '*', table: 'messages', schema: 'public' }, payload => {
@@ -1524,20 +1583,17 @@
             const msg = payload.new;
             if (!msg.recipient || msg.recipient === currentUser || msg.username === currentUser) {
                 allMessages.push(msg);
-
-                // Start: unread logic
-                if (msg.username !== currentUser && document.getElementById('chatViewer').style.display !== "flex") {
+                if (msg.username !== currentUser && (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'global')) {
                     unreadCount++;
                     const badge = document.getElementById('unreadBadge');
                     badge.innerText = unreadCount;
                     badge.style.display = "inline-block";
                 }
-                // End: unread logic
             }
           } else if (payload.eventType === 'DELETE') {
             allMessages = allMessages.filter(m => m.id !== payload.old.id);
           }
-          renderMessages();
+          if(activeChannel === 'global') renderMessages();
         })
         .on('presence', { event: 'sync' }, () => {
           const newState = chatChannel.presenceState();
@@ -1549,9 +1605,23 @@
             }
           }
           const indicator = document.getElementById('typingIndicator');
-          indicator.innerText = typers.length > 0 ? `${typers.join(', ')} ${typers.length > 1 ? 'are' : 'is'} typing...` : '';
+          indicator.innerText = typers.length > 0 ? `${typers.join(', ')} typing...` : '';
         })
         .subscribe();
+    }
+
+    function subscribeStaffMessages() {
+        if (staffChannelSub || !isModUser) return;
+        staffChannelSub = _supabase.channel('staff_chat_room')
+            .on('postgres_changes', { event: '*', table: 'staff_messages', schema: 'public' }, payload => {
+                if (payload.eventType === 'INSERT') {
+                    staffMessages.push(payload.new);
+                } else if (payload.eventType === 'DELETE') {
+                    staffMessages = staffMessages.filter(m => m.id !== payload.old.id);
+                }
+                if(activeChannel === 'staff') renderMessages();
+            })
+            .subscribe();
     }
 
     // REALTIME PROFILE SUBSCRIPTION (FOR INSTANT BADGES)
@@ -1559,14 +1629,12 @@
         _supabase.channel('profiles_realtime')
             .on('postgres_changes', { event: 'UPDATE', table: 'profiles', schema: 'public' }, payload => {
                 const user = payload.new;
-                // Update the global moderator username set
                 if (user.is_mod || user.username === 'Derrick') {
                     modUsernames.add(user.username);
                 } else {
                     modUsernames.delete(user.username);
                 }
 
-                // If the updated record is the current user, update their local view as well
                 if (user.username === currentUser) {
                     isModUser = user.is_mod || user.username === 'Derrick';
                     document.getElementById('modNavBtn').style.display = isModUser ? 'block' : 'none';
@@ -1576,13 +1644,11 @@
                     }
                 }
 
-                // Immediately re-render active UI views that show badges
                 if (document.getElementById('chatViewer').style.display === "flex") {
                     renderMessages();
                 }
                 fetchLeaderboard();
                 
-                // Refresh the list if the user has the Mod Panel open
                 if (document.getElementById('modModal').classList.contains('active')) {
                     fetchModUsers();
                 }
@@ -1614,8 +1680,6 @@
         const text = document.getElementById('broadcastText');
         text.innerText = message;
         
-        // ADDED: FULLSCREEN AWARENESS
-        // If the browser is in fullscreen mode, move overlay into the fullscreen element
         if (document.fullscreenElement) {
             document.fullscreenElement.appendChild(overlay);
         } else {
@@ -1623,14 +1687,11 @@
         }
 
         overlay.style.display = 'flex';
-        
-        // Play alert sound if available
         try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
     }
 
     function closeBroadcast() {
         document.getElementById('broadcastOverlay').style.display = 'none';
-        // Cleanup: Return to body if it was moved during fullscreen
         document.body.appendChild(document.getElementById('broadcastOverlay'));
     }
 
@@ -1647,7 +1708,6 @@
         const ban = await checkActiveBan(true);
         if (ban === 'site') return;
 
-        // Remote fetch to check role
         const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
         
         if (data) {
@@ -1657,8 +1717,6 @@
                 document.getElementById('modNavBtn').style.display = 'block';
                 document.getElementById('pMenuStatus').textContent = data.username === 'Derrick' ? 'Admin' : 'Moderator';
                 document.getElementById('pMenuStatus').style.color = 'var(--accent)';
-                
-                // Show Admin Only sections
                 if (data.username === 'Derrick') {
                     document.getElementById('adminBroadcastSection').style.display = 'block';
                 }
@@ -1683,13 +1741,11 @@
             }
         }
         
-        // Initial mod list fetch for badges
         const { data: mods } = await _supabase.from('profiles').select('username, is_mod');
         if (mods) {
             mods.forEach(m => {
                 if(m.is_mod || m.username === 'Derrick') modUsernames.add(m.username);
             });
-            // REFRESH LEADERBOARD AFTER FETCHING MODS TO ENSURE BADGES SHOW
             fetchLeaderboard();
         }
     }
@@ -1722,10 +1778,7 @@
 
     // MOD APPLICATION POPUP LOGIC
     function checkModApplyPopup() {
-        // Only run after profile loaded to avoid showing to existing mods/admins
         if (currentUser === 'Derrick' || isModUser) return;
-        
-        // Show occasionally with a ~30% chance on page load
         if (Math.random() < 0.3) {
             document.getElementById('modApplyModal').classList.add('active');
         }
@@ -1744,8 +1797,8 @@
 
     loadProfile();
     subscribeBroadcasts();
-    subscribeMessages(); // Start listening for unread counts immediately
-    subscribeProfiles(); // Start listening for realtime profile updates (Instant Mod Badges)
+    subscribeMessages();
+    subscribeProfiles();
 
     async function trackMinutes() {
       if (!currentUser) return;
@@ -1764,7 +1817,6 @@
     }
 
     async function fetchLeaderboard() {
-      // FIX: Removed the unstable join that breaks when usernames change
       const { data, error } = await _supabase
         .from('leaderboard')
         .select('username, minutes')
@@ -1784,9 +1836,7 @@
         body.innerHTML = data.map((entry, index) => {
             let rowName = entry.username;
             const isMe = (rowName === currentUser);
-            
             const isRowAdmin = rowName === 'Derrick';
-            // Use the global modUsernames set for mod detection
             const isRowMod = modUsernames.has(rowName) && !isRowAdmin;
 
             return `
@@ -1810,8 +1860,6 @@
     
     trackMinutes();
     fetchLeaderboard();
-
-    // Trigger Popup Dice Roll after 2 seconds
     setTimeout(checkModApplyPopup, 2000);
 
     const container = document.getElementById('container');
