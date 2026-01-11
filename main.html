@@ -1226,7 +1226,7 @@
     function closeChat() {
       document.getElementById('chatViewer').style.display = "none";
       document.body.style.overflow = "auto";
-      if(chatChannel) chatChannel.unsubscribe();
+      // DISABLED: if(chatChannel) chatChannel.unsubscribe(); // CONNECTION KEPT ALIVE FOR UNREAD UPDATES
     }
 
     async function fetchMessages() {
