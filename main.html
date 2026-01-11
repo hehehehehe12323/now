@@ -1405,6 +1405,42 @@
         .subscribe();
     }
 
+    // REALTIME PROFILE SUBSCRIPTION (FOR INSTANT BADGES)
+    function subscribeProfiles() {
+        _supabase.channel('profiles_realtime')
+            .on('postgres_changes', { event: 'UPDATE', table: 'profiles', schema: 'public' }, payload => {
+                const user = payload.new;
+                // Update the global moderator username set
+                if (user.is_mod || user.username === 'Derrick') {
+                    modUsernames.add(user.username);
+                } else {
+                    modUsernames.delete(user.username);
+                }
+
+                // If the updated record is the current user, update their local view as well
+                if (user.username === currentUser) {
+                    isModUser = user.is_mod || user.username === 'Derrick';
+                    document.getElementById('modNavBtn').style.display = isModUser ? 'block' : 'none';
+                    const statusEl = document.getElementById('pMenuStatus');
+                    if (statusEl) {
+                        statusEl.textContent = user.username === 'Derrick' ? 'Admin' : (user.is_mod ? 'Moderator' : 'Explorer');
+                    }
+                }
+
+                // Immediately re-render active UI views that show badges
+                if (document.getElementById('chatViewer').style.display === "flex") {
+                    renderMessages();
+                }
+                fetchLeaderboard();
+                
+                // Refresh the list if the user has the Mod Panel open
+                if (document.getElementById('modModal').classList.contains('active')) {
+                    fetchModUsers();
+                }
+            })
+            .subscribe();
+    }
+
     // BROADCAST LOGIC
     async function sendBroadcast() {
         if (currentUser !== 'Derrick') return;
@@ -1558,6 +1594,7 @@
     loadProfile();
     subscribeBroadcasts();
     subscribeMessages(); // Start listening for unread counts immediately
+    subscribeProfiles(); // Start listening for realtime profile updates (Instant Mod Badges)
 
     async function trackMinutes() {
       if (!currentUser) return;
