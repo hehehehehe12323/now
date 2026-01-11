@@ -1222,12 +1222,17 @@
     }
 
     async function fetchLeaderboard() {
-      // Join leaderboard with profiles to get mod status
+      // FIX: Removed the unstable join that breaks when usernames change
       const { data, error } = await _supabase
         .from('leaderboard')
-        .select('username, minutes, profiles(is_mod)')
+        .select('username, minutes')
         .order('minutes', { ascending: false })
         .limit(10);
+
+      if (error) {
+        console.error("Leaderboard query failed:", error.message);
+        return;
+      }
 
       if (data) {
         const me = data.find(u => u.username === currentUser);
@@ -1239,7 +1244,8 @@
             const isMe = (rowName === currentUser);
             
             const isRowAdmin = rowName === 'Derrick';
-            const isRowMod = entry.profiles?.is_mod && !isRowAdmin;
+            // Use the global modUsernames set for mod detection
+            const isRowMod = modUsernames.has(rowName) && !isRowAdmin;
 
             return `
               <tr class="${isMe ? 'current-user' : ''}">
