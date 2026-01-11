@@ -130,7 +130,8 @@
     .modal-overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.8);
       backdrop-filter: blur(8px); z-index: 3000; display: none;
-      align-items: center; justify-content: center; padding: 2rem;
+      align-items: flex-start; justify-content: center; padding: 2rem;
+      overflow-y: auto;
     }
     .modal-overlay.active { display: flex; }
     .modal-card {
