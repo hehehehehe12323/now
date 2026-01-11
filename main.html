@@ -1902,6 +1902,10 @@
       document.getElementById('profileMenu').classList.toggle('active');
     }
 
+    function toggleToolsMenu() {
+    document.getElementById('toolsMenu').classList.toggle('active');
+}
+    
     function openSettings() {
         document.getElementById('setFullName').value = localStorage.getItem('asteroid_full_name') || "";
         document.getElementById('setPfpUrl').value = localStorage.getItem('asteroid_pfp') || "";
@@ -1936,12 +1940,13 @@
         document.getElementById('modApplyModal').classList.remove('active');
     }
 
-    window.addEventListener('click', (e) => {
-      if (!e.target.closest('.profile-container')) document.getElementById('profileMenu').classList.remove('active');
-      if (e.target.id === 'settingsModal') closeSettings();
-      if (e.target.id === 'modModal') closeModPanel();
-      if (e.target.id === 'modApplyModal') closeModApply();
-    });
+   window.addEventListener('click', (e) => {
+    if (!e.target.closest('.profile-container')) document.getElementById('profileMenu').classList.remove('active');
+    if (!e.target.closest('.chat-tools-container')) document.getElementById('toolsMenu').classList.remove('active'); // Add this line
+    if (e.target.id === 'settingsModal') closeSettings();
+    if (e.target.id === 'modModal') closeModPanel();
+    if (e.target.id === 'modApplyModal') closeModApply();
+});
 
     loadProfile();
     subscribeBroadcasts();
