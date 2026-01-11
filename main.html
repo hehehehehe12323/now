@@ -161,7 +161,15 @@
     .shop-item.equipped { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
     .item-preview { height: 40px; display: flex; align-items: center; justify-content: center; font-weight: 800; margin-bottom: 0.5rem; }
     .item-price { font-size: 0.8rem; font-weight: 800; color: var(--gold); }
-    .name-sparkle { background: linear-gradient(90deg, #fff, #6366f1, #10b981, #fff); background-size: 200% auto; animation: shine 2s linear infinite; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    
+    /* STYLE DEFINITIONS */
+    .name-sparkle { background: linear-gradient(90deg, #fff, #6366f1, #10b981, #fff); background-size: 200% auto; animation: shine 2s linear infinite; -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+    .name-glow { text-shadow: 0 0 8px currentColor; font-weight: 800; }
+    .name-italic { font-style: italic; }
+    .border-gold { border: 2px solid #f59e0b !important; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+    .border-neon { border: 2px solid #a855f7 !important; box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
+    .border-cyan { border: 2px solid #06b6d4 !important; box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
+
     @keyframes shine { to { background-position: 200% center; } }
 
     /* PERSONAL LIBRARY SECTION */
@@ -272,8 +280,8 @@
       flex: 1; 
       display: flex; 
       flex-direction: column; 
-      max-width: 100%; /* CHANGED: FULL SCREEN LENGTH */
-      margin: 0; /* CHANGED: NO MARGIN */
+      max-width: 100%;
+      margin: 0;
       width: 100%; 
       position: relative; 
       overflow: hidden; 
@@ -283,7 +291,7 @@
     #chatBody { 
       flex: 1; 
       overflow-y: auto; 
-      padding: 3rem 6rem; /* CHANGED: MORE PADDING FOR FULL WIDTH */
+      padding: 3rem 6rem;
       display: flex; 
       flex-direction: column; 
       gap: 1.25rem; 
@@ -306,10 +314,9 @@
       align-self: flex-start;
       position: relative;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      animation: messageSlideIn 0.35s ease-out forwards; /* CHANGED: SMOOTH ANIMATION */
+      animation: messageSlideIn 0.35s ease-out forwards;
     }
 
-    /* Unique Style for Staff Room Messages */
     .message.staff-msg {
         background: linear-gradient(135deg, #1e293b, #2d1b1b);
         border-color: rgba(239, 68, 68, 0.3);
@@ -426,7 +433,7 @@
     }
 
     .typing-indicator { 
-      padding: 0.6rem 6rem; /* CHANGED: MORE PADDING FOR FULL WIDTH */
+      padding: 0.6rem 6rem;
       font-size: 0.72rem; 
       color: var(--accent); 
       font-weight: 700; 
@@ -438,7 +445,7 @@
     }
 
     .chat-input-area { 
-      padding: 1.5rem 6rem 3rem; /* CHANGED: MORE PADDING FOR FULL WIDTH */
+      padding: 1.5rem 6rem 3rem;
       background: linear-gradient(to top, var(--bg-surface), transparent);
       display: flex; 
       flex-direction: column; 
@@ -600,6 +607,7 @@
     .btn-success { background: var(--accent); border: none; }
     .btn-danger { background: #ef4444; border: none; }
     .btn-leaderboard { background: linear-gradient(135deg, #f59e0b, #d97706); border: none; }
+    .btn-shop { background: var(--gold); border: none; color: black !important; }
 
     /* Leaderboard Styles */
     #leaderboardSection {
@@ -802,6 +810,7 @@
       <div class="online-stats" id="siteOnlineStats" onclick="showOnlineList('site')">Users Online: 0 | Staff Online: 0</div>
     </div>
     <div class="nav-right">
+      <button class="btn btn-shop" onclick="openShop()">Shop ✨</button>
       <button id="modNavBtn" class="btn" style="display:none; background: var(--accent); border:none;" onclick="openModPanel()">Mod Panel</button>
       <button class="btn btn-primary" onclick="openChat()">Asteroid Chat <span id="unreadBadge" style="background:#ef4444; color:white; border-radius:50%; padding:2px 7px; font-size:0.75rem; margin-left:6px; display:none;">0</span></button>
       <button class="btn" onclick="saveData()">Save</button>
@@ -830,7 +839,6 @@
             </div>
           </div>
           <div class="menu-items">
-            <a class="menu-link" onclick="openShop()">Asteroid Shop ✨</a>
             <a class="menu-link" onclick="location.reload()">Refresh Data</a>
             <a class="menu-link" onclick="openSettings()">Settings</a>
             <a href="https://asteroid-pixel.github.io" class="menu-link logout">Log Out</a>
@@ -1187,18 +1195,31 @@
     
     // NEW ECONOMY DATA
     let profileData = null;
+    let profilesCache = {};
+
     const shopItems = {
         tags: [
             { id: 'tag_pro', name: '[PRO]', price: 50, type: 'tag' },
             { id: 'tag_gamer', name: '[GAMER]', price: 50, type: 'tag' },
             { id: 'tag_star', name: '[✨]', price: 100, type: 'tag' },
-            { id: 'tag_god', name: '[GODLY]', price: 500, type: 'tag' }
+            { id: 'tag_vip', name: '[VIP]', price: 200, type: 'tag' },
+            { id: 'tag_ace', name: '[ACE]', price: 250, type: 'tag' },
+            { id: 'tag_king', name: '[KING]', price: 400, type: 'tag' },
+            { id: 'tag_mythic', name: '[MYTHIC]', price: 600, type: 'tag' },
+            { id: 'tag_god', name: '[GODLY]', price: 1000, type: 'tag' }
         ],
         styles: [
             { id: 'color_blue', name: 'Cool Blue', price: 100, type: 'color', value: '#3b82f6' },
             { id: 'color_rose', name: 'Rose Red', price: 150, type: 'color', value: '#f43f5e' },
+            { id: 'color_neon', name: 'Neon Green', price: 200, type: 'color', value: '#22c55e' },
+            { id: 'color_purple', name: 'Electric Purple', price: 200, type: 'color', value: '#a855f7' },
+            { id: 'color_gold', name: 'Gold Font', price: 300, type: 'color', value: '#f59e0b' },
             { id: 'style_sparkle', name: 'Sparkly Name', price: 300, type: 'style', value: 'sparkle' },
-            { id: 'border_gold', name: 'Gold Border', price: 1000, type: 'border', value: 'gold' }
+            { id: 'style_glow', name: 'Glow Name', price: 400, type: 'style', value: 'glow' },
+            { id: 'style_italic', name: 'Italic Name', price: 100, type: 'style', value: 'italic' },
+            { id: 'border_gold', name: 'Gold Border', price: 500, type: 'border', value: 'gold' },
+            { id: 'border_neon', name: 'Neon Border', price: 600, type: 'border', value: 'neon' },
+            { id: 'border_cyan', name: 'Cyan Border', price: 600, type: 'border', value: 'cyan' }
         ]
     };
 
@@ -1291,7 +1312,7 @@
         document.getElementById('onlineListModal').classList.remove('active');
     }
 
-    // NEW MOD HELPERS (FEATURE 2 & 3)
+    // MOD HELPERS
     async function logModAction(action, target, details) {
         await _supabase.from('audit_logs').insert({
             moderator: currentUser,
@@ -1347,9 +1368,7 @@
         }
     }
 
-    // UPDATED BAN CHECK USING is_banned, ban_until + remote chat bans
     async function checkActiveBan(silent = false) {
-        // Local violations check
         const expiry = localStorage.getItem('asteroid_ban_expiry');
         const type = localStorage.getItem('asteroid_ban_type');
         if (expiry && Date.now() < parseInt(expiry)) {
@@ -1364,10 +1383,8 @@
             }
         }
 
-        // Supabase DB check
         const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
         if (data) {
-            // Check Site Ban
             if (data.is_banned) {
                 if (!data.ban_until) {
                     renderBanScreen("PERMANENT", data.ban_reason);
@@ -1380,7 +1397,6 @@
                     return 'site';
                 }
             }
-            // Check Chat Ban
             if (data.is_chat_banned) {
                 if (!data.chat_ban_until) {
                     if (!silent) addSystemMessage("Chat Privileges Revoked", `Permanent. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
@@ -1510,7 +1526,6 @@
             const isChatBanned = u.is_chat_banned && (!u.chat_ban_until || new Date(u.chat_ban_until) > new Date());
             const isAdmin = u.username === 'Derrick';
             
-            // Generate Action Buttons
             let actions = `<div style="display: flex; gap: 5px;">`;
             actions += `<button class="btn" style="padding: 5px 8px; font-size: 0.65rem; background: var(--bg-surface);" onclick="viewUserProfile('${u.username}')">Profile</button>`;
             if (!isAdmin) {
@@ -1522,7 +1537,6 @@
                         ${isChatBanned ? 'Lift Chat' : 'Suspend Chat'}
                     </button>`;
                 
-                // Mod Management (Admin only)
                 if (currentUser === 'Derrick') {
                     actions += `
                     <button class="btn" style="padding: 5px 8px; font-size: 0.65rem; background:#6366f1;" onclick="handleModToggle('${u.username}', ${u.is_mod})">
@@ -1556,7 +1570,6 @@
         renderModList(filtered);
     }
 
-    // TOGGLE MOD ROLE (ADMIN ONLY)
     async function handleModToggle(user, currentStatus) {
         if (currentUser !== 'Derrick') return alert("Only the admin account can manage moderators.");
         const actionText = currentStatus ? "revoke moderator status" : "grant moderator status";
@@ -1569,7 +1582,6 @@
         }
     }
 
-    // MODERATING SITE BANS
     async function handleModBan(user, isCurrentlyBanned) {
         if (user === 'Derrick') return alert("You cannot ban the system administrator.");
         if (isCurrentlyBanned) {
@@ -1599,7 +1611,6 @@
         }
     }
 
-    // MODERATING CHAT SUSPENSIONS
     async function handleModChatBan(user, isCurrentlyBanned) {
         if (user === 'Derrick') return alert("You cannot suspend the system administrator.");
         if (isCurrentlyBanned) {
@@ -1634,12 +1645,11 @@
     let currentRecipient = null;
     let allMessages = [];
     let staffMessages = [];
-    let activeChannel = 'global'; // 'global' or 'staff'
+    let activeChannel = 'global'; 
     let chatChannel = null;
     let staffChannelSub = null;
     let typingTimeout = null;
 
-    // PERSISTENT NOTIFICATION LOGIC
     function updateLastSeen() {
         const all = activeChannel === 'global' ? allMessages : staffMessages;
         if (all.length > 0) {
@@ -1654,7 +1664,6 @@
         const lastGlobal = localStorage.getItem('asteroid_last_seen_global') || new Date(0).toISOString();
         const lastStaff = localStorage.getItem('asteroid_last_seen_staff') || new Date(0).toISOString();
 
-        // Check Global Room
         const { data: globalMissed } = await _supabase.from('messages')
             .select('content, username, created_at')
             .or(`recipient.is.null,recipient.eq.${currentUser},username.eq.${currentUser}`)
@@ -1702,7 +1711,6 @@
       document.getElementById('chatViewer').style.display = "flex";
       document.body.style.overflow = "hidden";
 
-      // Show Channel Switcher if Mod
       if (isModUser) {
           document.getElementById('chatChannelBar').style.display = 'flex';
       } else {
@@ -1788,17 +1796,22 @@
         const isModSender = modUsernames.has(msg.username) && !isAdminSender;
         const parsedContent = isBlockedStr ? msg.content : (window.marked ? marked.parse(msg.content) : msg.content);
 
-        // NEW: Only show DM link for mods, OR for users if message is a PM from staff to them.
         const canDM = (isModUser || (isPM && (isModSender || isAdminSender) && msg.recipient === currentUser));
+        
+        // APPLY STYLES
+        const prof = profilesCache[msg.username] || {};
+        const nameColor = prof.name_color || '';
+        const nameStyleClass = (prof.name_style === 'sparkle' ? 'name-sparkle' : (prof.name_style === 'glow' ? 'name-glow' : (prof.name_style === 'italic' ? 'name-italic' : '')));
+        const tagText = prof.selected_tag || '';
 
         return `
           <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''} ${activeChannel === 'staff' ? 'staff-msg' : ''}">
             <div class="msg-header">
               <span class="msg-user">
-                ${msg.username} 
+                ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${tagText}</span>` : ''}
+                <span class="${nameStyleClass}" style="color: ${nameColor || 'inherit'}">${msg.username}</span>
                 ${isAdminSender ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
                 ${isModSender ? '<span class="mod-badge">MOD</span>' : ''}
-                ${isPM ? `<small style="color:#f59e0b; margin-left:5px;">(Private to ${msg.recipient === currentUser ? 'You' : msg.recipient})</small>` : ''}
               </span>
               <span class="msg-time">${time}</span>
             </div>
@@ -1818,8 +1831,7 @@
     function setReply(id, user) {
       currentReplyToId = id;
       currentRecipient = null;
-      const preview = document.getElementById('replyPreview');
-      preview.style.display = 'flex';
+      document.getElementById('replyPreview').style.display = 'flex';
       document.getElementById('replyText').innerText = `Replying to ${user}...`;
       document.getElementById('chatInput').focus();
     }
@@ -1827,8 +1839,7 @@
     function setDM(user) {
         currentRecipient = user;
         currentReplyToId = null;
-        const preview = document.getElementById('replyPreview');
-        preview.style.display = 'flex';
+        document.getElementById('replyPreview').style.display = 'flex';
         document.getElementById('replyText').innerText = `DM to ${user} (Private)...`;
         document.getElementById('chatInput').focus();
     }
@@ -1856,7 +1867,6 @@
       let content = input.value.trim();
       if (!content) return;
 
-      // NEW: Block users from initiating DMs to non-staff members
       if (currentRecipient && !isModUser) {
           const isTargetStaff = modUsernames.has(currentRecipient) || currentRecipient === 'Derrick';
           if (!isTargetStaff) {
@@ -1957,11 +1967,10 @@
                     if (!staffMessages.find(m => m.id === payload.new.id)) {
                         staffMessages.push(payload.new);
                     }
-                    const msg = payload.new;
-                    if (msg.username !== currentUser) {
+                    if (payload.new.username !== currentUser) {
                         if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'staff') {
                           const badge = document.getElementById('unreadBadge');
-                          const lowerContent = (msg.content || "").toLowerCase();
+                          const lowerContent = (payload.new.content || "").toLowerCase();
                           const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
                                           (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
                                           (lowerContent.includes("@staff") && isModUser) ||
@@ -1983,11 +1992,11 @@
             .subscribe();
     }
 
-    // REALTIME PROFILE SUBSCRIPTION (FOR INSTANT BADGES)
     function subscribeProfiles() {
         _supabase.channel('profiles_realtime')
-            .on('postgres_changes', { event: 'UPDATE', table: 'profiles', schema: 'public' }, payload => {
+            .on('postgres_changes', { event: 'UPDATE', table: 'profiles', schema: 'public' }, async payload => {
                 const user = payload.new;
+                profilesCache[user.username] = user; 
                 if (user.is_mod || user.username === 'Derrick') {
                     modUsernames.add(user.username);
                 } else {
@@ -1995,69 +2004,37 @@
                 }
 
                 if (user.username === currentUser) {
+                    profileData = user;
                     isModUser = user.is_mod || user.username === 'Derrick';
                     document.getElementById('modNavBtn').style.display = isModUser ? 'block' : 'none';
-                    const bar = document.getElementById('chatChannelBar');
-                    if (bar) bar.style.display = isModUser ? 'flex' : 'none';
-
-                    const statusEl = document.getElementById('pMenuStatus');
-                    if (statusEl) {
-                        statusEl.textContent = user.username === 'Derrick' ? 'Admin' : (user.is_mod ? 'Moderator' : 'Explorer');
-                    }
-                    
+                    if (document.getElementById('pMenuStatus')) document.getElementById('pMenuStatus').textContent = user.username === 'Derrick' ? 'Admin' : (user.is_mod ? 'Moderator' : 'Explorer');
                     updateOnlineStats('site');
                     updateOnlineStats('chat');
                 }
 
-                if (document.getElementById('chatViewer').style.display === "flex") {
-                    renderMessages();
-                }
+                if (document.getElementById('chatViewer').style.display === "flex") renderMessages();
                 fetchLeaderboard();
-                
-                if (document.getElementById('modModal').classList.contains('active')) {
-                    fetchModUsers();
-                }
             })
             .subscribe();
     }
 
-    // BROADCAST LOGIC
     async function sendBroadcast() {
         if (currentUser !== 'Derrick') return;
         const msg = document.getElementById('broadcastInput').value.trim();
         if (!msg) return;
-
-        const { error } = await _supabase.from('broadcasts').insert({
-            message: msg,
-            sender: currentUser
-        });
-
-        if (error) {
-            alert("Broadcast failed: " + error.message);
-        } else {
-            document.getElementById('broadcastInput').value = "";
-            alert("Broadcast sent successfully!");
-        }
+        await _supabase.from('broadcasts').insert({ message: msg, sender: currentUser });
+        document.getElementById('broadcastInput').value = "";
     }
 
     function showBroadcastAlert(message) {
         const overlay = document.getElementById('broadcastOverlay');
-        const text = document.getElementById('broadcastText');
-        text.innerText = message;
-        
-        if (document.fullscreenElement) {
-            document.fullscreenElement.appendChild(overlay);
-        } else {
-            document.body.appendChild(overlay);
-        }
-
+        document.getElementById('broadcastText').innerText = message;
         overlay.style.display = 'flex';
         try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
     }
 
     function closeBroadcast() {
         document.getElementById('broadcastOverlay').style.display = 'none';
-        document.body.appendChild(document.getElementById('broadcastOverlay'));
     }
 
     function subscribeBroadcasts() {
@@ -2081,11 +2058,7 @@
             
             if (isModUser) {
                 document.getElementById('modNavBtn').style.display = 'block';
-                document.getElementById('pMenuStatus').textContent = data.username === 'Derrick' ? 'Admin' : 'Moderator';
-                document.getElementById('pMenuStatus').style.color = 'var(--accent)';
-                if (data.username === 'Derrick') {
-                    document.getElementById('adminBroadcastSection').style.display = 'block';
-                }
+                if (data.username === 'Derrick') document.getElementById('adminBroadcastSection').style.display = 'block';
             }
             
             const savedName = localStorage.getItem('asteroid_full_name') || data.full_name;
@@ -2096,29 +2069,25 @@
             document.getElementById('pMenuMins').textContent = (data.total_minutes || 0) + 'm';
             document.getElementById('pMenuCoins').textContent = data.coins || 0;
 
-            const navPfp = document.getElementById('navPfp');
-            const navInitial = document.getElementById('navInitial');
-            
             if (savedPfp) {
-                navPfp.src = savedPfp;
-                navPfp.style.display = 'block';
-                navInitial.style.display = 'none';
-            } else {
-                navPfp.style.display = 'none';
-                navInitial.style.display = 'block';
+                document.getElementById('navPfp').src = savedPfp;
+                document.getElementById('navPfp').style.display = 'block';
+                document.getElementById('navInitial').style.display = 'none';
             }
 
             updatePersonalRow();
         }
         
-        const { data: mods } = await _supabase.from('profiles').select('username, is_mod');
-        if (mods) {
-            mods.forEach(m => {
-                if(m.is_mod || m.username === 'Derrick') modUsernames.add(m.username);
+        // POPULATE LOOKUP CACHE
+        const { data: allProfs } = await _supabase.from('profiles').select('*');
+        if (allProfs) {
+            allProfs.forEach(p => {
+                profilesCache[p.username] = p;
+                if(p.is_mod || p.username === 'Derrick') modUsernames.add(p.username);
             });
-            fetchLeaderboard();
         }
 
+        fetchLeaderboard();
         initSitePresence();
         checkMissedMessages();
     }
@@ -2149,16 +2118,12 @@
         localStorage.setItem('asteroid_pfp', pfp);
         loadProfile();
         closeSettings();
-        
         _supabase.from('profiles').upsert({ username: currentUser, full_name: name }, { onConflict: 'username' });
     }
 
-    // MOD APPLICATION POPUP LOGIC
     function checkModApplyPopup() {
         if (currentUser === 'Derrick' || isModUser) return;
-        if (Math.random() < 0.3) {
-            document.getElementById('modApplyModal').classList.add('active');
-        }
+        if (Math.random() < 0.3) document.getElementById('modApplyModal').classList.add('active');
     }
 
     function closeModApply() {
@@ -2185,10 +2150,7 @@
         const inventory = profileData.inventory || [];
         grid.innerHTML = items.map(item => {
             const isOwned = inventory.includes(item.id);
-            const isEquipped = profileData.selected_tag === item.name || 
-                               profileData.name_color === item.value || 
-                               profileData.name_style === item.value ||
-                               profileData.leaderboard_border === item.value;
+            const isEquipped = (profileData.selected_tag === item.name || profileData.name_color === item.value || profileData.name_style === item.value || profileData.leaderboard_border === item.value);
 
             return `
                 <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}" onclick="handleItemAction('${item.id}', ${isOwned})">
@@ -2204,37 +2166,36 @@
 
         if (isOwned) {
             let update = {};
-            if (item.type === 'tag') update.selected_tag = item.name;
-            if (item.type === 'color') update.name_color = item.value;
-            if (item.type === 'style') update.name_style = item.value;
-            if (item.type === 'border') update.leaderboard_border = item.value;
+            if (item.type === 'tag') update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
+            if (item.type === 'color') update.name_color = (profileData.name_color === item.value ? null : item.value);
+            if (item.type === 'style') update.name_style = (profileData.name_style === item.value ? null : item.value);
+            if (item.type === 'border') update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
 
-            const { error } = await _supabase.from('profiles').update(update).eq('username', currentUser);
-            if (!error) { await loadProfile(); renderShopItems(item.type === 'tag' ? 'tags' : 'styles'); }
+            await _supabase.from('profiles').update(update).eq('username', currentUser);
+            await loadProfile();
+            renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
         } else {
             if (profileData.coins < item.price) return alert("Not enough coins!");
             if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
                 const newCoins = profileData.coins - item.price;
                 const newInv = [...(profileData.inventory || []), item.id];
-                const { error } = await _supabase.from('profiles').update({ coins: newCoins, inventory: newInv }).eq('username', currentUser);
-                if (!error) { await loadProfile(); document.getElementById('shopBalance').textContent = profileData.coins; renderShopItems(item.type === 'tag' ? 'tags' : 'styles'); }
+                await _supabase.from('profiles').update({ coins: newCoins, inventory: newInv }).eq('username', currentUser);
+                await loadProfile();
+                document.getElementById('shopBalance').textContent = profileData.coins;
+                renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
             }
         }
     }
 
-    // --- FAVORITES & RECENT ---
     async function toggleFavorite(gameId) {
         event.stopPropagation();
         let favs = profileData.favorites || [];
         if (favs.includes(gameId)) favs = favs.filter(id => id !== gameId);
         else favs.push(gameId);
 
-        const { error } = await _supabase.from('profiles').update({ favorites: favs }).eq('username', currentUser);
-        if (!error) {
-            await loadProfile();
-            updatePersonalRow();
-            displayZones(zones.filter(z => z.name.toLowerCase().includes(searchBar.value.toLowerCase()))); 
-        }
+        await _supabase.from('profiles').update({ favorites: favs }).eq('username', currentUser);
+        await loadProfile();
+        updatePersonalRow();
     }
 
     async function trackRecent(gameId) {
@@ -2256,14 +2217,6 @@
         section.style.display = 'block';
 
         const myGames = zones.filter(z => personalIds.includes(z.id));
-        myGames.sort((a,b) => {
-            const aFav = favIds.includes(a.id);
-            const bFav = favIds.includes(b.id);
-            if (aFav && !bFav) return -1;
-            if (!aFav && bFav) return 1;
-            return 0;
-        });
-
         row.innerHTML = myGames.map(game => `
             <div class="lib-card animate-in">
                 <div class="star-btn ${favIds.includes(game.id) ? 'active' : ''}" onclick="toggleFavorite(${game.id})">★</div>
@@ -2277,11 +2230,6 @@
     window.addEventListener('click', (e) => {
         if (!e.target.closest('.profile-container')) document.getElementById('profileMenu').classList.remove('active');
         if (!e.target.closest('.chat-tools-container')) document.getElementById('toolsMenu').classList.remove('active');
-        if (e.target.id === 'settingsModal') closeSettings();
-        if (e.target.id === 'modModal') closeModPanel();
-        if (e.target.id === 'modApplyModal') closeModApply();
-        if (e.target.id === 'onlineListModal') closeOnlineList();
-        if (e.target.id === 'shopModal') closeShop();
     });
 
     loadProfile();
@@ -2300,9 +2248,8 @@
       const { data: profData } = await _supabase.from('profiles').select('total_minutes, coins').eq('username', currentUser).maybeSingle();
       const nextTotal = (profData ? (profData.total_minutes || 0) : 0) + 1;
       
-      // COIN ECONOMY
-      let newCoins = profData ? (profData.coins || 0) : 0;
-      if (nextTotal % 10 === 0) newCoins += 10;
+      // award 1 coin per minute
+      let newCoins = (profData ? (profData.coins || 0) : 0) + 1;
 
       document.getElementById('pMenuMins').textContent = nextTotal + 'm';
       document.getElementById('pMenuCoins').textContent = newCoins;
@@ -2317,36 +2264,23 @@
     }
 
     async function fetchLeaderboard() {
-      const { data, error } = await _supabase
-        .from('leaderboard')
-        .select('username, minutes')
-        .order('minutes', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.error("Leaderboard query failed:", error.message);
-        return;
-      }
-
+      const { data } = await _supabase.from('leaderboard').select('username, minutes').order('minutes', { ascending: false }).limit(10);
       if (data) {
-        const { data: prof } = await _supabase.from('profiles').select('total_minutes').eq('username', currentUser).maybeSingle();
-        if(prof) document.getElementById('pMenuMins').textContent = (prof.total_minutes || 0) + 'm';
-
         const body = document.getElementById('leaderboardBody');
         body.innerHTML = data.map((entry, index) => {
-            let rowName = entry.username;
-            const isMe = (rowName === currentUser);
-            const isRowAdmin = rowName === 'Derrick';
-            const isRowMod = modUsernames.has(rowName) && !isRowAdmin;
+            const isMe = (entry.username === currentUser);
+            const isAdmin = entry.username === 'Derrick';
+            const isMod = modUsernames.has(entry.username) && !isAdmin;
+            const prof = profilesCache[entry.username] || {};
+            const borderClass = prof.leaderboard_border ? 'border-' + prof.leaderboard_border : '';
 
             return `
-              <tr class="${isMe ? 'current-user' : ''}">
+              <tr class="${isMe ? 'current-user' : ''} ${borderClass}">
                 <td class="rank-cell">#${index + 1}</td>
                 <td class="user-cell">
-                    ${rowName} 
-                    ${isMe ? '<small>(You)</small>' : ''} 
-                    ${isRowAdmin ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
-                    ${isRowMod ? '<span class="mod-badge">MOD</span>' : ''}
+                    ${entry.username} 
+                    ${isAdmin ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
+                    ${isMod ? '<span class="mod-badge">MOD</span>' : ''}
                 </td>
                 <td class="mins-cell">${entry.minutes}m</td>
               </tr>
@@ -2362,13 +2296,6 @@
     fetchLeaderboard();
     setTimeout(checkModApplyPopup, 2000);
 
-    const container = document.getElementById('container');
-    const featuredContainer = document.getElementById('gameOfTheDay');
-    const zoneViewer = document.getElementById('zoneViewer');
-    let zoneFrame = document.getElementById('zoneFrame');
-    const searchBar = document.getElementById('searchBar');
-    const sortOptions = document.getElementById('sortOptions');
-    
     const zonesURL = "zones.json";
     const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
     const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
@@ -2383,7 +2310,7 @@
         await fetchPopularity();
         sortZones();
       } catch (error) {
-        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center;">Connection error</div>`;
+        document.getElementById('container').innerHTML = `<div style="grid-column: 1/-1; text-align: center;">Connection error</div>`;
       }
     }
 
@@ -2399,7 +2326,7 @@
     }
 
     function sortZones() {
-      const sortBy = sortOptions.value;
+      const sortBy = document.getElementById('sortOptions').value;
       if (sortBy === 'name') zones.sort((a, b) => a.name.localeCompare(b.name));
       else if (sortBy === 'id') zones.sort((a, b) => a.id - b.id);
       else if (sortBy === 'popular') zones.sort((a, b) => (popularityData[b.id] || 0) - (popularityData[a.id] || 0));
@@ -2410,6 +2337,7 @@
     }
 
     function displayZones(zonesToDisplay) {
+        const container = document.getElementById('container');
       container.innerHTML = "";
       const favIds = profileData ? (profileData.favorites || []) : [];
       zonesToDisplay.forEach((game, index) => {
@@ -2429,7 +2357,7 @@
     function displayGameOfTheDay() {
       const game = getGameOfTheDay();
       if (game) {
-        featuredContainer.innerHTML = `
+        document.getElementById('gameOfTheDay').innerHTML = `
           <div class="gotd-banner" style="background-image: url('${game.cover.replace("{COVER_URL}", coverURL)}')"></div>
           <div class="gotd-info">
             <span class="version-badge" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #f59e0b; margin: 0 0 1rem 0;">FEATURED</span>
@@ -2437,7 +2365,7 @@
             <p style="color: var(--text-muted); margin: 0;">Hand-picked for you today.</p>
           </div>
         `;
-        featuredContainer.onclick = () => { trackRecent(game.id); openZone(game); };
+        document.getElementById('gameOfTheDay').onclick = () => { trackRecent(game.id); openZone(game); };
       }
     }
 
@@ -2449,27 +2377,26 @@
       return zones[Math.abs(hash) % zones.length];
     }
 
-    function filterZones() { displayZones(zones.filter(z => z.name.toLowerCase().includes(searchBar.value.toLowerCase()))); }
+    function filterZones() { displayZones(zones.filter(z => z.name.toLowerCase().includes(document.getElementById('searchBar').value.toLowerCase()))); }
 
     async function openZone(file) {
-      const ban = await checkActiveBan();
-      if (ban === 'site') return;
+      if (await checkActiveBan() === 'site') return;
 
       if (file.url.startsWith("http")) { window.location.href = file.url; return; }
       fetch(file.url.replace("{HTML_URL}", htmlURL)).then(res => res.text()).then(html => {
-        zoneViewer.style.display = "flex";
+        document.getElementById('zoneViewer').style.display = "flex";
         document.body.style.overflow = "hidden";
-        zoneFrame.contentDocument.open();
-        zoneFrame.contentDocument.write(html);
-        zoneFrame.contentDocument.close();
+        document.getElementById('zoneFrame').contentDocument.open();
+        document.getElementById('zoneFrame').contentDocument.write(html);
+        document.getElementById('zoneFrame').contentDocument.close();
         document.getElementById('zoneName').textContent = file.name;
         document.getElementById('zoneId').textContent = `#${file.id}`;
       });
     }
 
-    function closeZone() { zoneViewer.style.display = "none"; document.body.style.overflow = "auto"; zoneFrame.src = "about:blank"; }
-    function fullscreenZone() { if (zoneFrame.requestFullscreen) zoneFrame.requestFullscreen(); }
-    function aboutBlank() { const nw = window.open("about:blank", "_blank"); if (nw) { nw.document.write(zoneFrame.contentDocument.documentElement.outerHTML); nw.document.close(); } }
+    function closeZone() { document.getElementById('zoneViewer').style.display = "none"; document.body.style.overflow = "auto"; document.getElementById('zoneFrame').src = "about:blank"; }
+    function fullscreenZone() { if (document.getElementById('zoneFrame').requestFullscreen) document.getElementById('zoneFrame').requestFullscreen(); }
+    function aboutBlank() { const nw = window.open("about:blank", "_blank"); if (nw) { nw.document.write(document.getElementById('zoneFrame').contentDocument.documentElement.outerHTML); nw.document.close(); } }
 
     function saveData() {
       let storageObj = {};
@@ -2496,40 +2423,21 @@
 
     listZones();
 
-    // --- INACTIVITY LOGOUT SYSTEM ---
-const IDLE_LIMIT = 3 * 60 * 1000; // 3 Minutes
-let lastActivity = Date.now();
+    const IDLE_LIMIT = 3 * 60 * 1000; 
+    let lastActivity = Date.now();
 
-function logoutUser() {
-    sessionStorage.removeItem("usernamePassword");
-    // Change this URL if your landing page is different
-    window.location.href = "https://asteroid-pixel.github.io"; 
-}
-
-function resetIdleTimer() {
-    lastActivity = Date.now();
-}
-
-function checkIdleStatus() {
-    const diff = Date.now() - lastActivity;
-    if (diff >= IDLE_LIMIT) {
-        logoutUser();
+    function logoutUser() {
+        sessionStorage.removeItem("usernamePassword");
+        window.location.href = "https://asteroid-pixel.github.io"; 
     }
-}
 
-// Event listeners for REAL activity (Excludes mouse movement)
-['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
-    document.addEventListener(evt, resetIdleTimer, true);
-});
+    function resetIdleTimer() { lastActivity = Date.now(); }
+    function checkIdleStatus() { if (Date.now() - lastActivity >= IDLE_LIMIT) logoutUser(); }
 
-// Check every 10 seconds
-setInterval(checkIdleStatus, 10000);
-
-// Instant logout if they return to the tab after being away for 3+ mins
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) checkIdleStatus();
-});
-// --------------------------------
+    ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+        document.addEventListener(evt, resetIdleTimer, true);
+    });
+    setInterval(checkIdleStatus, 10000);
   </script>
 </body>
 </html>
