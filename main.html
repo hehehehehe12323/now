@@ -608,6 +608,22 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .animate-in { animation: fadeIn 0.6s ease forwards; }
 
+    /* Broadcast Styles */
+    .broadcast-overlay {
+        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        z-index: 9999; width: 90%; max-width: 600px;
+        background: linear-gradient(135deg, #ef4444, #991b1b);
+        color: white; padding: 1.5rem 2rem; border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(239, 68, 68, 0.4);
+        display: none; flex-direction: column; gap: 10px;
+        animation: slideDownFade 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes slideDownFade { from { opacity: 0; transform: translate(-50%, -100%); } to { opacity: 1; transform: translate(-50%, 0); } }
+    .broadcast-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; }
+    .broadcast-title { font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
+    .broadcast-msg { font-size: 1.1rem; font-weight: 600; line-height: 1.4; }
+    .admin-broadcast-section { margin-top: 2rem; padding: 1.5rem; background: rgba(239, 68, 68, 0.05); border: 1px dashed #ef4444; border-radius: 16px; }
+
     @media (max-width: 768px) {
       .toolbar { flex-direction: column; align-items: stretch; }
       .nav-right .btn { padding: 8px 12px; font-size: 0.8rem; }
@@ -670,6 +686,15 @@
     </div>
   </nav>
 
+  <!-- Global Broadcast Alert -->
+  <div id="broadcastOverlay" class="broadcast-overlay">
+      <div class="broadcast-header">
+          <span class="broadcast-title">⚠️ Priority System Alert</span>
+          <span style="cursor:pointer; font-weight: 800;" onclick="closeBroadcast()">×</span>
+      </div>
+      <div id="broadcastText" class="broadcast-msg">This is a global broadcast message.</div>
+  </div>
+
   <!-- Settings Modal -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-card">
@@ -696,7 +721,18 @@
             <h2>Mod Controls</h2>
             <button class="btn btn-danger" onclick="closeModPanel()">Close</button>
         </div>
-        <div class="form-group">
+        
+        <!-- BROADCAST SECTION (Admin Only) -->
+        <div id="adminBroadcastSection" class="admin-broadcast-section" style="display:none;">
+            <h3 style="margin-top:0; color:#ef4444; letter-spacing:-1px;">Global System Broadcast</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted);">This message will pop up on every active user's screen instantly.</p>
+            <div style="display: flex; gap:10px;">
+                <input type="text" id="broadcastInput" placeholder="Enter broadcast message..." style="flex:1; background:var(--bg-surface); border:1px solid var(--border); padding:10px; border-radius:10px; color:white;">
+                <button class="btn btn-danger" onclick="sendBroadcast()">Send to All</button>
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top:2rem;">
             <input type="text" id="userListSearch" placeholder="Search by username or full name..." onkeyup="filterModList()">
         </div>
         <div class="mod-user-list">
@@ -722,27 +758,13 @@
   <!-- MOD APPLICATION POPUP -->
   <div class="modal-overlay" id="modApplyModal">
     <div class="modal-card">
-        <h2 style="color: var(--accent); letter-spacing: -2px;">Join Our Moderation Team</h2>
-        <p style="margin: 1.5rem 0; color: var(--text-muted);">
-            We are seeking dedicated and community‑minded individuals to help maintain a safe and welcoming environment. Interested in applying for a moderator position?
-        </p>
-
-        <p>As a moderator, you will have access to the following tools and privileges:</p>
-        <ul>
-            <li>Ban and unban user accounts</li>
-            <li>Suspend user chat privileges</li>
-            <li>Remove inappropriate chat messages</li>
-            <li>Send private messages</li>
-            <li>Display a moderator badge in chat and on the leaderboard</li>
-            <li>Access the full user directory</li>
-        </ul>
-
-        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdNhfTyWGN2bN2DR_R9z4v3JLCYfLs3C8SZpvX08x0ZWBlJqQ/viewform?usp=dialog"
+        <h2 style="color: var(--accent); letter-spacing: -2px;">Become a Moderator!</h2>
+        <p style="margin: 1.5rem 0; color: var(--text-muted);">We are looking for passionate individuals to help moderate our community. Interested in applying for a staff position?</p>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdNhfTyWGN2bN2DR_R9z4v3JLCYfLs3C8SZpvX08x0ZWBlJqQ/viewform?usp=dialog" 
            target="_blank" class="btn btn-primary mod-apply-btn" onclick="closeModApply()">Apply Now</a>
-
         <button class="btn" style="width: 100%; margin-top: 10px;" onclick="closeModApply()">Dismiss</button>
     </div>
-</div>
+  </div>
 
   <header class="hero">
     <span class="version-badge">VERSION 1.6.8</span>
@@ -1307,6 +1329,47 @@
         .subscribe();
     }
 
+    // BROADCAST LOGIC
+    async function sendBroadcast() {
+        if (currentUser !== 'Derrick') return;
+        const msg = document.getElementById('broadcastInput').value.trim();
+        if (!msg) return;
+
+        const { error } = await _supabase.from('broadcasts').insert({
+            message: msg,
+            sender: currentUser
+        });
+
+        if (error) {
+            alert("Broadcast failed: " + error.message);
+        } else {
+            document.getElementById('broadcastInput').value = "";
+            alert("Broadcast sent successfully!");
+        }
+    }
+
+    function showBroadcastAlert(message) {
+        const overlay = document.getElementById('broadcastOverlay');
+        const text = document.getElementById('broadcastText');
+        text.innerText = message;
+        overlay.style.display = 'flex';
+        
+        // Play alert sound if available
+        try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+    }
+
+    function closeBroadcast() {
+        document.getElementById('broadcastOverlay').style.display = 'none';
+    }
+
+    function subscribeBroadcasts() {
+        _supabase.channel('global_broadcasts')
+            .on('postgres_changes', { event: 'INSERT', table: 'broadcasts', schema: 'public' }, payload => {
+                showBroadcastAlert(payload.new.message);
+            })
+            .subscribe();
+    }
+
     // PROFILE LOGIC
     async function loadProfile() {
         const ban = await checkActiveBan(true);
@@ -1322,6 +1385,11 @@
                 document.getElementById('modNavBtn').style.display = 'block';
                 document.getElementById('pMenuStatus').textContent = data.username === 'Derrick' ? 'Admin' : 'Moderator';
                 document.getElementById('pMenuStatus').style.color = 'var(--accent)';
+                
+                // Show Admin Only sections
+                if (data.username === 'Derrick') {
+                    document.getElementById('adminBroadcastSection').style.display = 'block';
+                }
             }
             
             const savedName = localStorage.getItem('asteroid_full_name') || data.full_name;
@@ -1401,6 +1469,7 @@
     });
 
     loadProfile();
+    subscribeBroadcasts();
 
     async function trackMinutes() {
       if (!currentUser) return;
