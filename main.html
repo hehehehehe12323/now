@@ -1351,6 +1351,7 @@
     }
 
     function subscribeMessages() {
+      if (chatChannel) return; // Guard for double subscription
       chatChannel = _supabase.channel('global_chat_room', {
         config: { presence: { key: currentUser } }
       });
@@ -1543,6 +1544,7 @@
 
     loadProfile();
     subscribeBroadcasts();
+    subscribeMessages(); // Start listening for unread counts immediately
 
     async function trackMinutes() {
       if (!currentUser) return;
