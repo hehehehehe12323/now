@@ -837,16 +837,17 @@
         renderModList(filtered);
     }
 
-    // FIXED MOD BAN LOGIC
+    // MODERATING INDIVIDUAL USERS
     async function handleModBan(user, isCurrentlyBanned) {
         if (isCurrentlyBanned) {
             if (confirm(`Unban ${user}?`)) {
-                await _supabase.from('profiles').upsert({ 
-                    username: user, 
+                const { error } = await _supabase.from('profiles').update({ 
                     is_banned: false, 
                     ban_until: null,
                     ban_reason: null 
-                }, { onConflict: 'username' });
+                }).eq('username', user);
+                
+                if (error) alert("Database Error: " + error.message);
                 fetchModUsers();
             }
         } else {
@@ -857,12 +858,13 @@
                     expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
                 }
                 
-                await _supabase.from('profiles').upsert({ 
-                    username: user, 
+                const { error } = await _supabase.from('profiles').update({ 
                     is_banned: true, 
                     ban_until: expiry,
                     ban_reason: "Moderator Action" 
-                }, { onConflict: 'username' });
+                }).eq('username', user);
+                
+                if (error) alert("Database Error: " + error.message);
                 fetchModUsers();
             }
         }
