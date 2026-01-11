@@ -162,6 +162,22 @@
     .status-banned { color: #ef4444; font-weight: 800; }
     .status-active { color: var(--accent); font-weight: 800; }
 
+    /* AUDIT LOG TAB STYLES */
+    .mod-tabs { display: flex; gap: 5px; margin-bottom: 1.5rem; }
+    .mod-tab-btn { flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-muted); font-weight: 700; cursor: pointer; }
+    .mod-tab-btn.active { background: var(--primary); color: white; border: none; }
+
+    /* RAP SHEET OVERLAY */
+    #userProfileOverlay {
+        position: absolute; inset: 0; background: var(--bg-card); z-index: 10;
+        display: none; flex-direction: column; padding: 2rem; animation: fadeIn 0.2s ease;
+    }
+    .rap-sheet-list { flex: 1; overflow-y: auto; margin: 1rem 0; padding: 1rem; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); }
+    .violation-item { padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    .violation-type { font-weight: 800; text-transform: uppercase; font-size: 0.7rem; display: block; }
+    .type-warning { color: #f59e0b; }
+    .type-ban { color: #ef4444; }
+
     /* CHATROOM RE-STYLING */
     @keyframes messageSlideIn {
       from { opacity: 0; transform: translateY(12px); }
@@ -751,14 +767,32 @@
 
   <!-- MOD PANEL MODAL -->
   <div class="modal-overlay" id="modModal">
-    <div class="modal-card">
+    <div class="modal-card" style="position: relative; overflow: hidden;">
+
+        <!-- RAP SHEET OVERLAY -->
+        <div id="userProfileOverlay">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 id="rapSheetName">User Name's Rap Sheet</h2>
+                <button class="btn" onclick="closeUserProfile()">Back to List</button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0;">Viewing historical violations and moderator notes.</p>
+            <div class="rap-sheet-list" id="rapSheetBody">
+                <!-- Violations go here -->
+            </div>
+        </div>
+
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h2>Mod Controls</h2>
             <button class="btn btn-danger" onclick="closeModPanel()">Close</button>
         </div>
 
+        <div class="mod-tabs">
+            <button id="tabUsers" class="mod-tab-btn active" onclick="switchModTab('users')">All Users</button>
+            <button id="tabLogs" class="mod-tab-btn" onclick="switchModTab('logs')">Audit Logs</button>
+        </div>
+
         <!-- COLLAPSIBLE MOD DOCUMENTATION -->
-        <details style="margin-bottom: 1.5rem; background: var(--bg-surface); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); cursor: pointer;">
+        <details id="modGuidelines" style="margin-bottom: 1.5rem; background: var(--bg-surface); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); cursor: pointer;">
             <summary style="font-weight: 800; color: var(--accent); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Staff Job Requirements & Guidelines</summary>
             <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
                 <p><b style="color:white">Clean the Chat:</b> Immediately delete inappropriate messages (hate speech, spam, or extreme swearing) and anything related to cheating on assignments. Protect the community vibe.</p>
@@ -779,25 +813,47 @@
             </div>
         </div>
 
-        <div class="form-group" style="margin-top:2rem;">
-            <input type="text" id="userListSearch" placeholder="Search by username or full name..." onkeyup="filterModList()">
+        <!-- USER LIST VIEW -->
+        <div id="viewModUsers">
+            <div class="form-group" style="margin-top:2rem;">
+                <input type="text" id="userListSearch" placeholder="Search by username or full name..." onkeyup="filterModList()">
+            </div>
+            <div class="mod-user-list">
+                <table class="mod-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Status</th>
+                            <th>Site</th>
+                            <th>Chat</th>
+                            <th>Mod Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modUserBody">
+                        <!-- Injected by mod logic -->
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="mod-user-list">
-            <table class="mod-table">
-                <thead>
-                    <tr>
-                        <th>Username</th>
-                        <th>Status</th>
-                        <th>Site</th>
-                        <th>Chat</th>
-                        <th>Mod Role</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="modUserBody">
-                    <!-- Injected by mod logic -->
-                </tbody>
-            </table>
+
+        <!-- AUDIT LOGS VIEW -->
+        <div id="viewModLogs" style="display: none;">
+            <div class="mod-user-list" style="max-height: 500px;">
+                <table class="mod-table">
+                    <thead>
+                        <tr>
+                            <th>Moderator</th>
+                            <th>Action</th>
+                            <th>Target</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="auditLogsBody">
+                        <!-- Logs injected here -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
   </div>
@@ -964,6 +1020,25 @@
       window.location.href = "index.html";
     }
 
+    // NEW MOD HELPERS (FEATURE 2 & 3)
+    async function logModAction(action, target, details) {
+        await _supabase.from('audit_logs').insert({
+            moderator: currentUser,
+            action: action,
+            target_user: target,
+            details: details
+        });
+    }
+
+    async function addViolation(user, type, reason, moderator) {
+        await _supabase.from('violations').insert({
+            username: user,
+            type: type,
+            reason: reason,
+            moderator: moderator
+        });
+    }
+
     // MODERATION LOGIC
     function getFuzzyText(text) {
         return text.toLowerCase()
@@ -990,10 +1065,12 @@
             localStorage.setItem('asteroid_ban_expiry', expiry);
             localStorage.setItem('asteroid_ban_type', 'chat');
             addSystemMessage("System Warning", "This is your 1st violation of the community policy. You have been banned from chatting for 10 minutes.");
+            addViolation(currentUser, "Warning", "Auto-mod: Profanity used in chat.", "System");
         } else if (violations >= 2) {
             const expiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
             localStorage.setItem('asteroid_ban_expiry', expiry);
             localStorage.setItem('asteroid_ban_type', 'site');
+            addViolation(currentUser, "Site Ban", "Auto-mod: Second violation of community policy.", "System");
             alert("SYSTEM ALERT:\nThis is your second violation. You are now banned from the whole site for 1 week.");
             location.reload(); 
         }
@@ -1067,11 +1144,67 @@
 
     async function openModPanel() {
         document.getElementById('modModal').classList.add('active');
-        await fetchModUsers();
+        switchModTab('users');
     }
 
     function closeModPanel() {
         document.getElementById('modModal').classList.remove('active');
+    }
+
+    async function switchModTab(tab) {
+        document.querySelectorAll('.mod-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('viewModUsers').style.display = 'none';
+        document.getElementById('viewModLogs').style.display = 'none';
+        document.getElementById('modGuidelines').style.display = 'none';
+
+        if (tab === 'users') {
+            document.getElementById('tabUsers').classList.add('active');
+            document.getElementById('viewModUsers').style.display = 'block';
+            document.getElementById('modGuidelines').style.display = 'block';
+            await fetchModUsers();
+        } else {
+            document.getElementById('tabLogs').classList.add('active');
+            document.getElementById('viewModLogs').style.display = 'block';
+            await fetchAuditLogs();
+        }
+    }
+
+    async function fetchAuditLogs() {
+        const { data } = await _supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50);
+        if (data) {
+            document.getElementById('auditLogsBody').innerHTML = data.map(log => `
+                <tr>
+                    <td style="color:var(--accent)">${log.moderator}</td>
+                    <td><b>${log.action}</b><br><small style="color:var(--text-muted)">${log.details}</small></td>
+                    <td>${log.target_user || "-"}</td>
+                    <td style="font-size:0.7rem;">${new Date(log.created_at).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    async function viewUserProfile(username) {
+        document.getElementById('rapSheetName').innerText = `${username}'s Rap Sheet`;
+        document.getElementById('userProfileOverlay').style.display = 'flex';
+        
+        const { data } = await _supabase.from('violations').select('*').eq('username', username).order('created_at', { ascending: false });
+        const list = document.getElementById('rapSheetBody');
+        
+        if (data && data.length > 0) {
+            list.innerHTML = data.map(v => `
+                <div class="violation-item">
+                    <span class="violation-type ${v.type.includes('Ban') ? 'type-ban' : 'type-warning'}">${v.type}</span>
+                    <p style="margin: 5px 0;">${v.reason}</p>
+                    <small style="color:var(--text-muted)">By ${v.moderator} • ${new Date(v.created_at).toLocaleDateString()}</small>
+                </div>
+            `).join('');
+        } else {
+            list.innerHTML = `<p style="text-align:center; padding: 2rem; color:var(--text-muted)">No violation history found for this user.</p>`;
+        }
+    }
+
+    function closeUserProfile() {
+        document.getElementById('userProfileOverlay').style.display = 'none';
     }
 
     async function fetchModUsers() {
@@ -1108,6 +1241,7 @@
             
             // Generate Action Buttons
             let actions = `<div style="display: flex; gap: 5px;">`;
+            actions += `<button class="btn" style="padding: 5px 8px; font-size: 0.65rem; background: var(--bg-surface);" onclick="viewUserProfile('${u.username}')">Profile</button>`;
             if (!isAdmin) {
                 actions += `
                     <button class="btn ${isSiteBanned ? '' : 'btn-danger'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
@@ -1154,10 +1288,12 @@
     // TOGGLE MOD ROLE (ADMIN ONLY)
     async function handleModToggle(user, currentStatus) {
         if (currentUser !== 'Derrick') return alert("Only the admin account can manage moderators.");
-        const action = currentStatus ? "revoke moderator status from" : "grant moderator status to";
-        if (confirm(`Are you sure you want to ${action} ${user}?`)) {
+        const actionText = currentStatus ? "revoke moderator status" : "grant moderator status";
+        if (confirm(`Are you sure you want to ${actionText} for ${user}?`)) {
             const { error } = await _supabase.from('profiles').update({ is_mod: !currentStatus }).eq('username', user);
-            if (error) alert(error.message);
+            if (error) { alert(error.message); } else {
+                logModAction("Update Role", user, `${currentStatus ? "Revoked" : "Granted"} Moderator privileges.`);
+            }
             fetchModUsers();
         }
     }
@@ -1168,7 +1304,9 @@
         if (isCurrentlyBanned) {
             if (confirm(`Unban ${user} from site?`)) {
                 const { error } = await _supabase.from('profiles').update({ is_banned: false, ban_until: null, ban_reason: null }).eq('username', user);
-                if (error) alert(error.message);
+                if (error) { alert(error.message); } else {
+                    logModAction("Site Unban", user, "Restored site access.");
+                }
                 fetchModUsers();
             }
         } else {
@@ -1181,7 +1319,10 @@
                 if (dur.trim() !== "" && !isNaN(dur)) expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
                 
                 const { error } = await _supabase.from('profiles').update({ is_banned: true, ban_until: expiry, ban_reason: reason }).eq('username', user);
-                if (error) alert(error.message);
+                if (error) { alert(error.message); } else {
+                    logModAction("Site Ban", user, `Banned for ${dur || "Permanent"}m. Reason: ${reason}`);
+                    addViolation(user, "Site Ban", reason, currentUser);
+                }
                 fetchModUsers();
             }
         }
@@ -1193,7 +1334,9 @@
         if (isCurrentlyBanned) {
             if (confirm(`Lift chat suspension for ${user}?`)) {
                 const { error } = await _supabase.from('profiles').update({ is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null }).eq('username', user);
-                if (error) alert(error.message);
+                if (error) { alert(error.message); } else {
+                    logModAction("Chat Lifted", user, "Restored chat privileges.");
+                }
                 fetchModUsers();
             }
         } else {
@@ -1206,7 +1349,10 @@
                 if (dur.trim() !== "" && !isNaN(dur)) expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
                 
                 const { error } = await _supabase.from('profiles').update({ is_chat_banned: true, chat_ban_until: expiry, chat_ban_reason: reason }).eq('username', user);
-                if (error) alert(error.message);
+                if (error) { alert(error.message); } else {
+                    logModAction("Chat Suspend", user, `Suspended for ${dur || "Permanent"}m. Reason: ${reason}`);
+                    addViolation(user, "Chat Ban", reason, currentUser);
+                }
                 fetchModUsers();
             }
         }
@@ -1256,8 +1402,12 @@
     async function deleteMessage(id) {
         if (!isModUser) return; // Defensive check
         if (!confirm("Delete this message permanently?")) return;
+        
+        const msgToDelete = allMessages.find(m => m.id === id);
         const { error } = await _supabase.from('messages').delete().eq('id', id);
-        if (error) alert(error.message);
+        if (error) { alert(error.message); } else {
+            logModAction("Deleted Message", msgToDelete.username, `Deleted message ID ${id}: "${msgToDelete.content.substring(0, 30)}..."`);
+        }
     }
 
     function renderMessages() {
