@@ -1748,6 +1748,9 @@
             document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
             document.getElementById('pMenuName').textContent = savedName || currentUser;
             
+            // Set initial total minutes
+            document.getElementById('pMenuMins').textContent = (data.total_minutes || 0) + 'm';
+
             const navPfp = document.getElementById('navPfp');
             const navInitial = document.getElementById('navInitial');
             
@@ -1827,13 +1830,19 @@
       
       const { data } = await _supabase.from('leaderboard').select('minutes').eq('username', currentUser).maybeSingle();
       const nextMins = (data ? data.minutes : 0) + 1;
-      document.getElementById('pMenuMins').textContent = nextMins + 'm';
+      
+      const { data: profData } = await _supabase.from('profiles').select('total_minutes').eq('username', currentUser).maybeSingle();
+      const nextTotal = (profData ? (profData.total_minutes || 0) : 0) + 1;
+      
+      document.getElementById('pMenuMins').textContent = nextTotal + 'm';
 
       await _supabase.from('leaderboard').upsert({ 
         username: currentUser, 
         minutes: nextMins,
         updated_at: new Date().toISOString()
       }, { onConflict: 'username' });
+
+      await _supabase.from('profiles').update({ total_minutes: nextTotal }).eq('username', currentUser);
     }
 
     async function fetchLeaderboard() {
@@ -1849,8 +1858,8 @@
       }
 
       if (data) {
-        const me = data.find(u => u.username === currentUser);
-        if(me) document.getElementById('pMenuMins').textContent = me.minutes + 'm';
+        const { data: prof } = await _supabase.from('profiles').select('total_minutes').eq('username', currentUser).maybeSingle();
+        if(prof) document.getElementById('pMenuMins').textContent = (prof.total_minutes || 0) + 'm';
 
         const body = document.getElementById('leaderboardBody');
         body.innerHTML = data.map((entry, index) => {
