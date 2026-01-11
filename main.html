@@ -700,6 +700,28 @@
       .hero h2 { font-size: 2.5rem; }
       #chatBody, .chat-input-area, .typing-indicator { padding-left: 1.5rem; padding-right: 1.5rem; }
     }
+
+        /* Tools Dropdown Styles */
+    .chat-tools-container { position: relative; display: flex; align-items: center; margin-left: 8px; }
+    .tools-menu {
+      position: absolute; bottom: 135%; left: 0; width: 240px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 18px; padding: 1.25rem; box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+      display: none; flex-direction: column; gap: 1rem; z-index: 1001;
+      animation: fadeIn 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+    .tools-menu.active { display: flex; }
+    .tool-item { display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
+    .tool-item:last-child { border: none; }
+    .tool-title { font-size: 0.72rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
+    .tool-desc { font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; }
+    .btn-tool { 
+      background: var(--bg-surface); border: 1px solid var(--border); 
+      border-radius: 12px; padding: 6px 14px; font-size: 0.75rem; 
+      color: white; cursor: pointer; font-weight: 700; transition: all 0.2s;
+    }
+    .btn-tool:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.1); }
   </style>
 
   <script>
@@ -998,6 +1020,27 @@
                  onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); postMessage(); }"
                  oninput="handleTyping()"></textarea>
           <button class="btn btn-primary" onclick="postMessage()">Send</button>
+          <div class="chat-tools-container">
+            <button class="btn-tool" onclick="toggleToolsMenu()">Tools</button>
+            <div id="toolsMenu" class="tools-menu">
+              <div class="tool-item">
+                <span class="tool-title">Markdown Support</span>
+                <span class="tool-desc">Use **bold**, *italics*, `code`, or > quotes to style your messages.</span>
+              </div>
+              <div class="tool-item">
+                <span class="tool-title">@ User Mentions</span>
+                <span class="tool-desc">Type @username to tag someone. Use @staff or @admin or @mod for priority alerts.</span>
+              </div>
+              <div class="tool-item">
+                <span class="tool-title">Reply & PM</span>
+                <span class="tool-desc">Hover any message to reveal 'Reply'. Staff can 'DM' users privately.</span>
+              </div>
+              <div class="tool-item">
+                <span class="tool-title">Multi-line Text</span>
+                <span class="tool-desc">Press Shift + Enter to add a new line without sending.</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
