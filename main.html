@@ -134,7 +134,7 @@
     .form-group input:focus { outline: none; border-color: var(--primary); }
 
     /* MOD PANEL SPECIFIC STYLES */
-    #modModal .modal-card { max-width: 800px; }
+    #modModal .modal-card { max-width: 900px; }
     .mod-user-list { 
         max-height: 400px; overflow-y: auto; margin-top: 1rem; 
         border: 1px solid var(--border); border-radius: 12px;
@@ -455,13 +455,14 @@
 <body>
 
   <nav>
-    <div class="nav-left" onclick="handleLogoClick()">
+    <div class="nav-left">
       <img src="asteroid.jpeg" alt="Asteroid Logo" class="nav-logo" id="mainLogo" />
       <div class="nav-brand">
         <h1>ASTEROID</h1>
       </div>
     </div>
     <div class="nav-right">
+      <button id="modNavBtn" class="btn" style="display:none; background: var(--accent); border:none;" onclick="openModPanel()">Mod Panel</button>
       <button class="btn btn-primary" onclick="openChat()">Global Chat</button>
       <button class="btn" onclick="saveData()">Save</button>
       <button class="btn" onclick="document.getElementById('file').click()">Load</button>
@@ -476,7 +477,7 @@
         <div class="profile-menu" id="profileMenu">
           <div class="menu-header">
             <span class="menu-name" id="pMenuName">User</span>
-            <span class="menu-status">Explorer</span>
+            <span class="menu-status" id="pMenuStatus">Explorer</span>
           </div>
           <div class="menu-stats">
             <span class="stat-label">Total Time Played</span>
@@ -526,9 +527,10 @@
                 <thead>
                     <tr>
                         <th>Username</th>
-                        <th>Time (m)</th>
-                        <th>Site Status</th>
-                        <th>Chat Status</th>
+                        <th>Status</th>
+                        <th>Site</th>
+                        <th>Chat</th>
+                        <th>Mod Role</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -736,7 +738,7 @@
         }
 
         // Supabase DB check
-        const { data } = await _supabase.from('profiles').select('is_banned, ban_until, ban_reason, is_chat_banned, chat_ban_until, chat_ban_reason').eq('username', currentUser).maybeSingle();
+        const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
         if (data) {
             // Check Site Ban
             if (data.is_banned) {
@@ -783,14 +785,6 @@
 
     // MOD PANEL LOGIC
     let modUserCache = [];
-    function handleLogoClick() {
-        const pass = prompt("Enter Mod Password:");
-        if (pass === "asteroidMod2026") {
-            openModPanel();
-        } else if (pass !== null) {
-            alert("Incorrect password.");
-        }
-    }
 
     async function openModPanel() {
         document.getElementById('modModal').classList.add('active');
@@ -811,6 +805,7 @@
                 return {
                     username: p.username,
                     full_name: p.full_name,
+                    is_mod: p.is_mod,
                     is_banned: p.is_banned,
                     ban_until: p.ban_until,
                     is_chat_banned: p.is_chat_banned,
@@ -828,23 +823,39 @@
         body.innerHTML = users.map(u => {
             const isSiteBanned = u.is_banned && (!u.ban_until || new Date(u.ban_until) > new Date());
             const isChatBanned = u.is_chat_banned && (!u.chat_ban_until || new Date(u.chat_ban_until) > new Date());
+            const isAdmin = u.username === 'admin';
             
+            // Generate Action Buttons
+            let actions = `<div style="display: flex; gap: 5px;">`;
+            if (!isAdmin) {
+                actions += `
+                    <button class="btn ${isSiteBanned ? '' : 'btn-danger'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
+                        ${isSiteBanned ? 'Unban Site' : 'Ban Site'}
+                    </button>
+                    <button class="btn ${isChatBanned ? '' : 'btn-primary'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
+                        ${isChatBanned ? 'Lift Chat' : 'Suspend Chat'}
+                    </button>`;
+                
+                // Mod Management (Admin only)
+                if (currentUser === 'admin') {
+                    actions += `
+                    <button class="btn" style="padding: 5px 8px; font-size: 0.65rem; background:#6366f1;" onclick="handleModToggle('${u.username}', ${u.is_mod})">
+                        ${u.is_mod ? 'Revoke Mod' : 'Make Mod'}
+                    </button>`;
+                }
+            } else {
+                actions += `<span style="font-size:0.75rem; color:var(--accent);">Protected System User</span>`;
+            }
+            actions += `</div>`;
+
             return `
                 <tr>
                     <td>${u.username}</td>
                     <td>${u.minutes}m</td>
                     <td class="${isSiteBanned ? 'status-banned' : 'status-active'}">${isSiteBanned ? 'Banned' : 'Active'}</td>
                     <td class="${isChatBanned ? 'status-banned' : 'status-active'}">${isChatBanned ? 'Suspended' : 'Active'}</td>
-                    <td>
-                        <div style="display: flex; gap: 5px;">
-                            <button class="btn ${isSiteBanned ? '' : 'btn-danger'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
-                                ${isSiteBanned ? 'Unban Site' : 'Ban Site'}
-                            </button>
-                            <button class="btn ${isChatBanned ? '' : 'btn-primary'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
-                                ${isChatBanned ? 'Lift Chat' : 'Suspend Chat'}
-                            </button>
-                        </div>
-                    </td>
+                    <td><b style="color:${u.is_mod ? 'var(--accent)' : 'var(--text-muted)'}">${u.is_mod ? 'MODERATOR' : 'USER'}</b></td>
+                    <td>${actions}</td>
                 </tr>
             `;
         }).join('');
@@ -859,8 +870,20 @@
         renderModList(filtered);
     }
 
+    // TOGGLE MOD ROLE (ADMIN ONLY)
+    async function handleModToggle(user, currentStatus) {
+        if (currentUser !== 'admin') return alert("Only the admin account can manage moderators.");
+        const action = currentStatus ? "revoke moderator status from" : "grant moderator status to";
+        if (confirm(`Are you sure you want to ${action} ${user}?`)) {
+            const { error } = await _supabase.from('profiles').update({ is_mod: !currentStatus }).eq('username', user);
+            if (error) alert(error.message);
+            fetchModUsers();
+        }
+    }
+
     // MODERATING SITE BANS
     async function handleModBan(user, isCurrentlyBanned) {
+        if (user === 'admin') return alert("You cannot ban the system administrator.");
         if (isCurrentlyBanned) {
             if (confirm(`Unban ${user} from site?`)) {
                 const { error } = await _supabase.from('profiles').update({ is_banned: false, ban_until: null, ban_reason: null }).eq('username', user);
@@ -885,6 +908,7 @@
 
     // MODERATING CHAT SUSPENSIONS
     async function handleModChatBan(user, isCurrentlyBanned) {
+        if (user === 'admin') return alert("You cannot suspend the system administrator.");
         if (isCurrentlyBanned) {
             if (confirm(`Lift chat suspension for ${user}?`)) {
                 const { error } = await _supabase.from('profiles').update({ is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null }).eq('username', user);
@@ -1041,22 +1065,33 @@
         const ban = await checkActiveBan(true);
         if (ban === 'site') return;
 
-        const savedName = localStorage.getItem('asteroid_full_name');
-        const savedPfp = localStorage.getItem('asteroid_pfp');
+        // Remote fetch to check role
+        const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
         
-        document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
-        document.getElementById('pMenuName').textContent = savedName || currentUser;
-        
-        const navPfp = document.getElementById('navPfp');
-        const navInitial = document.getElementById('navInitial');
-        
-        if (savedPfp) {
-            navPfp.src = savedPfp;
-            navPfp.style.display = 'block';
-            navInitial.style.display = 'none';
-        } else {
-            navPfp.style.display = 'none';
-            navInitial.style.display = 'block';
+        if (data) {
+            if (data.is_mod || data.username === 'admin') {
+                document.getElementById('modNavBtn').style.display = 'block';
+                document.getElementById('pMenuStatus').textContent = data.username === 'admin' ? 'Owner' : 'Moderator';
+                document.getElementById('pMenuStatus').style.color = 'var(--accent)';
+            }
+            
+            const savedName = localStorage.getItem('asteroid_full_name') || data.full_name;
+            const savedPfp = localStorage.getItem('asteroid_pfp');
+            
+            document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
+            document.getElementById('pMenuName').textContent = savedName || currentUser;
+            
+            const navPfp = document.getElementById('navPfp');
+            const navInitial = document.getElementById('navInitial');
+            
+            if (savedPfp) {
+                navPfp.src = savedPfp;
+                navPfp.style.display = 'block';
+                navInitial.style.display = 'none';
+            } else {
+                navPfp.style.display = 'none';
+                navInitial.style.display = 'block';
+            }
         }
     }
 
