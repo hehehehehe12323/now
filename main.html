@@ -26,6 +26,7 @@
       --text-muted: #94a3b8;
       --glass: rgba(15, 23, 42, 0.8);
       --border: rgba(255, 255, 255, 0.1);
+      --gold: #f59e0b;
     }
 
     * { box-sizing: border-box; }
@@ -136,9 +137,10 @@
     .menu-header { display: flex; flex-direction: column; gap: 0.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); }
     .menu-name { font-weight: 800; font-size: 1.1rem; color: var(--text-main); }
     .menu-status { font-size: 0.75rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
-    .menu-stats { background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: 12px; }
-    .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
-    .stat-value { font-size: 1.1rem; font-weight: 800; color: var(--accent); display: block; }
+    .menu-stats { background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; line-height: 1;}
+    .stat-value { font-size: 1rem; font-weight: 800; color: var(--accent); display: block; }
+    .coin-value { color: var(--gold); }
     .menu-items { display: flex; flex-direction: column; gap: 0.5rem; }
     .menu-link { 
       padding: 0.6rem 0.8rem; border-radius: 10px; text-decoration: none; 
@@ -147,6 +149,37 @@
     }
     .menu-link:hover { background: rgba(255,255,255,0.05); }
     .menu-link.logout { color: #ef4444; }
+
+    /* ECONOMY & SHOP UI */
+    .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .shop-item { 
+      background: var(--bg-surface); padding: 1rem; border-radius: 16px; border: 1px solid var(--border); 
+      text-align: center; transition: all 0.2s; cursor: pointer; position: relative;
+    }
+    .shop-item:hover { transform: translateY(-3px); border-color: var(--gold); }
+    .shop-item.owned { opacity: 0.8; border-color: var(--accent); }
+    .shop-item.equipped { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
+    .item-preview { height: 40px; display: flex; align-items: center; justify-content: center; font-weight: 800; margin-bottom: 0.5rem; }
+    .item-price { font-size: 0.8rem; font-weight: 800; color: var(--gold); }
+    .name-sparkle { background: linear-gradient(90deg, #fff, #6366f1, #10b981, #fff); background-size: 200% auto; animation: shine 2s linear infinite; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    @keyframes shine { to { background-position: 200% center; } }
+
+    /* PERSONAL LIBRARY SECTION */
+    .personal-library { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
+    .personal-row { 
+      display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1rem; 
+      scrollbar-width: none; -ms-overflow-style: none;
+    }
+    .personal-row::-webkit-scrollbar { display: none; }
+    .lib-card { min-width: 180px; max-width: 180px; position: relative; }
+    .star-btn { 
+      position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.5); 
+      border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; 
+      justify-content: center; cursor: pointer; color: white; border: 1px solid var(--border);
+      transition: all 0.2s;
+    }
+    .star-btn:hover { transform: scale(1.1); background: rgba(0,0,0,0.8); }
+    .star-btn.active { color: var(--gold); border-color: var(--gold); }
 
     /* Settings Modal Styles */
     .modal-overlay {
@@ -622,6 +655,7 @@
       border: 1px solid var(--border);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
+      position: relative;
     }
 
     .game-card:hover {
@@ -786,10 +820,17 @@
             <span class="menu-status" id="pMenuStatus">Explorer</span>
           </div>
           <div class="menu-stats">
-            <span class="stat-label">Total Time Played</span>
-            <span class="stat-value" id="pMenuMins">0m</span>
+            <div>
+              <span class="stat-label">Playtime</span>
+              <span class="stat-value" id="pMenuMins">0m</span>
+            </div>
+            <div>
+              <span class="stat-label">Coins</span>
+              <span class="stat-value coin-value" id="pMenuCoins">0</span>
+            </div>
           </div>
           <div class="menu-items">
+            <a class="menu-link" onclick="openShop()">Asteroid Shop ✨</a>
             <a class="menu-link" onclick="location.reload()">Refresh Data</a>
             <a class="menu-link" onclick="openSettings()">Settings</a>
             <a href="https://asteroid-pixel.github.io" class="menu-link logout">Log Out</a>
@@ -798,6 +839,30 @@
       </div>
     </div>
   </nav>
+
+  <!-- Shop Modal -->
+  <div class="modal-overlay" id="shopModal">
+    <div class="modal-card" style="max-width: 600px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2>Asteroid Shop</h2>
+            <div style="font-weight: 800; color: var(--gold); background: rgba(245, 158, 11, 0.1); padding: 5px 15px; border-radius: 10px;">
+                Balance: <span id="shopBalance">0</span> 🪙
+            </div>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Purchase tags, colors, and styles to stand out in chat and leaderboards.</p>
+        
+        <div class="mod-tabs">
+            <button id="shopTabTags" class="mod-tab-btn active" onclick="switchShopTab('tags')">Chat Tags</button>
+            <button id="shopTabStyles" class="mod-tab-btn" onclick="switchShopTab('styles')">Styles & Colors</button>
+        </div>
+
+        <div id="shopGrid" class="shop-grid">
+            <!-- Items injected here -->
+        </div>
+
+        <button class="btn btn-danger" style="width: 100%; margin-top: 2rem;" onclick="closeShop()">Close Shop</button>
+    </div>
+  </div>
 
   <!-- Online List Modal (Staff Only) -->
   <div class="modal-overlay" id="onlineListModal">
@@ -844,7 +909,7 @@
 
         <!-- RAP SHEET OVERLAY -->
         <div id="userProfileOverlay">
-            <div style="display: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2 id="rapSheetName">User Name's Rap Sheet</h2>
                 <button class="btn" onclick="closeUserProfile()">Back to List</button>
             </div>
@@ -945,12 +1010,20 @@
   </div>
 
   <header class="hero">
-    <span class="version-badge">VERSION 1.6.8</span>
+    <span class="version-badge">VERSION 1.7.0</span>
     <h2>Your Library</h2>
     <p style="color: var(--text-muted); max-width: 600px; margin: 1.5rem auto;">
       Sync your data across devices and pick up where you left off.
     </p>
   </header>
+
+  <!-- PERSONAL ROW: FAVORITES & RECENT -->
+  <section id="personalLibrary" class="personal-library animate-in" style="display:none; margin-bottom: 3rem;">
+    <h3 style="letter-spacing: -1px; margin-bottom: 1rem;">My Space ✨</h3>
+    <div id="personalRow" class="personal-row">
+        <!-- Favorites and Recents go here -->
+    </div>
+  </section>
 
    <!-- Leaderboard Section at top of page -->
   <section id="leaderboardSection" class="animate-in">
@@ -1111,6 +1184,23 @@
     let isModUser = false;
     let modUsernames = new Set();
     let unreadCount = 0;
+    
+    // NEW ECONOMY DATA
+    let profileData = null;
+    const shopItems = {
+        tags: [
+            { id: 'tag_pro', name: '[PRO]', price: 50, type: 'tag' },
+            { id: 'tag_gamer', name: '[GAMER]', price: 50, type: 'tag' },
+            { id: 'tag_star', name: '[✨]', price: 100, type: 'tag' },
+            { id: 'tag_god', name: '[GODLY]', price: 500, type: 'tag' }
+        ],
+        styles: [
+            { id: 'color_blue', name: 'Cool Blue', price: 100, type: 'color', value: '#3b82f6' },
+            { id: 'color_rose', name: 'Rose Red', price: 150, type: 'color', value: '#f43f5e' },
+            { id: 'style_sparkle', name: 'Sparkly Name', price: 300, type: 'style', value: 'sparkle' },
+            { id: 'border_gold', name: 'Gold Border', price: 1000, type: 'border', value: 'gold' }
+        ]
+    };
 
     // Presence Variables
     let siteChannel = null;
@@ -1986,6 +2076,7 @@
         const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
         
         if (data) {
+            profileData = data;
             isModUser = data.is_mod || data.username === 'Derrick';
             
             if (isModUser) {
@@ -2003,6 +2094,7 @@
             document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
             document.getElementById('pMenuName').textContent = savedName || currentUser;
             document.getElementById('pMenuMins').textContent = (data.total_minutes || 0) + 'm';
+            document.getElementById('pMenuCoins').textContent = data.coins || 0;
 
             const navPfp = document.getElementById('navPfp');
             const navInitial = document.getElementById('navInitial');
@@ -2015,6 +2107,8 @@
                 navPfp.style.display = 'none';
                 navInitial.style.display = 'block';
             }
+
+            updatePersonalRow();
         }
         
         const { data: mods } = await _supabase.from('profiles').select('username, is_mod');
@@ -2071,6 +2165,115 @@
         document.getElementById('modApplyModal').classList.remove('active');
     }
 
+    // --- NEW SHOP LOGIC ---
+    function openShop() {
+        document.getElementById('shopModal').classList.add('active');
+        document.getElementById('shopBalance').textContent = profileData.coins || 0;
+        switchShopTab('tags');
+    }
+    function closeShop() { document.getElementById('shopModal').classList.remove('active'); }
+
+    function switchShopTab(tab) {
+        document.getElementById('shopTabTags').classList.toggle('active', tab === 'tags');
+        document.getElementById('shopTabStyles').classList.toggle('active', tab === 'styles');
+        renderShopItems(tab);
+    }
+
+    function renderShopItems(type) {
+        const grid = document.getElementById('shopGrid');
+        const items = type === 'tags' ? shopItems.tags : shopItems.styles;
+        const inventory = profileData.inventory || [];
+        grid.innerHTML = items.map(item => {
+            const isOwned = inventory.includes(item.id);
+            const isEquipped = profileData.selected_tag === item.name || 
+                               profileData.name_color === item.value || 
+                               profileData.name_style === item.value ||
+                               profileData.leaderboard_border === item.value;
+
+            return `
+                <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}" onclick="handleItemAction('${item.id}', ${isOwned})">
+                    <div class="item-preview">${item.name}</div>
+                    <div class="item-price">${isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : item.price + ' 🪙'}</div>
+                </div>`;
+        }).join('');
+    }
+
+    async function handleItemAction(itemId, isOwned) {
+        const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
+        if (!item) return;
+
+        if (isOwned) {
+            let update = {};
+            if (item.type === 'tag') update.selected_tag = item.name;
+            if (item.type === 'color') update.name_color = item.value;
+            if (item.type === 'style') update.name_style = item.value;
+            if (item.type === 'border') update.leaderboard_border = item.value;
+
+            const { error } = await _supabase.from('profiles').update(update).eq('username', currentUser);
+            if (!error) { await loadProfile(); renderShopItems(item.type === 'tag' ? 'tags' : 'styles'); }
+        } else {
+            if (profileData.coins < item.price) return alert("Not enough coins!");
+            if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
+                const newCoins = profileData.coins - item.price;
+                const newInv = [...(profileData.inventory || []), item.id];
+                const { error } = await _supabase.from('profiles').update({ coins: newCoins, inventory: newInv }).eq('username', currentUser);
+                if (!error) { await loadProfile(); document.getElementById('shopBalance').textContent = profileData.coins; renderShopItems(item.type === 'tag' ? 'tags' : 'styles'); }
+            }
+        }
+    }
+
+    // --- FAVORITES & RECENT ---
+    async function toggleFavorite(gameId) {
+        event.stopPropagation();
+        let favs = profileData.favorites || [];
+        if (favs.includes(gameId)) favs = favs.filter(id => id !== gameId);
+        else favs.push(gameId);
+
+        const { error } = await _supabase.from('profiles').update({ favorites: favs }).eq('username', currentUser);
+        if (!error) {
+            await loadProfile();
+            updatePersonalRow();
+            displayZones(zones.filter(z => z.name.toLowerCase().includes(searchBar.value.toLowerCase()))); 
+        }
+    }
+
+    async function trackRecent(gameId) {
+        let recent = profileData.recently_played || [];
+        recent = [gameId, ...recent.filter(id => id !== gameId)].slice(0, 4);
+        await _supabase.from('profiles').update({ recently_played: recent }).eq('username', currentUser);
+        loadProfile();
+    }
+
+    function updatePersonalRow() {
+        if (!profileData || !zones.length) return;
+        const row = document.getElementById('personalRow');
+        const section = document.getElementById('personalLibrary');
+        const favIds = profileData.favorites || [];
+        const recentIds = profileData.recently_played || [];
+        const personalIds = [...new Set([...favIds, ...recentIds])];
+
+        if (personalIds.length === 0) { section.style.display = 'none'; return; }
+        section.style.display = 'block';
+
+        const myGames = zones.filter(z => personalIds.includes(z.id));
+        myGames.sort((a,b) => {
+            const aFav = favIds.includes(a.id);
+            const bFav = favIds.includes(b.id);
+            if (aFav && !bFav) return -1;
+            if (!aFav && bFav) return 1;
+            return 0;
+        });
+
+        row.innerHTML = myGames.map(game => `
+            <div class="lib-card animate-in">
+                <div class="star-btn ${favIds.includes(game.id) ? 'active' : ''}" onclick="toggleFavorite(${game.id})">★</div>
+                <div class="game-card" onclick="openZone(${JSON.stringify(game).replace(/"/g, '&quot;')})">
+                    <img src="${game.cover.replace("{COVER_URL}", coverURL)}">
+                    <div class="game-info"><h3>${game.name}</h3></div>
+                </div>
+            </div>`).join('');
+    }
+
     window.addEventListener('click', (e) => {
         if (!e.target.closest('.profile-container')) document.getElementById('profileMenu').classList.remove('active');
         if (!e.target.closest('.chat-tools-container')) document.getElementById('toolsMenu').classList.remove('active');
@@ -2078,6 +2281,7 @@
         if (e.target.id === 'modModal') closeModPanel();
         if (e.target.id === 'modApplyModal') closeModApply();
         if (e.target.id === 'onlineListModal') closeOnlineList();
+        if (e.target.id === 'shopModal') closeShop();
     });
 
     loadProfile();
@@ -2093,10 +2297,15 @@
       const { data } = await _supabase.from('leaderboard').select('minutes').eq('username', currentUser).maybeSingle();
       const nextMins = (data ? data.minutes : 0) + 1;
       
-      const { data: profData } = await _supabase.from('profiles').select('total_minutes').eq('username', currentUser).maybeSingle();
+      const { data: profData } = await _supabase.from('profiles').select('total_minutes, coins').eq('username', currentUser).maybeSingle();
       const nextTotal = (profData ? (profData.total_minutes || 0) : 0) + 1;
       
+      // COIN ECONOMY
+      let newCoins = profData ? (profData.coins || 0) : 0;
+      if (nextTotal % 10 === 0) newCoins += 10;
+
       document.getElementById('pMenuMins').textContent = nextTotal + 'm';
+      document.getElementById('pMenuCoins').textContent = newCoins;
 
       await _supabase.from('leaderboard').upsert({ 
         username: currentUser, 
@@ -2104,7 +2313,7 @@
         updated_at: new Date().toISOString()
       }, { onConflict: 'username' });
 
-      await _supabase.from('profiles').update({ total_minutes: nextTotal }).eq('username', currentUser);
+      await _supabase.from('profiles').update({ total_minutes: nextTotal, coins: newCoins }).eq('username', currentUser);
     }
 
     async function fetchLeaderboard() {
@@ -2197,16 +2406,21 @@
       
       displayZones(zones);
       displayGameOfTheDay();
+      updatePersonalRow();
     }
 
     function displayZones(zonesToDisplay) {
       container.innerHTML = "";
+      const favIds = profileData ? (profileData.favorites || []) : [];
       zonesToDisplay.forEach((game, index) => {
         const card = document.createElement("div");
         card.className = "game-card animate-in";
         card.style.animationDelay = `${index * 0.02}s`;
-        card.onclick = () => openZone(game);
-        card.innerHTML = `<img src="${game.cover.replace("{COVER_URL}", coverURL)}"><div class="game-info"><h3>${game.name}</h3></div>`;
+        card.onclick = () => { trackRecent(game.id); openZone(game); };
+        card.innerHTML = `
+            <div class="star-btn ${favIds.includes(game.id) ? 'active' : ''}" style="top:5px; right:5px; width:25px; height:25px; font-size:12px;" onclick="toggleFavorite(${game.id})">★</div>
+            <img src="${game.cover.replace("{COVER_URL}", coverURL)}">
+            <div class="game-info"><h3>${game.name}</h3></div>`;
         container.appendChild(card);
       });
       document.getElementById("zoneCount").textContent = `${zonesToDisplay.length} Games Available`;
@@ -2223,7 +2437,7 @@
             <p style="color: var(--text-muted); margin: 0;">Hand-picked for you today.</p>
           </div>
         `;
-        featuredContainer.onclick = () => openZone(game);
+        featuredContainer.onclick = () => { trackRecent(game.id); openZone(game); };
       }
     }
 
