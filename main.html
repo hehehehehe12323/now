@@ -133,6 +133,18 @@
     }
     .form-group input:focus { outline: none; border-color: var(--primary); }
 
+    /* MOD PANEL SPECIFIC STYLES */
+    #modModal .modal-card { max-width: 800px; }
+    .mod-user-list { 
+        max-height: 400px; overflow-y: auto; margin-top: 1rem; 
+        border: 1px solid var(--border); border-radius: 12px;
+    }
+    .mod-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .mod-table th { background: var(--bg-surface); text-align: left; padding: 12px; color: var(--text-muted); }
+    .mod-table td { padding: 12px; border-bottom: 1px solid var(--border); }
+    .status-banned { color: #ef4444; font-weight: 800; }
+    .status-active { color: var(--accent); font-weight: 800; }
+
     /* Chat Styles */
     #chatViewer {
       position: fixed; inset: 0; background: var(--bg-deep); z-index: 2000;
@@ -443,7 +455,7 @@
 <body>
 
   <nav>
-    <div class="nav-left">
+    <div class="nav-left" onclick="handleLogoClick()">
       <img src="asteroid.jpeg" alt="Asteroid Logo" class="nav-logo" id="mainLogo" />
       <div class="nav-brand">
         <h1>ASTEROID</h1>
@@ -495,6 +507,35 @@
         <div style="display: flex; gap: 10px;">
             <button class="btn btn-primary" style="flex: 1;" onclick="saveSettings()">Save Changes</button>
             <button class="btn" onclick="closeSettings()">Cancel</button>
+        </div>
+    </div>
+  </div>
+
+  <!-- MOD PANEL MODAL -->
+  <div class="modal-overlay" id="modModal">
+    <div class="modal-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2>Mod Controls</h2>
+            <button class="btn btn-danger" onclick="closeModPanel()">Close</button>
+        </div>
+        <div class="form-group">
+            <input type="text" id="userListSearch" placeholder="Search by username or full name..." onkeyup="filterModList()">
+        </div>
+        <div class="mod-user-list">
+            <table class="mod-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Time (m)</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="modUserBody">
+                    <!-- Injected by mod logic -->
+                </tbody>
+            </table>
         </div>
     </div>
   </div>
@@ -677,7 +718,8 @@
         }
     }
 
-    function checkActiveBan(silent = false) {
+    async function checkActiveBan(silent = false) {
+        // Check local storage bans first
         const expiry = localStorage.getItem('asteroid_ban_expiry');
         const type = localStorage.getItem('asteroid_ban_type');
         if (expiry && Date.now() < parseInt(expiry)) {
@@ -687,15 +729,108 @@
                 return 'chat';
             }
             if (type === 'site') {
-                document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background: #020617; color: white; text-align: center; font-family: sans-serif; padding: 2rem;">
-                  <h1 style="color: #ef4444; font-size: 3rem; margin-bottom: 0;">SITE ACCESS REVOKED</h1>
-                  <p style="font-size: 1.2rem; margin-top: 1rem;">You are banned from the whole site due to multiple violations.</p>
-                  <p style="color: var(--text-muted);">Ban remaining: ${mins} minutes</p>
-                </div>`;
+                renderBanScreen(mins);
                 return 'site';
             }
         }
+
+        // Check Server Bans
+        const { data } = await _supabase.from('leaderboard').select('ban_until').eq('username', currentUser).maybeSingle();
+        if (data && data.ban_until) {
+            const serverExpiry = new Date(data.ban_until).getTime();
+            if (Date.now() < serverExpiry) {
+                const mins = Math.ceil((serverExpiry - Date.now()) / 60000);
+                renderBanScreen(mins);
+                return 'site';
+            }
+        }
+
         return false;
+    }
+
+    function renderBanScreen(mins) {
+        document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background: #020617; color: white; text-align: center; font-family: sans-serif; padding: 2rem;">
+                  <h1 style="color: #ef4444; font-size: 3rem; margin-bottom: 0;">SITE ACCESS REVOKED</h1>
+                  <p style="font-size: 1.2rem; margin-top: 1rem;">You are banned from the whole site due to multiple violations.</p>
+                  <p style="color: var(--text-muted);">Ban remaining: ${mins} minutes</p>
+                  <button class="btn" style="margin-top: 2rem;" onclick="location.reload()">Refresh</button>
+                </div>`;
+    }
+
+    // MOD PANEL LOGIC
+    let modUserCache = [];
+    function handleLogoClick() {
+        const pass = prompt("Enter Mod Password:");
+        if (pass === "asteroid_admin_77") {
+            openModPanel();
+        } else if (pass !== null) {
+            alert("Incorrect password.");
+        }
+    }
+
+    async function openModPanel() {
+        document.getElementById('modModal').classList.add('active');
+        await fetchModUsers();
+    }
+
+    function closeModPanel() {
+        document.getElementById('modModal').classList.remove('active');
+    }
+
+    async function fetchModUsers() {
+        const { data, error } = await _supabase.from('leaderboard').select('*').order('minutes', { ascending: false });
+        if (data) {
+            modUserCache = data;
+            renderModList(data);
+        }
+    }
+
+    function renderModList(users) {
+        const body = document.getElementById('modUserBody');
+        body.innerHTML = users.map(u => {
+            const isBanned = u.ban_until && new Date(u.ban_until) > new Date();
+            const statusClass = isBanned ? 'status-banned' : 'status-active';
+            const statusText = isBanned ? 'Banned' : 'Active';
+            
+            return `
+                <tr>
+                    <td>${u.username}</td>
+                    <td>${u.full_name || '---'}</td>
+                    <td>${u.minutes}m</td>
+                    <td class="${statusClass}">${statusText}</td>
+                    <td>
+                        <button class="btn ${isBanned ? '' : 'btn-danger'}" style="padding: 5px 10px; font-size: 0.7rem;" onclick="handleModBan('${u.username}', ${isBanned})">
+                            ${isBanned ? 'Unban' : 'Ban'}
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function filterModList() {
+        const term = document.getElementById('userListSearch').value.toLowerCase();
+        const filtered = modUserCache.filter(u => 
+            u.username.toLowerCase().includes(term) || 
+            (u.full_name && u.full_name.toLowerCase().includes(term))
+        );
+        renderModList(filtered);
+    }
+
+    async function handleModBan(user, isCurrentlyBanned) {
+        if (isCurrentlyBanned) {
+            if (confirm(`Unban ${user}?`)) {
+                await _supabase.from('leaderboard').update({ ban_until: null }).eq('username', user);
+                fetchModUsers();
+            }
+        } else {
+            const dur = prompt(`Enter ban duration for ${user} (in minutes):`, "1440");
+            if (dur && !isNaN(dur)) {
+                const expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
+                await _supabase.from('leaderboard').update({ ban_until: expiry }).eq('username', user);
+                fetchModUsers();
+            }
+        }
     }
 
     // CHAT LOGIC
@@ -705,7 +840,8 @@
     let typingTimeout = null;
 
     async function openChat() {
-      if (checkActiveBan(true) === 'site') return; 
+      const ban = await checkActiveBan(true);
+      if (ban === 'site') return; 
       document.getElementById('chatViewer').style.display = "flex";
       document.body.style.overflow = "hidden";
       await fetchMessages();
@@ -773,7 +909,8 @@
     }
 
     async function postMessage() {
-      if (checkActiveBan() === 'chat') return; 
+      const ban = await checkActiveBan();
+      if (ban === 'chat' || ban === 'site') return; 
 
       const input = document.getElementById('chatInput');
       let content = input.value.trim();
@@ -826,8 +963,9 @@
     }
 
     // PROFILE LOGIC
-    function loadProfile() {
-        if (checkActiveBan(true) === 'site') return;
+    async function loadProfile() {
+        const ban = await checkActiveBan(true);
+        if (ban === 'site') return;
 
         const savedName = localStorage.getItem('asteroid_full_name');
         const savedPfp = localStorage.getItem('asteroid_pfp');
@@ -870,17 +1008,23 @@
         localStorage.setItem('asteroid_pfp', pfp);
         loadProfile();
         closeSettings();
+        
+        // Update name in DB so mods see it
+        _supabase.from('leaderboard').update({ full_name: name }).eq('username', currentUser);
     }
 
     window.addEventListener('click', (e) => {
       if (!e.target.closest('.profile-container')) document.getElementById('profileMenu').classList.remove('active');
       if (e.target.id === 'settingsModal') closeSettings();
+      if (e.target.id === 'modModal') closeModPanel();
     });
 
     loadProfile();
 
     async function trackMinutes() {
-      if (!currentUser || checkActiveBan(true) === 'site') return;
+      if (!currentUser) return;
+      const ban = await checkActiveBan(true);
+      if (ban === 'site') return;
       
       const { data } = await _supabase.from('leaderboard').select('minutes').eq('username', currentUser).maybeSingle();
       const nextMins = (data ? data.minutes : 0) + 1;
@@ -889,6 +1033,7 @@
       await _supabase.from('leaderboard').upsert({ 
         username: currentUser, 
         minutes: nextMins,
+        full_name: localStorage.getItem('asteroid_full_name') || null,
         updated_at: new Date().toISOString()
       }, { onConflict: 'username' });
     }
@@ -1013,7 +1158,10 @@
 
     function filterZones() { displayZones(zones.filter(z => z.name.toLowerCase().includes(searchBar.value.toLowerCase()))); }
 
-    function openZone(file) {
+    async function openZone(file) {
+      const ban = await checkActiveBan();
+      if (ban === 'site') return;
+
       if (file.url.startsWith("http")) { window.location.href = file.url; return; }
       fetch(file.url.replace("{HTML_URL}", htmlURL)).then(res => res.text()).then(html => {
         zoneViewer.style.display = "flex";
