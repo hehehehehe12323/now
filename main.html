@@ -1033,6 +1033,7 @@
     let currentUser = null; 
     let isModUser = false;
     let modUsernames = new Set();
+    let unreadCount = 0;
 
     if (retrievedLogin) {
       try {
@@ -1394,7 +1395,58 @@
     let chatChannel = null;
     let staffChannelSub = null;
     let typingTimeout = null;
-    let unreadCount = 0;
+
+    // PERSISTENT NOTIFICATION LOGIC
+    function updateLastSeen() {
+        const all = activeChannel === 'global' ? allMessages : staffMessages;
+        if (all.length > 0) {
+            const newest = all[all.length - 1];
+            if (newest && newest.created_at) {
+                localStorage.setItem(`asteroid_last_seen_${activeChannel}`, newest.created_at);
+            }
+        }
+    }
+
+    async function checkMissedMessages() {
+        const lastGlobal = localStorage.getItem('asteroid_last_seen_global') || new Date(0).toISOString();
+        const lastStaff = localStorage.getItem('asteroid_last_seen_staff') || new Date(0).toISOString();
+
+        // Check Global Room
+        const { data: globalMissed } = await _supabase.from('messages')
+            .select('content, username, created_at')
+            .or(`recipient.is.null,recipient.eq.${currentUser},username.eq.${currentUser}`)
+            .gt('created_at', lastGlobal)
+            .neq('username', currentUser);
+        
+        let staffMissed = [];
+        if (isModUser) {
+            const { data } = await _supabase.from('staff_messages')
+                .select('content, username, created_at')
+                .gt('created_at', lastStaff)
+                .neq('username', currentUser);
+            staffMissed = data || [];
+        }
+
+        const combined = (globalMissed || []).concat(staffMissed);
+        if (combined.length > 0) {
+            unreadCount = combined.length;
+            const badge = document.getElementById('unreadBadge');
+            let hasMention = false;
+            
+            combined.forEach(msg => {
+                const lower = (msg.content || "").toLowerCase();
+                if (lower.includes(`@${currentUser.toLowerCase()}`) || 
+                    (lower.includes("@admin") && currentUser === 'Derrick') ||
+                    (lower.includes("@staff") && isModUser) ||
+                    (lower.includes("@mod") && isModUser)) {
+                    hasMention = true;
+                }
+            });
+
+            badge.innerText = hasMention ? "@" : unreadCount;
+            badge.style.display = "inline-block";
+        }
+    }
 
     async function openChat() {
       const ban = await checkActiveBan(true);
@@ -1432,6 +1484,7 @@
     }
 
     function closeChat() {
+      updateLastSeen();
       document.getElementById('chatViewer').style.display = "none";
       document.body.style.overflow = "auto";
     }
@@ -1445,6 +1498,7 @@
       if (data) {
         allMessages = data;
         renderMessages();
+        updateLastSeen();
       }
     }
 
@@ -1454,13 +1508,11 @@
             .order('created_at', { ascending: true })
             .limit(100);
         if (data) {
-            // MERGE Logic: Don't overwrite new messages from realtime
             const existingIds = new Set(staffMessages.map(m => m.id));
             const newFetchedData = data.filter(m => !existingIds.has(m.id));
             staffMessages = [...newFetchedData, ...staffMessages].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
             renderMessages();
-        } else if (error) {
-            console.error("Staff access denied.");
+            updateLastSeen();
         }
     }
 
@@ -1559,7 +1611,6 @@
       if (!content) return;
 
       const fuzzyText = getFuzzyText(content);
-      // FIXED: corrected 'sensor' typo to 'censor'
       const isBlocked = (activeChannel === 'global') && window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
 
       if (isBlocked) {
@@ -1594,27 +1645,28 @@
           if (payload.eventType === 'INSERT') {
             const msg = payload.new;
             if (!msg.recipient || msg.recipient === currentUser || msg.username === currentUser) {
-                // Duplicate prevention
                 if (!allMessages.find(m => m.id === msg.id)) {
                     allMessages.push(msg);
                 }
-                if (msg.username !== currentUser && (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'global')) {
-                    unreadCount++;
-                    const badge = document.getElementById('unreadBadge');
-                    
-                    // Tagging Logic
-                    const lowerContent = (msg.content || "").toLowerCase();
-                    const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
-                                     (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
-                                     (lowerContent.includes("@staff") && isModUser) ||
-                                     (lowerContent.includes("@mod") && isModUser);
+                if (msg.username !== currentUser) {
+                    if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'global') {
+                      unreadCount++;
+                      const badge = document.getElementById('unreadBadge');
+                      const lowerContent = (msg.content || "").toLowerCase();
+                      const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
+                                      (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
+                                      (lowerContent.includes("@staff") && isModUser) ||
+                                      (lowerContent.includes("@mod") && isModUser);
 
-                    if (isTagged || badge.innerText === "@") {
-                        badge.innerText = "@";
+                      if (isTagged || badge.innerText === "@") {
+                          badge.innerText = "@";
+                      } else {
+                          badge.innerText = unreadCount;
+                      }
+                      badge.style.display = "inline-block";
                     } else {
-                        badge.innerText = unreadCount;
+                      updateLastSeen();
                     }
-                    badge.style.display = "inline-block";
                 }
             }
           } else if (payload.eventType === 'DELETE') {
@@ -1642,24 +1694,25 @@
         staffChannelSub = _supabase.channel('staff_chat_room')
             .on('postgres_changes', { event: '*', table: 'staff_messages', schema: 'public' }, payload => {
                 if (payload.eventType === 'INSERT') {
-                    // Duplicate prevention
                     if (!staffMessages.find(m => m.id === payload.new.id)) {
                         staffMessages.push(payload.new);
                     }
-                    
-                    // Tagging Logic for Staff room
                     const msg = payload.new;
-                    if (msg.username !== currentUser && (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'staff')) {
-                        const badge = document.getElementById('unreadBadge');
-                        const lowerContent = (msg.content || "").toLowerCase();
-                        const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
-                                         (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
-                                         (lowerContent.includes("@staff") && isModUser) ||
-                                         (lowerContent.includes("@mod") && isModUser);
-                        
-                        if (isTagged) {
-                            badge.innerText = "@";
-                            badge.style.display = "inline-block";
+                    if (msg.username !== currentUser) {
+                        if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'staff') {
+                          const badge = document.getElementById('unreadBadge');
+                          const lowerContent = (msg.content || "").toLowerCase();
+                          const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
+                                          (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
+                                          (lowerContent.includes("@staff") && isModUser) ||
+                                          (lowerContent.includes("@mod") && isModUser);
+                          
+                          if (isTagged) {
+                              badge.innerText = "@";
+                              badge.style.display = "inline-block";
+                          }
+                        } else {
+                          updateLastSeen();
                         }
                     }
                 } else if (payload.eventType === 'DELETE') {
@@ -1684,8 +1737,6 @@
                 if (user.username === currentUser) {
                     isModUser = user.is_mod || user.username === 'Derrick';
                     document.getElementById('modNavBtn').style.display = isModUser ? 'block' : 'none';
-                    
-                    // FIXED: Immediate visibility check for chat channels
                     const bar = document.getElementById('chatChannelBar');
                     if (bar) bar.style.display = isModUser ? 'flex' : 'none';
 
@@ -1778,8 +1829,6 @@
             
             document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
             document.getElementById('pMenuName').textContent = savedName || currentUser;
-            
-            // Set initial total minutes
             document.getElementById('pMenuMins').textContent = (data.total_minutes || 0) + 'm';
 
             const navPfp = document.getElementById('navPfp');
@@ -1802,6 +1851,8 @@
             });
             fetchLeaderboard();
         }
+
+        checkMissedMessages();
     }
 
     function toggleProfileMenu() {
