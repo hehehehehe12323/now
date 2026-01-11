@@ -822,7 +822,7 @@
         if (profiles) {
             modUsernames.clear();
             modUserCache = profiles.map(p => {
-                if (p.is_mod || p.username === 'admin') modUsernames.add(p.username);
+                if (p.is_mod || p.username === 'Derrick') modUsernames.add(p.username);
                 const lb = (leaderboard || []).find(l => l.username === p.username);
                 return {
                     username: p.username,
@@ -845,7 +845,7 @@
         body.innerHTML = users.map(u => {
             const isSiteBanned = u.is_banned && (!u.ban_until || new Date(u.ban_until) > new Date());
             const isChatBanned = u.is_chat_banned && (!u.chat_ban_until || new Date(u.chat_ban_until) > new Date());
-            const isAdmin = u.username === 'admin';
+            const isAdmin = u.username === 'Derrick';
             
             // Generate Action Buttons
             let actions = `<div style="display: flex; gap: 5px;">`;
@@ -859,7 +859,7 @@
                     </button>`;
                 
                 // Mod Management (Admin only)
-                if (currentUser === 'admin') {
+                if (currentUser === 'Derrick') {
                     actions += `
                     <button class="btn" style="padding: 5px 8px; font-size: 0.65rem; background:#6366f1;" onclick="handleModToggle('${u.username}', ${u.is_mod})">
                         ${u.is_mod ? 'Revoke Mod' : 'Make Mod'}
@@ -876,7 +876,7 @@
                     <td>${u.minutes}m</td>
                     <td class="${isSiteBanned ? 'status-banned' : 'status-active'}">${isSiteBanned ? 'Banned' : 'Active'}</td>
                     <td class="${isChatBanned ? 'status-banned' : 'status-active'}">${isChatBanned ? 'Suspended' : 'Active'}</td>
-                    <td><b style="color:${u.is_mod ? 'var(--accent)' : 'var(--text-muted)'}">${u.is_mod ? 'MODERATOR' : 'USER'}</b></td>
+                    <td><b style="color:${(u.is_mod || isAdmin) ? 'var(--accent)' : 'var(--text-muted)'}">${isAdmin ? 'ADMIN' : (u.is_mod ? 'MODERATOR' : 'USER')}</b></td>
                     <td>${actions}</td>
                 </tr>
             `;
@@ -894,7 +894,7 @@
 
     // TOGGLE MOD ROLE (ADMIN ONLY)
     async function handleModToggle(user, currentStatus) {
-        if (currentUser !== 'admin') return alert("Only the admin account can manage moderators.");
+        if (currentUser !== 'Derrick') return alert("Only the admin account can manage moderators.");
         const action = currentStatus ? "revoke moderator status from" : "grant moderator status to";
         if (confirm(`Are you sure you want to ${action} ${user}?`)) {
             const { error } = await _supabase.from('profiles').update({ is_mod: !currentStatus }).eq('username', user);
@@ -905,7 +905,7 @@
 
     // MODERATING SITE BANS
     async function handleModBan(user, isCurrentlyBanned) {
-        if (user === 'admin') return alert("You cannot ban the system administrator.");
+        if (user === 'Derrick') return alert("You cannot ban the system administrator.");
         if (isCurrentlyBanned) {
             if (confirm(`Unban ${user} from site?`)) {
                 const { error } = await _supabase.from('profiles').update({ is_banned: false, ban_until: null, ban_reason: null }).eq('username', user);
@@ -930,7 +930,7 @@
 
     // MODERATING CHAT SUSPENSIONS
     async function handleModChatBan(user, isCurrentlyBanned) {
-        if (user === 'admin') return alert("You cannot suspend the system administrator.");
+        if (user === 'Derrick') return alert("You cannot suspend the system administrator.");
         if (isCurrentlyBanned) {
             if (confirm(`Lift chat suspension for ${user}?`)) {
                 const { error } = await _supabase.from('profiles').update({ is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null }).eq('username', user);
@@ -989,6 +989,7 @@
     }
 
     async function deleteMessage(id) {
+        if (!isModUser) return; // Defensive check
         if (!confirm("Delete this message permanently?")) return;
         const { error } = await _supabase.from('messages').delete().eq('id', id);
         if (error) alert(error.message);
@@ -1002,13 +1003,16 @@
         const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const parentMsg = msg.parent_id ? allMessages.find(m => m.id === msg.parent_id) : null;
         const isPM = msg.recipient !== null;
-        const isModSender = modUsernames.has(msg.username);
+        
+        const isAdminSender = msg.username === 'Derrick';
+        const isModSender = modUsernames.has(msg.username) && !isAdminSender;
         
         return `
           <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''}">
             <div class="msg-header">
               <span class="msg-user">
                 ${msg.username} 
+                ${isAdminSender ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
                 ${isModSender ? '<span class="mod-badge">MOD</span>' : ''}
                 ${isPM ? `<small style="color:#f59e0b; margin-left:5px;">(Private to ${msg.recipient === currentUser ? 'You' : msg.recipient})</small>` : ''}
               </span>
@@ -1019,7 +1023,7 @@
             <div class="msg-footer">
                 <span class="msg-link" onclick="setReply(${msg.id}, '${msg.username}')">Reply</span>
                 ${(isModUser && !isOwn) ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
-                ${(isModUser || isOwn) ? `<span class="msg-link delete" onclick="deleteMessage(${msg.id})">Delete</span>` : ''}
+                ${isModUser ? `<span class="msg-link delete" onclick="deleteMessage(${msg.id})">Delete</span>` : ''}
             </div>
           </div>
         `;
@@ -1131,11 +1135,11 @@
         const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
         
         if (data) {
-            isModUser = data.is_mod || data.username === 'admin';
+            isModUser = data.is_mod || data.username === 'Derrick';
             
             if (isModUser) {
                 document.getElementById('modNavBtn').style.display = 'block';
-                document.getElementById('pMenuStatus').textContent = data.username === 'admin' ? 'Owner' : 'Moderator';
+                document.getElementById('pMenuStatus').textContent = data.username === 'Derrick' ? 'Admin' : 'Moderator';
                 document.getElementById('pMenuStatus').style.color = 'var(--accent)';
             }
             
@@ -1159,8 +1163,12 @@
         }
         
         // Initial mod list fetch for badges
-        const { data: mods } = await _supabase.from('profiles').select('username').or('is_mod.eq.true,username.eq.admin');
-        if (mods) mods.forEach(m => modUsernames.add(m.username));
+        const { data: mods } = await _supabase.from('profiles').select('username, is_mod');
+        if (mods) {
+            mods.forEach(m => {
+                if(m.is_mod || m.username === 'Derrick') modUsernames.add(m.username);
+            });
+        }
     }
 
     function toggleProfileMenu() {
@@ -1229,7 +1237,9 @@
         body.innerHTML = data.map((entry, index) => {
             let rowName = entry.username;
             const isMe = (rowName === currentUser);
-            const isRowMod = entry.profiles?.is_mod || rowName === 'admin';
+            
+            const isRowAdmin = rowName === 'Derrick';
+            const isRowMod = entry.profiles?.is_mod && !isRowAdmin;
 
             return `
               <tr class="${isMe ? 'current-user' : ''}">
@@ -1237,6 +1247,7 @@
                 <td class="user-cell">
                     ${rowName} 
                     ${isMe ? '<small>(You)</small>' : ''} 
+                    ${isRowAdmin ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
                     ${isRowMod ? '<span class="mod-badge">MOD</span>' : ''}
                 </td>
                 <td class="mins-cell">${entry.minutes}m</td>
