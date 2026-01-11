@@ -29,7 +29,9 @@
       --gold: #f59e0b;
     }
 
-    * { box-sizing: border-box; }
+    * { 
+      box-sizing: border-box; 
+    }
 
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
@@ -44,7 +46,7 @@
       overflow-x: hidden;
     }
 
-    /* Navbar */
+    /* Navbar Styles */
     nav {
       position: sticky;
       top: 0;
@@ -58,7 +60,12 @@
       align-items: center;
     }
 
-    .nav-left { display: flex; align-items: center; gap: 1rem; }
+    .nav-left { 
+      display: flex; 
+      align-items: center; 
+      gap: 1rem; 
+    }
+
     .nav-logo {
       width: 42px;
       height: 42px;
@@ -66,7 +73,10 @@
       cursor: pointer;
       transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
-    .nav-logo:hover { transform: scale(1.1) rotate(5deg); }
+
+    .nav-logo:hover { 
+      transform: scale(1.1) rotate(5deg); 
+    }
     
     .nav-brand h1 {
       font-size: 1.25rem;
@@ -78,9 +88,13 @@
       -webkit-text-fill-color: transparent;
     }
 
-    .nav-right { display: flex; gap: 0.75rem; align-items: center; }
+    .nav-right { 
+      display: flex; 
+      gap: 0.75rem; 
+      align-items: center; 
+    }
 
-    /* Badges */
+    /* Badge & Tag Styles */
     .mod-badge {
         background: var(--accent);
         color: white;
@@ -94,7 +108,6 @@
         letter-spacing: 0.5px;
     }
 
-    /* Online Stats Style */
     .online-stats {
         font-size: 0.65rem;
         font-weight: 800;
@@ -111,148 +124,489 @@
         align-items: center;
         gap: 8px;
     }
-    .online-stats.staff-clickable { cursor: pointer; }
-    .online-stats.staff-clickable:hover { background: var(--border); color: var(--text-main); }
 
-    /* PROFILE STYLES */
-    .profile-container { position: relative; }
-    .profile-trigger {
-      width: 42px; height: 42px; border-radius: 50%;
-      background: var(--primary); display: flex; align-items: center;
-      justify-content: center; cursor: pointer; border: 2px solid var(--border);
-      transition: all 0.2s; overflow: hidden;
+    .online-stats.staff-clickable { 
+      cursor: pointer; 
     }
-    .profile-trigger:hover { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
-    .profile-trigger img { width: 100%; height: 100%; object-fit: cover; display: none; }
-    .profile-initial { font-weight: 800; font-size: 1.1rem; color: white; }
+
+    .online-stats.staff-clickable:hover { 
+      background: var(--border); 
+      color: var(--text-main); 
+    }
+
+    /* Profile UI */
+    .profile-container { 
+      position: relative; 
+    }
+
+    .profile-trigger {
+      width: 42px; 
+      height: 42px; 
+      border-radius: 50%;
+      background: var(--primary); 
+      display: flex; 
+      align-items: center;
+      justify-content: center; 
+      cursor: pointer; 
+      border: 2px solid var(--border);
+      transition: all 0.2s; 
+      overflow: hidden;
+    }
+
+    .profile-trigger:hover { 
+      border-color: var(--primary); 
+      box-shadow: 0 0 15px var(--primary-glow); 
+    }
+
+    .profile-trigger img { 
+      width: 100%; 
+      height: 100%; 
+      object-fit: cover; 
+      display: none; 
+    }
+
+    .profile-initial { 
+      font-weight: 800; 
+      font-size: 1.1rem; 
+      color: white; 
+    }
     
     .profile-menu {
-      position: absolute; top: 130%; right: 0; width: 260px;
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-      display: none; flex-direction: column; gap: 1rem; z-index: 1001;
+      position: absolute; 
+      top: 130%; 
+      right: 0; 
+      width: 260px;
+      background: var(--bg-card); 
+      border: 1px solid var(--border);
+      border-radius: 20px; 
+      padding: 1.5rem; 
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      display: none; 
+      flex-direction: column; 
+      gap: 1rem; 
+      z-index: 1001;
       animation: fadeIn 0.2s ease;
     }
-    .profile-menu.active { display: flex; }
-    .menu-header { display: flex; flex-direction: column; gap: 0.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); }
-    .menu-name { font-weight: 800; font-size: 1.1rem; color: var(--text-main); }
-    .menu-status { font-size: 0.75rem; color: var(--accent); font-weight: 700; text-transform: uppercase; }
-    .menu-stats { background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; line-height: 1;}
-    .stat-value { font-size: 1rem; font-weight: 800; color: var(--accent); display: block; }
-    .coin-value { color: var(--gold); }
-    .menu-items { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .profile-menu.active { 
+      display: flex; 
+    }
+
+    .menu-header { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 0.2rem; 
+      padding-bottom: 0.8rem; 
+      border-bottom: 1px solid var(--border); 
+    }
+
+    .menu-name { 
+      font-weight: 800; 
+      font-size: 1.1rem; 
+      color: var(--text-main); 
+    }
+
+    .menu-status { 
+      font-size: 0.75rem; 
+      color: var(--accent); 
+      font-weight: 700; 
+      text-transform: uppercase; 
+    }
+
+    .menu-stats { 
+      background: rgba(255,255,255,0.03); 
+      padding: 0.75rem; 
+      border-radius: 12px; 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 10px; 
+    }
+
+    .stat-label { 
+      font-size: 0.7rem; 
+      color: var(--text-muted); 
+      text-transform: uppercase; 
+      line-height: 1;
+    }
+
+    .stat-value { 
+      font-size: 1rem; 
+      font-weight: 800; 
+      color: var(--accent); 
+      display: block; 
+    }
+
+    .coin-value { 
+      color: var(--gold); 
+    }
+
+    .menu-items { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 0.5rem; 
+    }
+
     .menu-link { 
-      padding: 0.6rem 0.8rem; border-radius: 10px; text-decoration: none; 
-      color: var(--text-main); font-size: 0.9rem; font-weight: 600; 
-      transition: background 0.2s; cursor: pointer; display: block;
+      padding: 0.6rem 0.8rem; 
+      border-radius: 10px; 
+      text-decoration: none; 
+      color: var(--text-main); 
+      font-size: 0.9rem; 
+      font-weight: 600; 
+      transition: background 0.2s; 
+      cursor: pointer; 
+      display: block;
     }
-    .menu-link:hover { background: rgba(255,255,255,0.05); }
-    .menu-link.logout { color: #ef4444; }
 
-    /* ECONOMY & SHOP UI */
-    .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .menu-link:hover { 
+      background: rgba(255,255,255,0.05); 
+    }
+
+    .menu-link.logout { 
+      color: #ef4444; 
+    }
+
+    /* Economy & Shop UI */
+    .shop-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+      gap: 1rem; 
+      margin-top: 1rem; 
+    }
+
     .shop-item { 
-      background: var(--bg-surface); padding: 1rem; border-radius: 16px; border: 1px solid var(--border); 
-      text-align: center; transition: all 0.2s; cursor: pointer; position: relative;
+      background: var(--bg-surface); 
+      padding: 1rem; 
+      border-radius: 16px; 
+      border: 1px solid var(--border); 
+      text-align: center; 
+      transition: all 0.2s; 
+      cursor: pointer; 
+      position: relative;
     }
-    .shop-item:hover { transform: translateY(-3px); border-color: var(--gold); }
-    .shop-item.owned { opacity: 0.8; border-color: var(--accent); }
-    .shop-item.equipped { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
-    .item-preview { height: 40px; display: flex; align-items: center; justify-content: center; font-weight: 800; margin-bottom: 0.5rem; }
-    .item-price { font-size: 0.8rem; font-weight: 800; color: var(--gold); }
+
+    .shop-item:hover { 
+      transform: translateY(-3px); 
+      border-color: var(--gold); 
+    }
+
+    .shop-item.owned { 
+      opacity: 0.8; 
+      border-color: var(--accent); 
+    }
+
+    .shop-item.equipped { 
+      border-color: var(--primary); 
+      box-shadow: 0 0 10px var(--primary-glow); 
+    }
+
+    .item-preview { 
+      height: 40px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-weight: 800; 
+      margin-bottom: 0.5rem; 
+    }
+
+    .item-price { 
+      font-size: 0.8rem; 
+      font-weight: 800; 
+      color: var(--gold); 
+    }
     
-    /* STYLE DEFINITIONS */
-    .name-sparkle { background: linear-gradient(90deg, #fff, #6366f1, #10b981, #fff); background-size: 200% auto; animation: shine 2s linear infinite; -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
-    .name-glow { text-shadow: 0 0 8px currentColor; font-weight: 800; }
-    .name-italic { font-style: italic; }
-    .border-gold { border: 2px solid #f59e0b !important; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
-    .border-neon { border: 2px solid #a855f7 !important; box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
-    .border-cyan { border: 2px solid #06b6d4 !important; box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
-
-    @keyframes shine { to { background-position: 200% center; } }
-
-    /* PERSONAL LIBRARY SECTION */
-    .personal-library { max-width: 1200px; margin: 2rem auto; padding: 0 2rem; }
-    .personal-row { 
-      display: flex; gap: 1.5rem; overflow-x: auto; padding-bottom: 1rem; 
-      scrollbar-width: none; -ms-overflow-style: none;
+    /* Special Equipped Styles */
+    .name-sparkle { 
+      background: linear-gradient(90deg, #fff, #6366f1, #10b981, #fff); 
+      background-size: 200% auto; 
+      animation: shine 2s linear infinite; 
+      -webkit-background-clip: text; 
+      -webkit-text-fill-color: transparent; 
+      font-weight: 800; 
     }
-    .personal-row::-webkit-scrollbar { display: none; }
-    .lib-card { min-width: 180px; max-width: 180px; position: relative; }
+
+    .name-glow { 
+      text-shadow: 0 0 10px currentColor; 
+      font-weight: 800; 
+    }
+
+    .name-italic { 
+      font-style: italic; 
+    }
+
+    .border-gold { 
+      border: 3px solid #f59e0b !important; 
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); 
+    }
+
+    .border-neon { 
+      border: 3px solid #a855f7 !important; 
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.4); 
+    }
+
+    .border-cyan { 
+      border: 3px solid #06b6d4 !important; 
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.4); 
+    }
+
+    @keyframes shine { 
+      to { background-position: 200% center; } 
+    }
+
+    /* Library Section Styles */
+    .personal-library { 
+      max-width: 1200px; 
+      margin: 2rem auto; 
+      padding: 0 2rem; 
+    }
+
+    .personal-row { 
+      display: flex; 
+      gap: 1.5rem; 
+      overflow-x: auto; 
+      padding-bottom: 1rem; 
+      scrollbar-width: none; 
+      -ms-overflow-style: none;
+    }
+
+    .personal-row::-webkit-scrollbar { 
+      display: none; 
+    }
+
+    .lib-card { 
+      min-width: 180px; 
+      max-width: 180px; 
+      position: relative; 
+    }
+
     .star-btn { 
-      position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(0,0,0,0.5); 
-      border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; 
-      justify-content: center; cursor: pointer; color: white; border: 1px solid var(--border);
+      position: absolute; 
+      top: 10px; 
+      right: 10px; 
+      z-index: 10; 
+      background: rgba(0,0,0,0.5); 
+      border-radius: 50%; 
+      width: 30px; 
+      height: 30px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      cursor: pointer; 
+      color: white; 
+      border: 1px solid var(--border);
       transition: all 0.2s;
     }
-    .star-btn:hover { transform: scale(1.1); background: rgba(0,0,0,0.8); }
-    .star-btn.active { color: var(--gold); border-color: var(--gold); }
 
-    /* Settings Modal Styles */
+    .star-btn:hover { 
+      transform: scale(1.1); 
+      background: rgba(0,0,0,0.8); 
+    }
+
+    .star-btn.active { 
+      color: var(--gold); 
+      border-color: var(--gold); 
+    }
+
+    /* Modal Framework */
     .modal-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(8px); z-index: 3000; display: none;
-      align-items: flex-start; justify-content: center; padding: 2rem;
+      position: fixed; 
+      inset: 0; 
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px); 
+      z-index: 3000; 
+      display: none;
+      align-items: flex-start; 
+      justify-content: center; 
+      padding: 2rem;
       overflow-y: auto;
     }
-    .modal-overlay.active { display: flex; }
+
+    .modal-overlay.active { 
+      display: flex; 
+    }
+
     .modal-card {
-      background: var(--bg-card); border: 1px solid var(--border);
-      width: 100%; max-width: 450px; border-radius: 24px; padding: 2.5rem;
+      background: var(--bg-card); 
+      border: 1px solid var(--border);
+      width: 100%; 
+      max-width: 450px; 
+      border-radius: 24px; 
+      padding: 2.5rem;
       animation: fadeIn 0.3s ease;
     }
-    .modal-card h2 { margin: 0 0 1.5rem 0; letter-spacing: -1px; }
-    .form-group { margin-bottom: 1.5rem; }
-    .form-group label { display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem; text-transform: uppercase; }
+
+    .modal-card h2 { 
+      margin: 0 0 1.5rem 0; 
+      letter-spacing: -1px; 
+    }
+
+    .form-group { 
+      margin-bottom: 1.5rem; 
+    }
+
+    .form-group label { 
+      display: block; 
+      font-size: 0.8rem; 
+      font-weight: 700; 
+      color: var(--text-muted); 
+      margin-bottom: 0.5rem; 
+      text-transform: uppercase; 
+    }
+
     .form-group input {
-      width: 100%; background: var(--bg-surface); border: 1px solid var(--border);
-      padding: 12px 16px; border-radius: 12px; color: white; font-family: inherit;
+      width: 100%; 
+      background: var(--bg-surface); 
+      border: 1px solid var(--border);
+      padding: 12px 16px; 
+      border-radius: 12px; 
+      color: white; 
+      font-family: inherit;
     }
-    .form-group input:focus { outline: none; border-color: var(--primary); }
 
-    /* MOD PANEL SPECIFIC STYLES */
-    #modModal .modal-card { max-width: 900px; }
+    .form-group input:focus { 
+      outline: none; 
+      border-color: var(--primary); 
+    }
+
+    /* Mod Panel UI */
+    #modModal .modal-card { 
+      max-width: 900px; 
+    }
+
     .mod-user-list { 
-        max-height: 400px; overflow-y: auto; margin-top: 1rem; 
-        border: 1px solid var(--border); border-radius: 12px;
+        max-height: 400px; 
+        overflow-y: auto; 
+        margin-top: 1rem; 
+        border: 1px solid var(--border); 
+        border-radius: 12px;
     }
-    .mod-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    .mod-table th { background: var(--bg-surface); text-align: left; padding: 12px; color: var(--text-muted); }
-    .mod-table td { padding: 12px; border-bottom: 1px solid var(--border); }
-    .status-banned { color: #ef4444; font-weight: 800; }
-    .status-active { color: var(--accent); font-weight: 800; }
 
-    /* AUDIT LOG TAB STYLES */
-    .mod-tabs { display: flex; gap: 5px; margin-bottom: 1.5rem; }
-    .mod-tab-btn { flex: 1; padding: 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-muted); font-weight: 700; cursor: pointer; }
-    .mod-tab-btn.active { background: var(--primary); color: white; border: none; }
+    .mod-table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      font-size: 0.85rem; 
+    }
 
-    /* RAP SHEET OVERLAY */
+    .mod-table th { 
+      background: var(--bg-surface); 
+      text-align: left; 
+      padding: 12px; 
+      color: var(--text-muted); 
+    }
+
+    .mod-table td { 
+      padding: 12px; 
+      border-bottom: 1px solid var(--border); 
+    }
+
+    .status-banned { 
+      color: #ef4444; 
+      font-weight: 800; 
+    }
+
+    .status-active { 
+      color: var(--accent); 
+      font-weight: 800; 
+    }
+
+    .mod-tabs { 
+      display: flex; 
+      gap: 5px; 
+      margin-bottom: 1.5rem; 
+    }
+
+    .mod-tab-btn { 
+      flex: 1; 
+      padding: 10px; 
+      border-radius: 12px; 
+      border: 1px solid var(--border); 
+      background: var(--bg-surface); 
+      color: var(--text-muted); 
+      font-weight: 700; 
+      cursor: pointer; 
+    }
+
+    .mod-tab-btn.active { 
+      background: var(--primary); 
+      color: white; 
+      border: none; 
+    }
+
+    /* Rap Sheet UI */
     #userProfileOverlay {
-        position: absolute; inset: 0; background: var(--bg-card); z-index: 20;
-        display: none; flex-direction: column; padding: 2rem; animation: fadeIn 0.2s ease;
+        position: absolute; 
+        inset: 0; 
+        background: var(--bg-card); 
+        z-index: 20;
+        display: none; 
+        flex-direction: column; 
+        padding: 2rem; 
+        animation: fadeIn 0.2s ease;
     }
-    .rap-sheet-list { flex: 1; overflow-y: auto; margin: 1rem 0; padding: 1rem; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border); }
-    .violation-item { padding: 10px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
-    .violation-type { font-weight: 800; text-transform: uppercase; font-size: 0.7rem; display: block; }
-    .type-warning { color: #f59e0b; }
-    .type-ban { color: #ef4444; }
 
-    /* CHATROOM CHANNEL BAR (Staff Chat UI) */
+    .rap-sheet-list { 
+      flex: 1; 
+      overflow-y: auto; 
+      margin: 1rem 0; 
+      padding: 1rem; 
+      background: var(--bg-surface); 
+      border-radius: 12px; 
+      border: 1px solid var(--border); 
+    }
+
+    .violation-item { 
+      padding: 10px; 
+      border-bottom: 1px solid var(--border); 
+      font-size: 0.85rem; 
+    }
+
+    .violation-type { 
+      font-weight: 800; 
+      text-transform: uppercase; 
+      font-size: 0.7rem; 
+      display: block; 
+    }
+
+    .type-warning { 
+      color: #f59e0b; 
+    }
+
+    .type-ban { 
+      color: #ef4444; 
+    }
+
+    /* Chat UI Styles */
     .chat-channels {
-        display: flex; gap: 10px; padding: 0.8rem 6rem;
-        background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border);
+        display: flex; 
+        gap: 10px; 
+        padding: 0.8rem 6rem;
+        background: rgba(0,0,0,0.2); 
+        border-bottom: 1px solid var(--border);
     }
-    .channel-btn {
-        padding: 6px 15px; border-radius: 100px; font-size: 0.75rem; font-weight: 800;
-        text-transform: uppercase; cursor: pointer; border: 1px solid var(--border);
-        color: var(--text-muted); transition: all 0.2s;
-    }
-    .channel-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-    .channel-btn.staff-channel.active { background: #ef4444; border-color: #ef4444; }
 
-    /* CHATROOM RE-STYLING */
+    .channel-btn {
+        padding: 6px 15px; 
+        border-radius: 100px; 
+        font-size: 0.75rem; 
+        font-weight: 800;
+        text-transform: uppercase; 
+        cursor: pointer; 
+        border: 1px solid var(--border);
+        color: var(--text-muted); 
+        transition: all 0.2s;
+    }
+
+    .channel-btn.active { 
+      background: var(--primary); 
+      color: white; 
+      border-color: var(--primary); 
+    }
+
+    .channel-btn.staff-channel.active { 
+      background: #ef4444; 
+      border-color: #ef4444; 
+    }
+
     @keyframes messageSlideIn {
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
@@ -298,11 +652,22 @@
       scroll-behavior: smooth;
     }
 
-    /* Custom Scrollbar for Chat */
-    #chatBody::-webkit-scrollbar { width: 6px; }
-    #chatBody::-webkit-scrollbar-track { background: transparent; }
-    #chatBody::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-    #chatBody::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    #chatBody::-webkit-scrollbar { 
+      width: 6px; 
+    }
+
+    #chatBody::-webkit-scrollbar-track { 
+      background: transparent; 
+    }
+
+    #chatBody::-webkit-scrollbar-thumb { 
+      background: var(--border); 
+      border-radius: 10px; 
+    }
+
+    #chatBody::-webkit-scrollbar-thumb:hover { 
+      background: var(--text-muted); 
+    }
 
     .message { 
       background: var(--bg-card); 
@@ -350,10 +715,24 @@
       letter-spacing: 0.5px;
     }
 
-    .msg-user { font-weight: 800; color: var(--accent); }
-    .message.own .msg-user { color: rgba(255,255,255,0.9); }
-    .msg-time { color: var(--text-muted); opacity: 0.7; }
-    .message.own .msg-time { color: white; opacity: 0.6; }
+    .msg-user { 
+      font-weight: 800; 
+      color: var(--accent); 
+    }
+
+    .message.own .msg-user { 
+      color: rgba(255,255,255,0.9); 
+    }
+
+    .msg-time { 
+      color: var(--text-muted); 
+      opacity: 0.7; 
+    }
+
+    .message.own .msg-time { 
+      color: white; 
+      opacity: 0.6; 
+    }
 
     .msg-content { 
       word-break: break-word; 
@@ -361,9 +740,14 @@
       line-height: 1.5;
     }
 
-    /* Markdown Element Specifics */
-    .msg-content p { margin: 0 0 0.5rem 0; }
-    .msg-content p:last-child { margin: 0; }
+    .msg-content p { 
+      margin: 0 0 0.5rem 0; 
+    }
+
+    .msg-content p:last-child { 
+      margin: 0; 
+    }
+
     .msg-content code { 
       background: rgba(0, 0, 0, 0.3); 
       padding: 2px 5px; 
@@ -372,6 +756,7 @@
       font-size: 0.85em;
       border: 1px solid rgba(255,255,255,0.05);
     }
+
     .msg-content pre {
       background: rgba(0, 0, 0, 0.4);
       padding: 1rem;
@@ -380,9 +765,22 @@
       margin: 0.75rem 0;
       border: 1px solid var(--border);
     }
-    .msg-content pre code { background: none; padding: 0; border: none; }
-    .msg-content a { color: var(--accent); text-decoration: underline; }
-    .message.own .msg-content a { color: #fff; }
+
+    .msg-content pre code { 
+      background: none; 
+      padding: 0; 
+      border: none; 
+    }
+
+    .msg-content a { 
+      color: var(--accent); 
+      text-decoration: underline; 
+    }
+
+    .message.own .msg-content a { 
+      color: #fff; 
+    }
+
     .msg-content blockquote {
       margin: 0.5rem 0;
       padding-left: 1rem;
@@ -415,12 +813,28 @@
       opacity: 0;
       transition: opacity 0.2s ease;
     }
-    .message:hover .msg-footer { opacity: 1; }
 
-    .msg-link { cursor: pointer; color: var(--primary); transition: opacity 0.2s; }
-    .msg-link:hover { opacity: 0.7; }
-    .msg-link.delete { color: #ef4444; }
-    .message.own .msg-link { color: white; }
+    .message:hover .msg-footer { 
+      opacity: 1; 
+    }
+
+    .msg-link { 
+      cursor: pointer; 
+      color: var(--primary); 
+      transition: opacity 0.2s; 
+    }
+
+    .msg-link:hover { 
+      opacity: 0.7; 
+    }
+
+    .msg-link.delete { 
+      color: #ef4444; 
+    }
+
+    .message.own .msg-link { 
+      color: white; 
+    }
 
     .msg-parent { 
       background: rgba(0,0,0,0.2); 
@@ -486,18 +900,31 @@
       resize: none;
       height: 40px;
     }
-    #chatInput:focus { outline: none; }
+
+    #chatInput:focus { 
+      outline: none; 
+    }
 
     #chatViewer .btn-primary {
       padding: 10px 25px;
       border-radius: 16px;
     }
 
-    /* MOD POPUP SPECIFIC STYLES */
-    #modApplyModal .modal-card { text-align: center; max-width: 500px; padding: 2.5rem; }
-    .mod-apply-btn { width: 100%; text-decoration: none; margin-top: 1rem; display: block; }
+    /* Mod Application Component */
+    #modApplyModal .modal-card { 
+      text-align: center; 
+      max-width: 500px; 
+      padding: 2.5rem; 
+    }
 
-    /* Hero Section */
+    .mod-apply-btn { 
+      width: 100%; 
+      text-decoration: none; 
+      margin-top: 1rem; 
+      display: block; 
+    }
+
+    /* Hero Section Styles */
     .hero {
       max-width: 1200px;
       margin: 4rem auto 2rem;
@@ -525,7 +952,7 @@
       margin-bottom: 1.5rem;
     }
 
-    /* Featured Game */
+    /* Game List Layout */
     .featured-section {
       max-width: 1000px;
       margin: 3rem auto;
@@ -562,7 +989,7 @@
       background: linear-gradient(to top, var(--bg-card) 20%, transparent);
     }
 
-    /* Toolbar */
+    /* Toolbar Layout */
     .toolbar {
       max-width: 1200px;
       margin: 2rem auto;
@@ -573,7 +1000,12 @@
       align-items: center;
     }
 
-    .search-wrapper { flex: 1; position: relative; min-width: 300px; }
+    .search-wrapper { 
+      flex: 1; 
+      position: relative; 
+      min-width: 300px; 
+    }
+
     #searchBar {
       width: 100%;
       background: var(--bg-surface);
@@ -584,6 +1016,7 @@
       font-size: 1rem;
       transition: all 0.3s;
     }
+
     #searchBar:focus {
       outline: none;
       border-color: var(--primary);
@@ -602,14 +1035,39 @@
       font-family: inherit;
     }
 
-    .btn-primary { background: var(--primary); border: none; }
-    .btn-primary:hover { transform: scale(1.05); background: #4f46e5; }
-    .btn-success { background: var(--accent); border: none; }
-    .btn-danger { background: #ef4444; border: none; }
-    .btn-leaderboard { background: linear-gradient(135deg, #f59e0b, #d97706); border: none; }
-    .btn-shop { background: var(--gold); border: none; color: black !important; }
+    .btn-primary { 
+      background: var(--primary); 
+      border: none; 
+    }
 
-    /* Leaderboard Styles */
+    .btn-primary:hover { 
+      transform: scale(1.05); 
+      background: #4f46e5; 
+    }
+
+    .btn-success { 
+      background: var(--accent); 
+      border: none; 
+    }
+
+    .btn-danger { 
+      background: #ef4444; 
+      border: none; 
+    }
+
+    .btn-leaderboard { 
+      background: linear-gradient(135deg, #f59e0b, #d97706); 
+      border: none; 
+    }
+
+    .btn-shop { 
+      background: var(--gold); 
+      border: none; 
+      color: var(--bg-deep) !important; 
+      font-weight: 800;
+    }
+
+    /* Leaderboard Component */
     #leaderboardSection {
       max-width: 800px;
       margin: 2rem auto;
@@ -641,12 +1099,26 @@
       border-bottom: 1px solid var(--border);
     }
 
-    .rank-cell { font-weight: 800; width: 60px; }
-    .user-cell { font-weight: 600; }
-    .mins-cell { color: var(--accent); font-weight: 800; text-align: right; }
-    .current-user { background: rgba(99, 102, 241, 0.1); }
+    .rank-cell { 
+      font-weight: 800; 
+      width: 60px; 
+    }
 
-    /* Game Grid */
+    .user-cell { 
+      font-weight: 600; 
+    }
+
+    .mins-cell { 
+      color: var(--accent); 
+      font-weight: 800; 
+      text-align: right; 
+    }
+
+    .current-user { 
+      background: rgba(99, 102, 241, 0.1); 
+    }
+
+    /* Game Catalog Grid */
     #container {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -678,7 +1150,10 @@
       object-fit: cover;
       transition: transform 0.5s;
     }
-    .game-card:hover img { transform: scale(1.05); }
+
+    .game-card:hover img { 
+      transform: scale(1.05); 
+    }
 
     .game-info {
       padding: 1.25rem;
@@ -691,7 +1166,7 @@
       font-weight: 700;
     }
 
-    /* Modal Viewer */
+    /* Main Modal Iframe Viewer */
     #zoneViewer {
       position: fixed;
       inset: 0;
@@ -716,7 +1191,7 @@
       background: #000;
     }
 
-    /* Data Footer */
+    /* Backup Section Layout */
     .data-footer {
       max-width: 800px;
       margin: 4rem auto;
@@ -734,27 +1209,76 @@
       font-size: 0.875rem;
       border-top: 1px solid var(--border);
     }
-    footer a { color: var(--text-main); text-decoration: none; font-weight: 600; }
 
-    /* Animations */
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-in { animation: fadeIn 0.6s ease forwards; }
+    footer a { 
+      color: var(--text-main); 
+      text-decoration: none; 
+      font-weight: 600; 
+    }
 
-    /* Broadcast Styles */
+    /* Global Animations */
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(10px); } 
+      to { opacity: 1; transform: translateY(0); } 
+      }
+
+    .animate-in { 
+      animation: fadeIn 0.6s ease forwards; 
+    }
+
+    /* Admin Broadcast Overlay */
     .broadcast-overlay {
-        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-        z-index: 9999; width: 90%; max-width: 600px;
+        position: fixed; 
+        top: 20px; 
+        left: 50%; 
+        transform: translateX(-50%);
+        z-index: 9999; 
+        width: 90%; 
+        max-width: 600px;
         background: linear-gradient(135deg, #ef4444, #991b1b);
-        color: white; padding: 1.5rem 2rem; border-radius: 20px;
+        color: white; 
+        padding: 1.5rem 2rem; 
+        border-radius: 20px;
         box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(239, 68, 68, 0.4);
-        display: none; flex-direction: column; gap: 10px;
+        display: none; 
+        flex-direction: column; 
+        gap: 10px;
         animation: slideDownFade 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
-    @keyframes slideDownFade { from { opacity: 0; transform: translate(-50%, -100%); } to { opacity: 1; transform: translate(-50%, 0); } }
-    .broadcast-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; }
-    .broadcast-title { font-weight: 800; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
-    .broadcast-msg { font-size: 1.1rem; font-weight: 600; line-height: 1.4; }
-    .admin-broadcast-section { margin-top: 2rem; padding: 1.5rem; background: rgba(239, 68, 68, 0.05); border: 1px dashed #ef4444; border-radius: 16px; }
+
+    @keyframes slideDownFade { 
+      from { opacity: 0; transform: translate(-50%, -100%); } 
+      to { opacity: 1; transform: translate(-50%, 0); } 
+    }
+
+    .broadcast-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      border-bottom: 1px solid rgba(255,255,255,0.2); 
+      padding-bottom: 8px; 
+    }
+
+    .broadcast-title { 
+      font-weight: 800; 
+      text-transform: uppercase; 
+      font-size: 0.75rem; 
+      letter-spacing: 1px; 
+    }
+
+    .broadcast-msg { 
+      font-size: 1.1rem; 
+      font-weight: 600; 
+      line-height: 1.4; 
+    }
+
+    .admin-broadcast-section { 
+      margin-top: 2rem; 
+      padding: 1.5rem; 
+      background: rgba(239, 68, 68, 0.05); 
+      border: 1px dashed #ef4444; 
+      border-radius: 16px; 
+    }
 
     @media (max-width: 768px) {
       .toolbar { flex-direction: column; align-items: stretch; }
@@ -763,27 +1287,78 @@
       #chatBody, .chat-input-area, .typing-indicator { padding-left: 1.5rem; padding-right: 1.5rem; }
     }
 
-    /* Tools Dropdown Styles */
-    .chat-tools-container { position: relative; display: flex; align-items: center; margin-left: 8px; }
+    /* Chat Tools UI */
+    .chat-tools-container { 
+      position: relative; 
+      display: flex; 
+      align-items: center; 
+      margin-left: 8px; 
+    }
+
     .tools-menu {
-      position: absolute; bottom: 120%; right: 0; width: 280px;
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 18px; padding: 1.25rem; box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-      display: none; flex-direction: column; gap: 1rem; z-index: 1001;
+      position: absolute; 
+      bottom: 120%; 
+      right: 0; 
+      width: 280px;
+      background: var(--bg-card); 
+      border: 1px solid var(--border);
+      border-radius: 18px; 
+      padding: 1.25rem; 
+      box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+      display: none; 
+      flex-direction: column; 
+      gap: 1rem; 
+      z-index: 1001;
       animation: fadeIn 0.2s ease;
       backdrop-filter: blur(10px);
     }
-    .tools-menu.active { display: flex; }
-    .tool-item { display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; }
-    .tool-item:last-child { border: none; }
-    .tool-title { font-size: 0.72rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; }
-    .tool-desc { font-size: 0.7rem; color: var(--text-muted); line-height: 1.4; }
-    .btn-tool { 
-      background: var(--bg-surface); border: 1px solid var(--border); 
-      border-radius: 12px; padding: 6px 14px; font-size: 0.75rem; 
-      color: white; cursor: pointer; font-weight: 700; transition: all 0.2s;
+
+    .tools-menu.active { 
+      display: flex; 
     }
-    .btn-tool:hover { border-color: var(--primary); background: rgba(99, 102, 241, 0.1); }
+
+    .tool-item { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 4px; 
+      border-bottom: 1px solid rgba(255,255,255,0.05); 
+      padding-bottom: 8px; 
+    }
+
+    .tool-item:last-child { 
+      border: none; 
+    }
+
+    .tool-title { 
+      font-size: 0.72rem; 
+      font-weight: 800; 
+      color: var(--accent); 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+    }
+
+    .tool-desc { 
+      font-size: 0.7rem; 
+      color: var(--text-muted); 
+      line-height: 1.4; 
+    }
+
+    .btn-tool { 
+      background: var(--bg-surface); 
+      border: 1px solid var(--border); 
+      border-radius: 12px; 
+      padding: 6px 14px; 
+      font-size: 0.75rem; 
+      color: white; 
+      cursor: pointer; 
+      font-weight: 700; 
+      transition: all 0.2s;
+    }
+
+    .btn-tool:hover { 
+      border-color: var(--primary); 
+      background: rgba(99, 102, 241, 0.1); 
+    }
   </style>
 
   <script>
@@ -817,7 +1392,7 @@
       <button class="btn" onclick="document.getElementById('file').click()">Load</button>
       <a href="https://docs.google.com/forms/d/e/1FAIpQLSfTZ5mk7aVxGnheE0Zo7kbVrV_XVCuTXSVMVElE5yYZbs5A6Q/viewform?usp=publish-editor" class="btn btn-danger" target="_blank" rel="noopener noreferrer">Report A Bug</a>
       
-      <!-- PROFILE COMPONENT -->
+      <!-- User Profile Dropdown Component -->
       <div class="profile-container">
         <div class="profile-trigger" id="profileTrigger" onclick="toggleProfileMenu()">
           <span class="profile-initial" id="navInitial">?</span>
@@ -848,7 +1423,7 @@
     </div>
   </nav>
 
-  <!-- Shop Modal -->
+  <!-- Items Shop System Overlay -->
   <div class="modal-overlay" id="shopModal">
     <div class="modal-card" style="max-width: 600px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -865,34 +1440,34 @@
         </div>
 
         <div id="shopGrid" class="shop-grid">
-            <!-- Items injected here -->
+            <!-- Items injected by logic -->
         </div>
 
         <button class="btn btn-danger" style="width: 100%; margin-top: 2rem;" onclick="closeShop()">Close Shop</button>
     </div>
   </div>
 
-  <!-- Online List Modal (Staff Only) -->
+  <!-- Staff Visibility List -->
   <div class="modal-overlay" id="onlineListModal">
     <div class="modal-card" style="max-width: 400px; padding: 2rem;">
         <h2 id="onlineListTitle" style="margin-bottom: 1rem; letter-spacing: -1px;">Online Users</h2>
         <div id="onlineListBody" style="max-height: 400px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid var(--border);">
-            <!-- User names injected here -->
+            <!-- User IDs injected here -->
         </div>
         <button class="btn btn-danger" style="width: 100%; margin-top: 1.5rem;" onclick="closeOnlineList()">Close</button>
     </div>
   </div>
 
-  <!-- Global Broadcast Alert -->
+  <!-- Global High-Priority Notification Overlay -->
   <div id="broadcastOverlay" class="broadcast-overlay">
       <div class="broadcast-header">
           <span class="broadcast-title">⚠️ Priority System Alert</span>
           <span style="cursor:pointer; font-weight: 800;" onclick="closeBroadcast()">×</span>
       </div>
-      <div id="broadcastText" class="broadcast-msg">This is a global broadcast message.</div>
+      <div id="broadcastText" class="broadcast-msg">Universal message loading...</div>
   </div>
 
-  <!-- Settings Modal -->
+  <!-- Settings Configuration Modal -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-card">
         <h2>Profile Settings</h2>
@@ -911,11 +1486,11 @@
     </div>
   </div>
 
-  <!-- MOD PANEL MODAL -->
+  <!-- MODERATION CONTROL CENTER MODAL -->
   <div class="modal-overlay" id="modModal">
     <div class="modal-card" style="position: relative; overflow: hidden;">
 
-        <!-- RAP SHEET OVERLAY -->
+        <!-- INDIVIDUAL RAP SHEET SYSTEM -->
         <div id="userProfileOverlay">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2 id="rapSheetName">User Name's Rap Sheet</h2>
@@ -923,7 +1498,7 @@
             </div>
             <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0;">Viewing historical violations and moderator notes.</p>
             <div class="rap-sheet-list" id="rapSheetBody">
-                <!-- Violations go here -->
+                <!-- Violation list injected here -->
             </div>
         </div>
 
@@ -937,7 +1512,7 @@
             <button id="tabLogs" class="mod-tab-btn" onclick="switchModTab('logs')">Audit Logs</button>
         </div>
 
-        <!-- COLLAPSIBLE MOD DOCUMENTATION -->
+        <!-- STAFF OPERATIONAL GUIDELINES -->
         <details id="modGuidelines" style="margin-bottom: 1.5rem; background: var(--bg-surface); padding: 1rem; border-radius: 12px; border: 1px solid var(--border); cursor: pointer;">
             <summary style="font-weight: 800; color: var(--accent); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;">Staff Job Requirements & Guidelines</summary>
             <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
@@ -951,7 +1526,7 @@
             </div>
         </details>
         
-        <!-- BROADCAST SECTION (Admin Only) -->
+        <!-- BROADCAST COMMAND CENTER (Admin Level) -->
         <div id="adminBroadcastSection" class="admin-broadcast-section" style="display:none;">
             <h3 style="margin-top:0; color:#ef4444; letter-spacing:-1px;">Global System Broadcast</h3>
             <p style="font-size:0.8rem; color:var(--text-muted);">This message will pop up on every active user's screen instantly.</p>
@@ -961,7 +1536,7 @@
             </div>
         </div>
 
-        <!-- USER LIST VIEW -->
+        <!-- DATABASE USER LIST VIEW -->
         <div id="viewModUsers">
             <div class="form-group" style="margin-top:2rem;">
                 <input type="text" id="userListSearch" placeholder="Search by username or full name..." onkeyup="filterModList()">
@@ -979,13 +1554,13 @@
                         </tr>
                     </thead>
                     <tbody id="modUserBody">
-                        <!-- Injected by mod logic -->
+                        <!-- Injected by logic -->
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- AUDIT LOGS VIEW -->
+        <!-- AUDIT LOG HISTORY VIEW -->
         <div id="viewModLogs" style="display: none;">
             <div class="mod-user-list" style="max-height: 500px;">
                 <table class="mod-table">
@@ -998,7 +1573,7 @@
                         </tr>
                     </thead>
                     <tbody id="auditLogsBody">
-                        <!-- Logs injected here -->
+                        <!-- Injected by logic -->
                     </tbody>
                 </table>
             </div>
@@ -1006,7 +1581,7 @@
     </div>
   </div>
 
-  <!-- MOD APPLICATION POPUP -->
+  <!-- Moderator Application Call-to-Action -->
   <div class="modal-overlay" id="modApplyModal">
     <div class="modal-card">
         <h2 style="color: var(--accent); letter-spacing: -2px;">Become a Moderator!</h2>
@@ -1025,15 +1600,15 @@
     </p>
   </header>
 
-  <!-- PERSONAL ROW: FAVORITES & RECENT -->
+  <!-- User Cloud Space and Personal Shortcuts -->
   <section id="personalLibrary" class="personal-library animate-in" style="display:none; margin-bottom: 3rem;">
     <h3 style="letter-spacing: -1px; margin-bottom: 1rem;">My Space ✨</h3>
     <div id="personalRow" class="personal-row">
-        <!-- Favorites and Recents go here -->
+        <!-- Shortcut cards injected here -->
     </div>
   </section>
 
-   <!-- Leaderboard Section at top of page -->
+   <!-- Sitewide Engagement Leaderboard -->
   <section id="leaderboardSection" class="animate-in">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <h3 style="margin: 0; letter-spacing: -1px;">Global Leaderboard</h3>
@@ -1049,18 +1624,20 @@
           </tr>
         </thead>
         <tbody id="leaderboardBody">
-          <!-- Injected by JS -->
+          <!-- Leaderboard entries injected here -->
         </tbody>
       </table>
     </div>
   </section>
 
+  <!-- Daily Selection UI -->
   <section class="featured-section">
     <div id="gameOfTheDay" class="animate-in">
-      <!-- Injected by JS -->
+      <!-- Logic injected content -->
     </div>
   </section>
 
+  <!-- Catalog Filtering Toolbar -->
   <div class="toolbar">
     <div class="search-wrapper">
       <input type="text" id="searchBar" placeholder="Search..." onkeyup="filterZones()" />
@@ -1076,9 +1653,10 @@
   <div id="zoneCount" style="text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem;"></div>
 
   <main id="container">
-    <!-- Game cards injected here -->
+    <!-- Active grid catalog -->
   </main>
 
+  <!-- Local Data Management UI -->
   <section class="data-footer">
     <h3 style="margin-top: 0;">Data Synchronization</h3>
     <p style="color: var(--text-muted); font-size: 0.9rem;">
@@ -1091,6 +1669,7 @@
     <input type="file" id="file" style="display:none" onchange="loadData(event)" />
   </section>
 
+  <!-- External Content Overlay System -->
   <div id="zoneViewer">
     <div id="zoneHeader">
       <div>
@@ -1106,6 +1685,7 @@
     <iframe id="zoneFrame"></iframe>
   </div>
 
+  <!-- ASTEROID GLOBAL CHAT SYSTEM -->
   <div id="chatViewer">
     <div id="zoneHeader">
       <div>
@@ -1117,7 +1697,7 @@
     </div>
     <div class="chat-container">
       
-      <!-- CHANNEL BAR FOR STAFF -->
+      <!-- STAFF PRIVATE CHANNEL UI -->
       <div id="chatChannelBar" class="chat-channels" style="display: none;">
           <div id="chanGlobal" class="channel-btn active" onclick="switchChatChannel('global')"># Global-Chat</div>
           <div id="chanStaff" class="channel-btn staff-channel" onclick="switchChatChannel('staff')"># Staff-Room</div>
@@ -1171,8 +1751,9 @@
     </div>
   </footer>
 
+  <!-- CORE LOGIC SCRIPTS -->
   <script>
-    // Configure Marked.js for Discord-like behavior (gfm, line breaks)
+    // Initialize Markdown Support (Marked.js)
     marked.setOptions({
       gfm: true,
       breaks: true,
@@ -1181,7 +1762,7 @@
       sanitize: false
     });
 
-    // Supabase Initialization
+    // Integrated Supabase Cloud Database Client
     const supabaseUrl = 'https://lnlnuoylmumabscobtsl.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
     const { createClient } = supabase;
@@ -1193,10 +1774,11 @@
     let modUsernames = new Set();
     let unreadCount = 0;
     
-    // NEW ECONOMY DATA
+    // Cloud Profile Synchronization Logic
     let profileData = null;
     let profilesCache = {};
 
+    // Defined Shop Catalog
     const shopItems = {
         tags: [
             { id: 'tag_pro', name: '[PRO]', price: 50, type: 'tag' },
@@ -1223,7 +1805,7 @@
         ]
     };
 
-    // Presence Variables
+    // Presence & Connectivity Systems
     let siteChannel = null;
     let sitePresence = {};
     let chatPresence = {};
@@ -1241,9 +1823,11 @@
       window.location.href = "index.html";
     }
 
-    // ONLINE PRESENCE LOGIC
+    // ONLINE ACTIVITY MONITORING
     async function initSitePresence() {
-        if (siteChannel) return;
+        if (siteChannel) {
+          return;
+        }
         siteChannel = _supabase.channel('site_presence', { config: { presence: { key: currentUser } } });
         siteChannel
             .on('presence', { event: 'sync' }, () => {
@@ -1251,32 +1835,44 @@
                 updateOnlineStats('site');
             })
             .subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') { await siteChannel.track({ user: currentUser }); }
+                if (status === 'SUBSCRIBED') { 
+                  await siteChannel.track({ user: currentUser }); 
+                }
             });
     }
 
     function updateOnlineStats(type) {
         const state = (type === 'site') ? sitePresence : chatPresence;
         const target = document.getElementById(type === 'site' ? 'siteOnlineStats' : 'chatOnlineStats');
-        if (!target) return;
+        if (!target) {
+          return;
+        }
 
         let uniqueUsers = new Set();
         let uniqueMods = new Set();
 
         for (const id in state) {
             state[id].forEach(p => {
-                if (modUsernames.has(p.user) || p.user === 'Derrick') uniqueMods.add(p.user);
-                else uniqueUsers.add(p.user);
+                if (modUsernames.has(p.user) || p.user === 'Derrick') {
+                  uniqueMods.add(p.user);
+                } else {
+                  uniqueUsers.add(p.user);
+                }
             });
         }
 
         target.innerHTML = `Users Online: ${uniqueUsers.size} | Staff Online: ${uniqueMods.size}`;
-        if (isModUser) target.classList.add('staff-clickable');
-        else target.classList.remove('staff-clickable');
+        if (isModUser) {
+          target.classList.add('staff-clickable');
+        } else {
+          target.classList.remove('staff-clickable');
+        }
     }
 
     function showOnlineList(type) {
-        if (!isModUser) return;
+        if (!isModUser) {
+          return;
+        }
         const state = (type === 'site') ? sitePresence : chatPresence;
         const listBody = document.getElementById('onlineListBody');
         document.getElementById('onlineListTitle').innerText = (type === 'site' ? "Sitewide Online" : "Chatroom Online");
@@ -1289,8 +1885,12 @@
         const sorted = Array.from(usersFound).sort((a,b) => {
              const aMod = modUsernames.has(a) || a === 'Derrick';
              const bMod = modUsernames.has(b) || b === 'Derrick';
-             if (aMod && !bMod) return -1;
-             if (!aMod && bMod) return 1;
+             if (aMod && !bMod) {
+               return -1;
+             }
+             if (!aMod && bMod) {
+               return 1;
+             }
              return a.localeCompare(b);
         });
 
@@ -1312,7 +1912,7 @@
         document.getElementById('onlineListModal').classList.remove('active');
     }
 
-    // MOD HELPERS
+    // MODERATOR UTILITY METHODS
     async function logModAction(action, target, details) {
         await _supabase.from('audit_logs').insert({
             moderator: currentUser,
@@ -1331,7 +1931,7 @@
         });
     }
 
-    // MODERATION LOGIC
+    // AUTOMATIC MODERATION ENGINE
     function getFuzzyText(text) {
         return text.toLowerCase()
             .replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a')
@@ -1374,7 +1974,9 @@
         if (expiry && Date.now() < parseInt(expiry)) {
             const mins = Math.ceil((parseInt(expiry) - Date.now()) / 60000);
             if (type === 'chat') {
-                if (!silent) addSystemMessage("Account Restricted", `You are currently chat-banned for policy violations. Remaining: ${mins}m`);
+                if (!silent) {
+                  addSystemMessage("Account Restricted", `You are currently chat-banned for policy violations. Remaining: ${mins}m`);
+                }
                 return 'chat';
             }
             if (type === 'site') {
@@ -1399,13 +2001,17 @@
             }
             if (data.is_chat_banned) {
                 if (!data.chat_ban_until) {
-                    if (!silent) addSystemMessage("Chat Privileges Revoked", `Permanent. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
+                    if (!silent) {
+                      addSystemMessage("Chat Privileges Revoked", `Permanent. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
+                    }
                     return 'chat';
                 }
                 const chatExpiry = new Date(data.chat_ban_until).getTime();
                 if (Date.now() < chatExpiry) {
                     const mins = Math.ceil((chatExpiry - Date.now()) / 60000);
-                    if (!silent) addSystemMessage("Chat Suspended", `Remaining: ${mins}m. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
+                    if (!silent) {
+                      addSystemMessage("Chat Suspended", `Remaining: ${mins}m. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
+                    }
                     return 'chat';
                 }
             }
@@ -1415,9 +2021,16 @@
     }
 
     function renderBanScreen(mins, reason) {
-        const timeText = (mins === "PERMANENT") ? "Indefinite Ban" : `Remaining Ban: ${mins} minutes`;
+        let timeText = "";
+        if (mins === "PERMANENT") {
+          timeText = "Indefinite Ban";
+        } else {
+          timeText = `Remaining Ban: ${mins} minutes`;
+        }
+        
         const reasonText = reason ? `<p style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; font-size: 0.9rem; border-left: 4px solid #ef4444;"><b>Reason:</b> ${reason}</p>` : "";
-        document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background: #020617; color: white; text-align: center; font-family: sans-serif; padding: 2rem;">
+        document.body.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background: #020617; color: white; text-align: center; font-family: sans-serif; padding: 2rem;">
                   <h1 style="color: #ef4444; font-size: 3rem; margin-bottom: 0;">SITE ACCESS REVOKED</h1>
                   <p style="font-size: 1.2rem; margin-top: 1rem;">You are banned from Asteroid due to community violations.</p>
                   ${reasonText}
@@ -1426,7 +2039,7 @@
                 </div>`;
     }
 
-    // MOD PANEL LOGIC
+    // MODERATOR PANEL LOGIC HANDLERS
     let modUserCache = [];
 
     async function openModPanel() {
@@ -1439,7 +2052,9 @@
     }
 
     async function switchModTab(tab) {
-        document.querySelectorAll('.mod-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.mod-tab-btn').forEach(function(b) {
+          b.classList.remove('active');
+        });
         document.getElementById('viewModUsers').style.display = 'none';
         document.getElementById('viewModLogs').style.display = 'none';
         document.getElementById('modGuidelines').style.display = 'none';
@@ -1459,14 +2074,16 @@
     async function fetchAuditLogs() {
         const { data } = await _supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50);
         if (data) {
-            document.getElementById('auditLogsBody').innerHTML = data.map(log => `
+            document.getElementById('auditLogsBody').innerHTML = data.map(function(log) {
+              return `
                 <tr>
                     <td style="color:var(--accent)">${log.moderator}</td>
                     <td><b>${log.action}</b><br><small style="color:var(--text-muted)">${log.details}</small></td>
                     <td>${log.target_user || "-"}</td>
                     <td style="font-size:0.7rem;">${new Date(log.created_at).toLocaleString()}</td>
                 </tr>
-            `).join('');
+              `;
+            }).join('');
         }
     }
 
@@ -1478,13 +2095,21 @@
         const list = document.getElementById('rapSheetBody');
         
         if (data && data.length > 0) {
-            list.innerHTML = data.map(v => `
+            list.innerHTML = data.map(function(v) {
+              let typeClass = "";
+              if (v.type.includes('Ban')) {
+                typeClass = "type-ban";
+              } else {
+                typeClass = "type-warning";
+              }
+              return `
                 <div class="violation-item">
-                    <span class="violation-type ${v.type.includes('Ban') ? 'type-ban' : 'type-warning'}">${v.type}</span>
+                    <span class="violation-type ${typeClass}">${v.type}</span>
                     <p style="margin: 5px 0;">${v.reason}</p>
                     <small style="color:var(--text-muted)">By ${v.moderator} • ${new Date(v.created_at).toLocaleDateString()}</small>
                 </div>
-            `).join('');
+              `;
+            }).join('');
         } else {
             list.innerHTML = `<p style="text-align:center; padding: 2rem; color:var(--text-muted)">No violation history found for this user.</p>`;
         }
@@ -1500,9 +2125,13 @@
         
         if (profiles) {
             modUsernames.clear();
-            modUserCache = profiles.map(p => {
-                if (p.is_mod || p.username === 'Derrick') modUsernames.add(p.username);
-                const lb = (leaderboard || []).find(l => l.username === p.username);
+            modUserCache = profiles.map(function(p) {
+                if (p.is_mod || p.username === 'Derrick') {
+                  modUsernames.add(p.username);
+                }
+                const lb = (leaderboard || []).find(function(l) { 
+                  return l.username === p.username; 
+                });
                 return {
                     username: p.username,
                     full_name: p.full_name,
@@ -1513,7 +2142,9 @@
                     chat_ban_until: p.chat_ban_until,
                     minutes: lb ? lb.minutes : 0
                 };
-            }).sort((a,b) => b.minutes - a.minutes);
+            }).sort(function(a, b) { 
+              return b.minutes - a.minutes; 
+            });
             
             renderModList(modUserCache);
         }
@@ -1521,26 +2152,33 @@
 
     function renderModList(users) {
         const body = document.getElementById('modUserBody');
-        body.innerHTML = users.map(u => {
-            const isSiteBanned = u.is_banned && (!u.ban_until || new Date(u.ban_until) > new Date());
-            const isChatBanned = u.is_chat_banned && (!u.chat_ban_until || new Date(u.chat_ban_until) > new Date());
-            const isAdmin = u.username === 'Derrick';
+        body.innerHTML = users.map(function(u) {
+            let isSiteBanned = u.is_banned && (!u.ban_until || new Date(u.ban_until) > new Date());
+            let isChatBanned = u.is_chat_banned && (!u.chat_ban_until || new Date(u.chat_ban_until) > new Date());
+            let isAdmin = (u.username === 'Derrick');
             
             let actions = `<div style="display: flex; gap: 5px;">`;
             actions += `<button class="btn" style="padding: 5px 8px; font-size: 0.65rem; background: var(--bg-surface);" onclick="viewUserProfile('${u.username}')">Profile</button>`;
-            if (!isAdmin) {
+            
+            if (isAdmin === false) {
+                let siteClass = isSiteBanned ? "" : "btn-danger";
+                let siteText = isSiteBanned ? "Unban Site" : "Ban Site";
+                let chatClass = isChatBanned ? "" : "btn-primary";
+                let chatText = isChatBanned ? "Lift Chat" : "Suspend Chat";
+
                 actions += `
-                    <button class="btn ${isSiteBanned ? '' : 'btn-danger'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
-                        ${isSiteBanned ? 'Unban Site' : 'Ban Site'}
+                    <button class="btn ${siteClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
+                        ${siteText}
                     </button>
-                    <button class="btn ${isChatBanned ? '' : 'btn-primary'}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
-                        ${isChatBanned ? 'Lift Chat' : 'Suspend Chat'}
+                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
+                        ${chatText}
                     </button>`;
                 
                 if (currentUser === 'Derrick') {
+                    let modText = u.is_mod ? 'Revoke Mod' : 'Make Mod';
                     actions += `
                     <button class="btn" style="padding: 5px 8px; font-size: 0.65rem; background:#6366f1;" onclick="handleModToggle('${u.username}', ${u.is_mod})">
-                        ${u.is_mod ? 'Revoke Mod' : 'Make Mod'}
+                        ${modText}
                     </button>`;
                 }
             } else {
@@ -1548,13 +2186,18 @@
             }
             actions += `</div>`;
 
+            let siteStatusClass = isSiteBanned ? 'status-banned' : 'status-active';
+            let chatStatusClass = isChatBanned ? 'status-banned' : 'status-active';
+            let roleText = isAdmin ? 'ADMIN' : (u.is_mod ? 'MODERATOR' : 'USER');
+            let roleColor = (u.is_mod || isAdmin) ? 'var(--accent)' : 'var(--text-muted)';
+
             return `
                 <tr>
                     <td>${u.username}</td>
                     <td>${u.minutes}m</td>
-                    <td class="${isSiteBanned ? 'status-banned' : 'status-active'}">${isSiteBanned ? 'Banned' : 'Active'}</td>
-                    <td class="${isChatBanned ? 'status-banned' : 'status-active'}">${isChatBanned ? 'Suspended' : 'Active'}</td>
-                    <td><b style="color:${(u.is_mod || isAdmin) ? 'var(--accent)' : 'var(--text-muted)'}">${isAdmin ? 'ADMIN' : (u.is_mod ? 'MODERATOR' : 'USER')}</b></td>
+                    <td class="${siteStatusClass}">${isSiteBanned ? 'Banned' : 'Active'}</td>
+                    <td class="${chatStatusClass}">${isChatBanned ? 'Suspended' : 'Active'}</td>
+                    <td><b style="color:${roleColor}">${roleText}</b></td>
                     <td>${actions}</td>
                 </tr>
             `;
@@ -1563,32 +2206,39 @@
 
     function filterModList() {
         const term = document.getElementById('userListSearch').value.toLowerCase();
-        const filtered = modUserCache.filter(u => {
-            return u.username.toLowerCase().includes(term) || 
-                   (u.full_name && u.full_name.toLowerCase().includes(term));
+        const filtered = modUserCache.filter(function(u) {
+            return u.username.toLowerCase().includes(term) || (u.full_name && u.full_name.toLowerCase().includes(term));
         });
         renderModList(filtered);
     }
 
     async function handleModToggle(user, currentStatus) {
-        if (currentUser !== 'Derrick') return alert("Only the admin account can manage moderators.");
+        if (currentUser !== 'Derrick') {
+          return alert("Only the admin account can manage moderators.");
+        }
         const actionText = currentStatus ? "revoke moderator status" : "grant moderator status";
         if (confirm(`Are you sure you want to ${actionText} for ${user}?`)) {
             const { error } = await _supabase.from('profiles').update({ is_mod: !currentStatus }).eq('username', user);
-            if (error) { alert(error.message); } else {
-                logModAction("Update Role", user, `${currentStatus ? "Revoked" : "Granted"} Moderator privileges.`);
+            if (error) { 
+              alert(error.message); 
+            } else {
+              logModAction("Update Role", user, `${currentStatus ? "Revoked" : "Granted"} Moderator privileges.`);
             }
             fetchModUsers();
         }
     }
 
     async function handleModBan(user, isCurrentlyBanned) {
-        if (user === 'Derrick') return alert("You cannot ban the system administrator.");
+        if (user === 'Derrick') {
+          return alert("You cannot ban the system administrator.");
+        }
         if (isCurrentlyBanned) {
             if (confirm(`Unban ${user} from site?`)) {
                 const { error } = await _supabase.from('profiles').update({ is_banned: false, ban_until: null, ban_reason: null }).eq('username', user);
-                if (error) { alert(error.message); } else {
-                    logModAction("Site Unban", user, "Restored site access.");
+                if (error) { 
+                  alert(error.message); 
+                } else {
+                  logModAction("Site Unban", user, "Restored site access.");
                 }
                 fetchModUsers();
             }
@@ -1596,15 +2246,21 @@
             const dur = prompt(`Ban ${user} from Site.\n\nEnter duration in minutes (or leave blank for permanent):`, "1440");
             if (dur !== null) {
                 const reason = prompt("Enter Ban Reason:", "Violation of site policy");
-                if (reason === null) return;
+                if (reason === null) {
+                  return;
+                }
 
                 let expiry = null;
-                if (dur.trim() !== "" && !isNaN(dur)) expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
+                if (dur.trim() !== "" && isNaN(dur) === false) {
+                  expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
+                }
                 
                 const { error } = await _supabase.from('profiles').update({ is_banned: true, ban_until: expiry, ban_reason: reason }).eq('username', user);
-                if (error) { alert(error.message); } else {
-                    logModAction("Site Ban", user, `Banned for ${dur || "Permanent"}m. Reason: ${reason}`);
-                    addViolation(user, "Site Ban", reason, currentUser);
+                if (error) { 
+                  alert(error.message); 
+                } else {
+                  logModAction("Site Ban", user, `Banned for ${dur || "Permanent"}m. Reason: ${reason}`);
+                  addViolation(user, "Site Ban", reason, currentUser);
                 }
                 fetchModUsers();
             }
@@ -1612,12 +2268,16 @@
     }
 
     async function handleModChatBan(user, isCurrentlyBanned) {
-        if (user === 'Derrick') return alert("You cannot suspend the system administrator.");
+        if (user === 'Derrick') {
+          return alert("You cannot suspend the system administrator.");
+        }
         if (isCurrentlyBanned) {
             if (confirm(`Lift chat suspension for ${user}?`)) {
                 const { error } = await _supabase.from('profiles').update({ is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null }).eq('username', user);
-                if (error) { alert(error.message); } else {
-                    logModAction("Chat Lifted", user, "Restored chat privileges.");
+                if (error) { 
+                  alert(error.message); 
+                } else {
+                  logModAction("Chat Lifted", user, "Restored chat privileges.");
                 }
                 fetchModUsers();
             }
@@ -1625,22 +2285,28 @@
             const dur = prompt(`Suspend ${user}'s Chat Privileges.\n\nEnter duration in minutes (or leave blank for permanent):`, "60");
             if (dur !== null) {
                 const reason = prompt("Enter Suspension Reason:", "Inappropriate language/behavior");
-                if (reason === null) return;
+                if (reason === null) {
+                  return;
+                }
 
                 let expiry = null;
-                if (dur.trim() !== "" && !isNaN(dur)) expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
+                if (dur.trim() !== "" && isNaN(dur) === false) {
+                  expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
+                }
                 
                 const { error } = await _supabase.from('profiles').update({ is_chat_banned: true, chat_ban_until: expiry, chat_ban_reason: reason }).eq('username', user);
-                if (error) { alert(error.message); } else {
-                    logModAction("Chat Suspend", user, `Suspended for ${dur || "Permanent"}m. Reason: ${reason}`);
-                    addViolation(user, "Chat Ban", reason, currentUser);
+                if (error) { 
+                  alert(error.message); 
+                } else {
+                  logModAction("Chat Suspend", user, `Suspended for ${dur || "Permanent"}m. Reason: ${reason}`);
+                  addViolation(user, "Chat Ban", reason, currentUser);
                 }
                 fetchModUsers();
             }
         }
     }
 
-    // CHAT LOGIC
+    // ASTEROID CHAT ENGINE LOGIC
     let currentReplyToId = null;
     let currentRecipient = null;
     let allMessages = [];
@@ -1651,7 +2317,13 @@
     let typingTimeout = null;
 
     function updateLastSeen() {
-        const all = activeChannel === 'global' ? allMessages : staffMessages;
+        let all = [];
+        if (activeChannel === 'global') {
+          all = allMessages;
+        } else {
+          all = staffMessages;
+        }
+
         if (all.length > 0) {
             const newest = all[all.length - 1];
             if (newest && newest.created_at) {
@@ -1685,7 +2357,7 @@
             const badge = document.getElementById('unreadBadge');
             let hasMention = false;
             
-            combined.forEach(msg => {
+            combined.forEach(function(msg) {
                 const lower = (msg.content || "").toLowerCase();
                 if (lower.includes(`@${currentUser.toLowerCase()}`) || 
                     (lower.includes("@admin") && currentUser === 'Derrick') ||
@@ -1695,14 +2367,20 @@
                 }
             });
 
-            badge.innerText = hasMention ? "@" : unreadCount;
+            if (hasMention) {
+              badge.innerText = "@";
+            } else {
+              badge.innerText = unreadCount;
+            }
             badge.style.display = "inline-block";
         }
     }
 
     async function openChat() {
       const ban = await checkActiveBan(true);
-      if (ban === 'site') return; 
+      if (ban === 'site') {
+        return; 
+      }
 
       unreadCount = 0;
       const badge = document.getElementById('unreadBadge');
@@ -1722,7 +2400,9 @@
 
     function switchChatChannel(channel) {
         activeChannel = channel;
-        document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.channel-btn').forEach(function(b) { 
+          b.classList.remove('active'); 
+        });
         if(channel === 'global') {
             document.getElementById('chanGlobal').classList.add('active');
             fetchMessages();
@@ -1759,25 +2439,33 @@
             .order('created_at', { ascending: true })
             .limit(100);
         if (data) {
-            const existingIds = new Set(staffMessages.map(m => m.id));
-            const newFetchedData = data.filter(m => !existingIds.has(m.id));
-            staffMessages = [...newFetchedData, ...staffMessages].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+            const existingIds = new Set(staffMessages.map(function(m) { return m.id; }));
+            const newFetchedData = data.filter(function(m) { return !existingIds.has(m.id); });
+            staffMessages = [...newFetchedData, ...staffMessages].sort(function(a, b) { 
+              return new Date(a.created_at) - new Date(b.created_at); 
+            });
             renderMessages();
             updateLastSeen();
         }
     }
 
     async function deleteMessage(id) {
-        if (!isModUser) return;
-        if (!confirm("Delete this message permanently?")) return;
+        if (!isModUser) {
+          return;
+        }
+        if (confirm("Delete this message permanently?") === false) {
+          return;
+        }
         
         const table = (activeChannel === 'global') ? 'messages' : 'staff_messages';
         const msgList = (activeChannel === 'global') ? allMessages : staffMessages;
-        const msgToDelete = msgList.find(m => m.id === id);
+        const msgToDelete = msgList.find(function(m) { return m.id === id; });
 
         const { error } = await _supabase.from(table).delete().eq('id', id);
-        if (error) { alert(error.message); } else {
-            logModAction("Deleted Message", msgToDelete ? msgToDelete.username : "Unknown", `Deleted ${activeChannel} message ID ${id}.`);
+        if (error) { 
+          alert(error.message); 
+        } else {
+          logModAction("Deleted Message", msgToDelete ? msgToDelete.username : "Unknown", `Deleted ${activeChannel} message ID ${id}.`);
         }
     }
 
@@ -1785,27 +2473,45 @@
       const body = document.getElementById('chatBody');
       const messagesToRender = (activeChannel === 'global') ? allMessages : staffMessages;
 
-      body.innerHTML = messagesToRender.map(msg => {
+      body.innerHTML = messagesToRender.map(function(msg) {
         const isOwn = msg.username === currentUser;
-        const isBlockedStr = msg.content === "Message blocked due to policy violations";
+        const isBlockedStr = (msg.content === "Message blocked due to policy violations");
         const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
-        const parentMsg = msg.parent_id ? messagesToRender.find(m => m.id === msg.parent_id) : null;
+        const parentMsg = msg.parent_id ? messagesToRender.find(function(m) { return m.id === msg.parent_id; }) : null;
         const isPM = (activeChannel === 'global') ? msg.recipient !== null : false;
         
-        const isAdminSender = msg.username === 'Derrick';
+        const isAdminSender = (msg.username === 'Derrick');
         const isModSender = modUsernames.has(msg.username) && !isAdminSender;
-        const parsedContent = isBlockedStr ? msg.content : (window.marked ? marked.parse(msg.content) : msg.content);
+        
+        let parsedContent = "";
+        if (isBlockedStr) {
+          parsedContent = msg.content;
+        } else {
+          parsedContent = window.marked ? marked.parse(msg.content) : msg.content;
+        }
 
         const canDM = (isModUser || (isPM && (isModSender || isAdminSender) && msg.recipient === currentUser));
         
-        // APPLY STYLES
+        // Style Mapping via Cache
         const prof = profilesCache[msg.username] || {};
         const nameColor = prof.name_color || '';
-        const nameStyleClass = (prof.name_style === 'sparkle' ? 'name-sparkle' : (prof.name_style === 'glow' ? 'name-glow' : (prof.name_style === 'italic' ? 'name-italic' : '')));
+        let nameStyleClass = "";
+        if (prof.name_style === 'sparkle') {
+          nameStyleClass = 'name-sparkle';
+        } else if (prof.name_style === 'glow') {
+          nameStyleClass = 'name-glow';
+        } else if (prof.name_style === 'italic') {
+          nameStyleClass = 'name-italic';
+        }
         const tagText = prof.selected_tag || '';
 
+        let ownClass = isOwn ? 'own' : '';
+        let privateClass = isPM ? 'private' : '';
+        let blockedClass = isBlockedStr ? 'blocked-content' : '';
+        let staffRoomClass = (activeChannel === 'staff') ? 'staff-msg' : '';
+
         return `
-          <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''} ${activeChannel === 'staff' ? 'staff-msg' : ''}">
+          <div class="message ${ownClass} ${privateClass} ${blockedClass} ${staffRoomClass}">
             <div class="msg-header">
               <span class="msg-user">
                 ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${tagText}</span>` : ''}
@@ -1851,21 +2557,27 @@
     }
 
     function handleTyping() {
-      if (!chatChannel || activeChannel !== 'global') return;
+      if (!chatChannel || activeChannel !== 'global') {
+        return;
+      }
       chatChannel.track({ user: currentUser, isTyping: true });
       clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => {
+      typingTimeout = setTimeout(function() {
         chatChannel.track({ user: currentUser, isTyping: false });
       }, 2000);
     }
 
     async function postMessage() {
       const ban = await checkActiveBan();
-      if (ban === 'chat' || ban === 'site') return; 
+      if (ban === 'chat' || ban === 'site') {
+        return; 
+      }
 
       const input = document.getElementById('chatInput');
       let content = input.value.trim();
-      if (!content) return;
+      if (content === "") {
+        return;
+      }
 
       if (currentRecipient && !isModUser) {
           const isTargetStaff = modUsernames.has(currentRecipient) || currentRecipient === 'Derrick';
@@ -1903,15 +2615,17 @@
     }
 
     function subscribeMessages() {
-      if (chatChannel) return;
+      if (chatChannel) {
+        return;
+      }
       chatChannel = _supabase.channel('global_chat_room', { config: { presence: { key: currentUser } } });
 
       chatChannel
-        .on('postgres_changes', { event: '*', table: 'messages', schema: 'public' }, payload => {
+        .on('postgres_changes', { event: '*', table: 'messages', schema: 'public' }, function(payload) {
           if (payload.eventType === 'INSERT') {
             const msg = payload.new;
             if (!msg.recipient || msg.recipient === currentUser || msg.username === currentUser) {
-                if (!allMessages.find(m => m.id === msg.id)) {
+                if (!allMessages.find(function(m) { return m.id === msg.id; })) {
                     allMessages.push(msg);
                 }
                 if (msg.username !== currentUser) {
@@ -1936,11 +2650,15 @@
                 }
             }
           } else if (payload.eventType === 'DELETE') {
-            allMessages = allMessages.filter(m => m.id !== payload.old.id);
+            allMessages = allMessages.filter(function(m) { 
+              return m.id !== payload.old.id; 
+            });
           }
-          if(activeChannel === 'global') renderMessages();
+          if(activeChannel === 'global') {
+            renderMessages();
+          }
         })
-        .on('presence', { event: 'sync' }, () => {
+        .on('presence', { event: 'sync' }, function() {
           chatPresence = chatChannel.presenceState();
           updateOnlineStats('chat');
           
@@ -1952,19 +2670,27 @@
             }
           }
           const indicator = document.getElementById('typingIndicator');
-          indicator.innerText = typers.length > 0 ? `${typers.join(', ')} typing...` : '';
+          if (typers.length > 0) {
+            indicator.innerText = `${typers.join(', ')} typing...`;
+          } else {
+            indicator.innerText = '';
+          }
         })
         .subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') { await chatChannel.track({ user: currentUser }); }
+            if (status === 'SUBSCRIBED') { 
+              await chatChannel.track({ user: currentUser }); 
+            }
         });
     }
 
     function subscribeStaffMessages() {
-        if (staffChannelSub || !isModUser) return;
+        if (staffChannelSub || !isModUser) {
+          return;
+        }
         staffChannelSub = _supabase.channel('staff_chat_room')
-            .on('postgres_changes', { event: '*', table: 'staff_messages', schema: 'public' }, payload => {
+            .on('postgres_changes', { event: '*', table: 'staff_messages', schema: 'public' }, function(payload) {
                 if (payload.eventType === 'INSERT') {
-                    if (!staffMessages.find(m => m.id === payload.new.id)) {
+                    if (!staffMessages.find(function(m) { return m.id === payload.new.id; })) {
                         staffMessages.push(payload.new);
                     }
                     if (payload.new.username !== currentUser) {
@@ -1985,16 +2711,20 @@
                         }
                     }
                 } else if (payload.eventType === 'DELETE') {
-                    staffMessages = staffMessages.filter(m => m.id !== payload.old.id);
+                    staffMessages = staffMessages.filter(function(m) { 
+                      return m.id !== payload.old.id; 
+                    });
                 }
-                if(activeChannel === 'staff') renderMessages();
+                if(activeChannel === 'staff') {
+                  renderMessages();
+                }
             })
             .subscribe();
     }
 
     function subscribeProfiles() {
         _supabase.channel('profiles_realtime')
-            .on('postgres_changes', { event: 'UPDATE', table: 'profiles', schema: 'public' }, async payload => {
+            .on('postgres_changes', { event: 'UPDATE', table: 'profiles', schema: 'public' }, async function(payload) {
                 const user = payload.new;
                 profilesCache[user.username] = user; 
                 if (user.is_mod || user.username === 'Derrick') {
@@ -2006,22 +2736,42 @@
                 if (user.username === currentUser) {
                     profileData = user;
                     isModUser = user.is_mod || user.username === 'Derrick';
-                    document.getElementById('modNavBtn').style.display = isModUser ? 'block' : 'none';
-                    if (document.getElementById('pMenuStatus')) document.getElementById('pMenuStatus').textContent = user.username === 'Derrick' ? 'Admin' : (user.is_mod ? 'Moderator' : 'Explorer');
+                    if (isModUser) {
+                      document.getElementById('modNavBtn').style.display = 'block';
+                    } else {
+                      document.getElementById('modNavBtn').style.display = 'none';
+                    }
+                    if (document.getElementById('pMenuStatus')) {
+                      let statusText = "";
+                      if (user.username === 'Derrick') {
+                        statusText = 'Admin';
+                      } else if (user.is_mod) {
+                        statusText = 'Moderator';
+                      } else {
+                        statusText = 'Explorer';
+                      }
+                      document.getElementById('pMenuStatus').textContent = statusText;
+                    }
                     updateOnlineStats('site');
                     updateOnlineStats('chat');
                 }
 
-                if (document.getElementById('chatViewer').style.display === "flex") renderMessages();
+                if (document.getElementById('chatViewer').style.display === "flex") {
+                  renderMessages();
+                }
                 fetchLeaderboard();
             })
             .subscribe();
     }
 
     async function sendBroadcast() {
-        if (currentUser !== 'Derrick') return;
+        if (currentUser !== 'Derrick') {
+          return;
+        }
         const msg = document.getElementById('broadcastInput').value.trim();
-        if (!msg) return;
+        if (msg === "") {
+          return;
+        }
         await _supabase.from('broadcasts').insert({ message: msg, sender: currentUser });
         document.getElementById('broadcastInput').value = "";
     }
@@ -2030,7 +2780,9 @@
         const overlay = document.getElementById('broadcastOverlay');
         document.getElementById('broadcastText').innerText = message;
         overlay.style.display = 'flex';
-        try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e){}
+        try { 
+          new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); 
+        } catch(e) {}
     }
 
     function closeBroadcast() {
@@ -2039,16 +2791,18 @@
 
     function subscribeBroadcasts() {
         _supabase.channel('global_broadcasts')
-            .on('postgres_changes', { event: 'INSERT', table: 'broadcasts', schema: 'public' }, payload => {
+            .on('postgres_changes', { event: 'INSERT', table: 'broadcasts', schema: 'public' }, function(payload) {
                 showBroadcastAlert(payload.new.message);
             })
             .subscribe();
     }
 
-    // PROFILE LOGIC
+    // PROFILE SYNCHRONIZATION LOGIC
     async function loadProfile() {
         const ban = await checkActiveBan(true);
-        if (ban === 'site') return;
+        if (ban === 'site') {
+          return;
+        }
 
         const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
         
@@ -2058,7 +2812,9 @@
             
             if (isModUser) {
                 document.getElementById('modNavBtn').style.display = 'block';
-                if (data.username === 'Derrick') document.getElementById('adminBroadcastSection').style.display = 'block';
+                if (data.username === 'Derrick') {
+                  document.getElementById('adminBroadcastSection').style.display = 'block';
+                }
             }
             
             const savedName = localStorage.getItem('asteroid_full_name') || data.full_name;
@@ -2078,12 +2834,14 @@
             updatePersonalRow();
         }
         
-        // POPULATE LOOKUP CACHE
+        // Refresh lookup cache
         const { data: allProfs } = await _supabase.from('profiles').select('*');
         if (allProfs) {
-            allProfs.forEach(p => {
+            allProfs.forEach(function(p) {
                 profilesCache[p.username] = p;
-                if(p.is_mod || p.username === 'Derrick') modUsernames.add(p.username);
+                if(p.is_mod || p.username === 'Derrick') {
+                  modUsernames.add(p.username);
+                }
             });
         }
 
@@ -2122,60 +2880,106 @@
     }
 
     function checkModApplyPopup() {
-        if (currentUser === 'Derrick' || isModUser) return;
-        if (Math.random() < 0.3) document.getElementById('modApplyModal').classList.add('active');
+        if (currentUser === 'Derrick' || isModUser) {
+          return;
+        }
+        if (Math.random() < 0.3) {
+          document.getElementById('modApplyModal').classList.add('active');
+        }
     }
 
     function closeModApply() {
         document.getElementById('modApplyModal').classList.remove('active');
     }
 
-    // --- NEW SHOP LOGIC ---
+    // EXPANDED SHOP SYSTEM LOGIC
     function openShop() {
         document.getElementById('shopModal').classList.add('active');
         document.getElementById('shopBalance').textContent = profileData.coins || 0;
         switchShopTab('tags');
     }
-    function closeShop() { document.getElementById('shopModal').classList.remove('active'); }
+
+    function closeShop() { 
+      document.getElementById('shopModal').classList.remove('active'); 
+    }
 
     function switchShopTab(tab) {
-        document.getElementById('shopTabTags').classList.toggle('active', tab === 'tags');
-        document.getElementById('shopTabStyles').classList.toggle('active', tab === 'styles');
+        if (tab === 'tags') {
+          document.getElementById('shopTabTags').classList.add('active');
+          document.getElementById('shopTabStyles').classList.remove('active');
+        } else {
+          document.getElementById('shopTabTags').classList.remove('active');
+          document.getElementById('shopTabStyles').classList.add('active');
+        }
         renderShopItems(tab);
     }
 
     function renderShopItems(type) {
         const grid = document.getElementById('shopGrid');
-        const items = type === 'tags' ? shopItems.tags : shopItems.styles;
+        let items = [];
+        if (type === 'tags') {
+          items = shopItems.tags;
+        } else {
+          items = shopItems.styles;
+        }
         const inventory = profileData.inventory || [];
-        grid.innerHTML = items.map(item => {
+
+        grid.innerHTML = items.map(function(item) {
             const isOwned = inventory.includes(item.id);
             const isEquipped = (profileData.selected_tag === item.name || profileData.name_color === item.value || profileData.name_style === item.value || profileData.leaderboard_border === item.value);
 
+            let statusText = "";
+            if (isOwned) {
+              if (isEquipped) {
+                statusText = 'EQUIPPED';
+              } else {
+                statusText = 'OWNED';
+              }
+            } else {
+              statusText = item.price + ' 🪙';
+            }
+
+            let ownedClass = isOwned ? 'owned' : '';
+            let equippedClass = isEquipped ? 'equipped' : '';
+
             return `
-                <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}" onclick="handleItemAction('${item.id}', ${isOwned})">
+                <div class="shop-item ${ownedClass} ${equippedClass}" onclick="handleItemAction('${item.id}', ${isOwned})">
                     <div class="item-preview">${item.name}</div>
-                    <div class="item-price">${isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : item.price + ' 🪙'}</div>
+                    <div class="item-price">${statusText}</div>
                 </div>`;
         }).join('');
     }
 
     async function handleItemAction(itemId, isOwned) {
-        const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
-        if (!item) return;
+        const item = [...shopItems.tags, ...shopItems.styles].find(function(i) { 
+          return i.id === itemId; 
+        });
+        if (!item) {
+          return;
+        }
 
         if (isOwned) {
             let update = {};
-            if (item.type === 'tag') update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
-            if (item.type === 'color') update.name_color = (profileData.name_color === item.value ? null : item.value);
-            if (item.type === 'style') update.name_style = (profileData.name_style === item.value ? null : item.value);
-            if (item.type === 'border') update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
+            if (item.type === 'tag') {
+              update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
+            }
+            if (item.type === 'color') {
+              update.name_color = (profileData.name_color === item.value ? null : item.value);
+            }
+            if (item.type === 'style') {
+              update.name_style = (profileData.name_style === item.value ? null : item.value);
+            }
+            if (item.type === 'border') {
+              update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
+            }
 
             await _supabase.from('profiles').update(update).eq('username', currentUser);
             await loadProfile();
             renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
         } else {
-            if (profileData.coins < item.price) return alert("Not enough coins!");
+            if (profileData.coins < item.price) {
+              return alert("Not enough coins!");
+            }
             if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
                 const newCoins = profileData.coins - item.price;
                 const newInv = [...(profileData.inventory || []), item.id];
@@ -2190,8 +2994,11 @@
     async function toggleFavorite(gameId) {
         event.stopPropagation();
         let favs = profileData.favorites || [];
-        if (favs.includes(gameId)) favs = favs.filter(id => id !== gameId);
-        else favs.push(gameId);
+        if (favs.includes(gameId)) {
+          favs = favs.filter(function(id) { return id !== gameId; });
+        } else {
+          favs.push(gameId);
+        }
 
         await _supabase.from('profiles').update({ favorites: favs }).eq('username', currentUser);
         await loadProfile();
@@ -2200,47 +3007,64 @@
 
     async function trackRecent(gameId) {
         let recent = profileData.recently_played || [];
-        recent = [gameId, ...recent.filter(id => id !== gameId)].slice(0, 4);
+        recent = [gameId, ...recent.filter(function(id) { return id !== gameId; })].slice(0, 4);
         await _supabase.from('profiles').update({ recently_played: recent }).eq('username', currentUser);
         loadProfile();
     }
 
     function updatePersonalRow() {
-        if (!profileData || !zones.length) return;
+        if (!profileData || !zones.length) {
+          return;
+        }
         const row = document.getElementById('personalRow');
         const section = document.getElementById('personalLibrary');
         const favIds = profileData.favorites || [];
         const recentIds = profileData.recently_played || [];
         const personalIds = [...new Set([...favIds, ...recentIds])];
 
-        if (personalIds.length === 0) { section.style.display = 'none'; return; }
+        if (personalIds.length === 0) { 
+          section.style.display = 'none'; 
+          return; 
+        }
         section.style.display = 'block';
 
-        const myGames = zones.filter(z => personalIds.includes(z.id));
-        row.innerHTML = myGames.map(game => `
+        const myGames = zones.filter(function(z) { return personalIds.includes(z.id); });
+        row.innerHTML = myGames.map(function(game) {
+          let favClass = favIds.includes(game.id) ? 'active' : '';
+          return `
             <div class="lib-card animate-in">
-                <div class="star-btn ${favIds.includes(game.id) ? 'active' : ''}" onclick="toggleFavorite(${game.id})">★</div>
+                <div class="star-btn ${favClass}" onclick="toggleFavorite(${game.id})">★</div>
                 <div class="game-card" onclick="openZone(${JSON.stringify(game).replace(/"/g, '&quot;')})">
                     <img src="${game.cover.replace("{COVER_URL}", coverURL)}">
                     <div class="game-info"><h3>${game.name}</h3></div>
                 </div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
     }
 
-    window.addEventListener('click', (e) => {
-        if (!e.target.closest('.profile-container')) document.getElementById('profileMenu').classList.remove('active');
-        if (!e.target.closest('.chat-tools-container')) document.getElementById('toolsMenu').classList.remove('active');
+    window.addEventListener('click', function(e) {
+        if (!e.target.closest('.profile-container')) {
+          document.getElementById('profileMenu').classList.remove('active');
+        }
+        if (!e.target.closest('.chat-tools-container')) {
+          document.getElementById('toolsMenu').classList.remove('active');
+        }
     });
 
+    // Start initialization
     loadProfile();
     subscribeBroadcasts();
     subscribeMessages();
     subscribeProfiles();
 
     async function trackMinutes() {
-      if (!currentUser) return;
+      if (!currentUser) {
+        return;
+      }
       const ban = await checkActiveBan(true);
-      if (ban === 'site') return;
+      if (ban === 'site') {
+        return;
+      }
       
       const { data } = await _supabase.from('leaderboard').select('minutes').eq('username', currentUser).maybeSingle();
       const nextMins = (data ? data.minutes : 0) + 1;
@@ -2248,7 +3072,7 @@
       const { data: profData } = await _supabase.from('profiles').select('total_minutes, coins').eq('username', currentUser).maybeSingle();
       const nextTotal = (profData ? (profData.total_minutes || 0) : 0) + 1;
       
-      // award 1 coin per minute
+      // Economy calculation: 1 coin per active minute
       let newCoins = (profData ? (profData.coins || 0) : 0) + 1;
 
       document.getElementById('pMenuMins').textContent = nextTotal + 'm';
@@ -2267,15 +3091,21 @@
       const { data } = await _supabase.from('leaderboard').select('username, minutes').order('minutes', { ascending: false }).limit(10);
       if (data) {
         const body = document.getElementById('leaderboardBody');
-        body.innerHTML = data.map((entry, index) => {
+        body.innerHTML = data.map(function(entry, index) {
             const isMe = (entry.username === currentUser);
-            const isAdmin = entry.username === 'Derrick';
+            const isAdmin = (entry.username === 'Derrick');
             const isMod = modUsernames.has(entry.username) && !isAdmin;
             const prof = profilesCache[entry.username] || {};
-            const borderClass = prof.leaderboard_border ? 'border-' + prof.leaderboard_border : '';
+            
+            let borderClass = "";
+            if (prof.leaderboard_border) {
+              borderClass = 'border-' + prof.leaderboard_border;
+            }
+
+            let currentUserClass = isMe ? 'current-user' : '';
 
             return `
-              <tr class="${isMe ? 'current-user' : ''} ${borderClass}">
+              <tr class="${currentUserClass} ${borderClass}">
                 <td class="rank-cell">#${index + 1}</td>
                 <td class="user-cell">
                     ${entry.username} 
@@ -2290,12 +3120,15 @@
     }
 
     setInterval(trackMinutes, 60000);
-    setInterval(() => checkActiveBan(true), 15000);
+    setInterval(function() { 
+      checkActiveBan(true); 
+    }, 15000);
     
     trackMinutes();
     fetchLeaderboard();
     setTimeout(checkModApplyPopup, 2000);
 
+    // CATALOG LOADING LOGIC
     const zonesURL = "zones.json";
     const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
     const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
@@ -2318,18 +3151,26 @@
       try {
         const response = await fetch("https://data.jsdelivr.com/v1/stats/packages/gh/gn-math/html@main/files?period=year");
         const data = await response.json();
-        data.forEach(file => {
+        data.forEach(function(file) {
           const idMatch = file.name.match(/\/(\d+)\.html$/);
-          if (idMatch) popularityData[parseInt(idMatch[1])] = file.hits.total;
+          if (idMatch) {
+            popularityData[parseInt(idMatch[1])] = file.hits.total;
+          }
         });
-      } catch (e) { console.warn("Popularity metrics offline"); }
+      } catch (e) { 
+        console.warn("Popularity metrics offline"); 
+      }
     }
 
     function sortZones() {
       const sortBy = document.getElementById('sortOptions').value;
-      if (sortBy === 'name') zones.sort((a, b) => a.name.localeCompare(b.name));
-      else if (sortBy === 'id') zones.sort((a, b) => a.id - b.id);
-      else if (sortBy === 'popular') zones.sort((a, b) => (popularityData[b.id] || 0) - (popularityData[a.id] || 0));
+      if (sortBy === 'name') {
+        zones.sort(function(a, b) { return a.name.localeCompare(b.name); });
+      } else if (sortBy === 'id') {
+        zones.sort(function(a, b) { return a.id - b.id; });
+      } else if (sortBy === 'popular') {
+        zones.sort(function(a, b) { return (popularityData[b.id] || 0) - (popularityData[a.id] || 0); });
+      }
       
       displayZones(zones);
       displayGameOfTheDay();
@@ -2340,13 +3181,17 @@
         const container = document.getElementById('container');
       container.innerHTML = "";
       const favIds = profileData ? (profileData.favorites || []) : [];
-      zonesToDisplay.forEach((game, index) => {
+      zonesToDisplay.forEach(function(game, index) {
         const card = document.createElement("div");
         card.className = "game-card animate-in";
         card.style.animationDelay = `${index * 0.02}s`;
-        card.onclick = () => { trackRecent(game.id); openZone(game); };
+        card.onclick = function() { 
+          trackRecent(game.id); 
+          openZone(game); 
+        };
+        let favClass = favIds.includes(game.id) ? 'active' : '';
         card.innerHTML = `
-            <div class="star-btn ${favIds.includes(game.id) ? 'active' : ''}" style="top:5px; right:5px; width:25px; height:25px; font-size:12px;" onclick="toggleFavorite(${game.id})">★</div>
+            <div class="star-btn ${favClass}" style="top:5px; right:5px; width:25px; height:25px; font-size:12px;" onclick="toggleFavorite(${game.id})">★</div>
             <img src="${game.cover.replace("{COVER_URL}", coverURL)}">
             <div class="game-info"><h3>${game.name}</h3></div>`;
         container.appendChild(card);
@@ -2365,25 +3210,44 @@
             <p style="color: var(--text-muted); margin: 0;">Hand-picked for you today.</p>
           </div>
         `;
-        document.getElementById('gameOfTheDay').onclick = () => { trackRecent(game.id); openZone(game); };
+        document.getElementById('gameOfTheDay').onclick = function() { 
+          trackRecent(game.id); 
+          openZone(game); 
+        };
       }
     }
 
     function getGameOfTheDay() {
-      if (!zones.length) return null;
+      if (zones.length === 0) {
+        return null;
+      }
       const seed = new Date().toDateString();
       let hash = 0;
-      for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+      for (let i = 0; i < seed.length; i++) {
+        hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+      }
       return zones[Math.abs(hash) % zones.length];
     }
 
-    function filterZones() { displayZones(zones.filter(z => z.name.toLowerCase().includes(document.getElementById('searchBar').value.toLowerCase()))); }
+    function filterZones() { 
+      const query = document.getElementById('searchBar').value.toLowerCase();
+      displayZones(zones.filter(function(z) { 
+        return z.name.toLowerCase().includes(query); 
+      })); 
+    }
 
     async function openZone(file) {
-      if (await checkActiveBan() === 'site') return;
+      if (await checkActiveBan() === 'site') {
+        return;
+      }
 
-      if (file.url.startsWith("http")) { window.location.href = file.url; return; }
-      fetch(file.url.replace("{HTML_URL}", htmlURL)).then(res => res.text()).then(html => {
+      if (file.url.startsWith("http")) { 
+        window.location.href = file.url; 
+        return; 
+      }
+      fetch(file.url.replace("{HTML_URL}", htmlURL)).then(function(res) { 
+        return res.text(); 
+      }).then(function(html) {
         document.getElementById('zoneViewer').style.display = "flex";
         document.body.style.overflow = "hidden";
         document.getElementById('zoneFrame').contentDocument.open();
@@ -2394,9 +3258,25 @@
       });
     }
 
-    function closeZone() { document.getElementById('zoneViewer').style.display = "none"; document.body.style.overflow = "auto"; document.getElementById('zoneFrame').src = "about:blank"; }
-    function fullscreenZone() { if (document.getElementById('zoneFrame').requestFullscreen) document.getElementById('zoneFrame').requestFullscreen(); }
-    function aboutBlank() { const nw = window.open("about:blank", "_blank"); if (nw) { nw.document.write(document.getElementById('zoneFrame').contentDocument.documentElement.outerHTML); nw.document.close(); } }
+    function closeZone() { 
+      document.getElementById('zoneViewer').style.display = "none"; 
+      document.body.style.overflow = "auto"; 
+      document.getElementById('zoneFrame').src = "about:blank"; 
+    }
+
+    function fullscreenZone() { 
+      if (document.getElementById('zoneFrame').requestFullscreen) {
+        document.getElementById('zoneFrame').requestFullscreen(); 
+      }
+    }
+
+    function aboutBlank() { 
+      const nw = window.open("about:blank", "_blank"); 
+      if (nw) { 
+        nw.document.write(document.getElementById('zoneFrame').contentDocument.documentElement.outerHTML); 
+        nw.document.close(); 
+      } 
+    }
 
     function saveData() {
       let storageObj = {};
@@ -2413,9 +3293,11 @@
 
     function loadData(event) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = function(e) {
         const parsed = JSON.parse(e.target.result);
-        for (let k in parsed) localStorage.setItem(k, parsed[k]);
+        for (let k in parsed) {
+          localStorage.setItem(k, parsed[k]);
+        }
         location.reload();
       };
       reader.readAsText(event.target.files[0]);
@@ -2423,21 +3305,39 @@
 
     listZones();
 
-    const IDLE_LIMIT = 3 * 60 * 1000; 
-    let lastActivity = Date.now();
+// --- INACTIVITY WATCHER SYSTEM ---
+const IDLE_LIMIT = 3 * 60 * 1000; 
+let lastActivity = Date.now();
 
-    function logoutUser() {
-        sessionStorage.removeItem("usernamePassword");
-        window.location.href = "https://asteroid-pixel.github.io"; 
+function logoutUser() {
+    sessionStorage.removeItem("usernamePassword");
+    window.location.href = "https://asteroid-pixel.github.io"; 
+}
+
+function resetIdleTimer() { 
+    lastActivity = Date.now(); 
+}
+
+function checkIdleStatus() { 
+    if (Date.now() - lastActivity >= IDLE_LIMIT) {
+        logoutUser(); 
     }
+}
 
-    function resetIdleTimer() { lastActivity = Date.now(); }
-    function checkIdleStatus() { if (Date.now() - lastActivity >= IDLE_LIMIT) logoutUser(); }
+['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(function(evt) {
+    document.addEventListener(evt, resetIdleTimer, true);
+});
 
-    ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
-        document.addEventListener(evt, resetIdleTimer, true);
-    });
-    setInterval(checkIdleStatus, 10000);
+setInterval(function() {
+    checkIdleStatus();
+}, 10000);
+
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden === false) {
+        checkIdleStatus();
+    }
+});
+// --------------------------------
   </script>
 </body>
 </html>
