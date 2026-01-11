@@ -2504,6 +2504,11 @@
           nameStyleClass = 'name-italic';
         }
         const tagText = prof.selected_tag || '';
+        
+        let borderClass = "";
+        if (prof.leaderboard_border) {
+          borderClass = 'border-' + prof.leaderboard_border;
+        }
 
         let ownClass = isOwn ? 'own' : '';
         let privateClass = isPM ? 'private' : '';
@@ -2511,7 +2516,7 @@
         let staffRoomClass = (activeChannel === 'staff') ? 'staff-msg' : '';
 
         return `
-          <div class="message ${ownClass} ${privateClass} ${blockedClass} ${staffRoomClass}">
+          <div class="message ${ownClass} ${privateClass} ${blockedClass} ${staffRoomClass} ${borderClass}">
             <div class="msg-header">
               <span class="msg-user">
                 ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${tagText}</span>` : ''}
@@ -3097,6 +3102,17 @@
             const isMod = modUsernames.has(entry.username) && !isAdmin;
             const prof = profilesCache[entry.username] || {};
             
+            const nameColor = prof.name_color || '';
+            let nameStyleClass = "";
+            if (prof.name_style === 'sparkle') {
+              nameStyleClass = 'name-sparkle';
+            } else if (prof.name_style === 'glow') {
+              nameStyleClass = 'name-glow';
+            } else if (prof.name_style === 'italic') {
+              nameStyleClass = 'name-italic';
+            }
+            const tagText = prof.selected_tag || '';
+
             let borderClass = "";
             if (prof.leaderboard_border) {
               borderClass = 'border-' + prof.leaderboard_border;
@@ -3108,7 +3124,8 @@
               <tr class="${currentUserClass} ${borderClass}">
                 <td class="rank-cell">#${index + 1}</td>
                 <td class="user-cell">
-                    ${entry.username} 
+                    ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${tagText}</span>` : ''}
+                    <span class="${nameStyleClass}" style="color: ${nameColor || 'inherit'}">${entry.username}</span>
                     ${isAdmin ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
                     ${isMod ? '<span class="mod-badge">MOD</span>' : ''}
                 </td>
