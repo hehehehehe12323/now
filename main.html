@@ -719,7 +719,6 @@
     }
 
     async function checkActiveBan(silent = false) {
-        // Check local storage bans first
         const expiry = localStorage.getItem('asteroid_ban_expiry');
         const type = localStorage.getItem('asteroid_ban_type');
         if (expiry && Date.now() < parseInt(expiry)) {
@@ -734,8 +733,8 @@
             }
         }
 
-        // Check Server Bans
-        const { data } = await _supabase.from('leaderboard').select('ban_until').eq('username', currentUser).maybeSingle();
+        // CORRECTED: Pointing to 'profiles' table for ban status
+        const { data } = await _supabase.from('profiles').select('ban_until').eq('username', currentUser).maybeSingle();
         if (data && data.ban_until) {
             const serverExpiry = new Date(data.ban_until).getTime();
             if (Date.now() < serverExpiry) {
@@ -761,7 +760,7 @@
     let modUserCache = [];
     function handleLogoClick() {
         const pass = prompt("Enter Mod Password:");
-        if (pass === "asteroid_admin_77") {
+        if (pass === "asteroidMod2026") {
             openModPanel();
         } else if (pass !== null) {
             alert("Incorrect password.");
@@ -778,7 +777,12 @@
     }
 
     async function fetchModUsers() {
-        const { data, error } = await _supabase.from('leaderboard').select('*').order('minutes', { ascending: false });
+        // CORRECTED: Joining leaderboard with profiles to get full_name and ban status
+        const { data, error } = await _supabase
+            .from('leaderboard')
+            .select('*, profiles(full_name, ban_until)')
+            .order('minutes', { ascending: false });
+            
         if (data) {
             modUserCache = data;
             renderModList(data);
@@ -788,14 +792,15 @@
     function renderModList(users) {
         const body = document.getElementById('modUserBody');
         body.innerHTML = users.map(u => {
-            const isBanned = u.ban_until && new Date(u.ban_until) > new Date();
+            const prof = u.profiles || {};
+            const isBanned = prof.ban_until && new Date(prof.ban_until) > new Date();
             const statusClass = isBanned ? 'status-banned' : 'status-active';
             const statusText = isBanned ? 'Banned' : 'Active';
             
             return `
                 <tr>
                     <td>${u.username}</td>
-                    <td>${u.full_name || '---'}</td>
+                    <td>${prof.full_name || '---'}</td>
                     <td>${u.minutes}m</td>
                     <td class="${statusClass}">${statusText}</td>
                     <td>
@@ -810,24 +815,27 @@
 
     function filterModList() {
         const term = document.getElementById('userListSearch').value.toLowerCase();
-        const filtered = modUserCache.filter(u => 
-            u.username.toLowerCase().includes(term) || 
-            (u.full_name && u.full_name.toLowerCase().includes(term))
-        );
+        const filtered = modUserCache.filter(u => {
+            const prof = u.profiles || {};
+            return u.username.toLowerCase().includes(term) || 
+                   (prof.full_name && prof.full_name.toLowerCase().includes(term));
+        });
         renderModList(filtered);
     }
 
     async function handleModBan(user, isCurrentlyBanned) {
         if (isCurrentlyBanned) {
             if (confirm(`Unban ${user}?`)) {
-                await _supabase.from('leaderboard').update({ ban_until: null }).eq('username', user);
+                // CORRECTED: Pointing to 'profiles' table
+                await _supabase.from('profiles').update({ ban_until: null }).eq('username', user);
                 fetchModUsers();
             }
         } else {
             const dur = prompt(`Enter ban duration for ${user} (in minutes):`, "1440");
             if (dur && !isNaN(dur)) {
                 const expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
-                await _supabase.from('leaderboard').update({ ban_until: expiry }).eq('username', user);
+                // CORRECTED: Pointing to 'profiles' table
+                await _supabase.from('profiles').update({ ban_until: expiry }).eq('username', user);
                 fetchModUsers();
             }
         }
@@ -1009,8 +1017,8 @@
         loadProfile();
         closeSettings();
         
-        // Update name in DB so mods see it
-        _supabase.from('leaderboard').update({ full_name: name }).eq('username', currentUser);
+        // CORRECTED: Pointing to 'profiles' table for metadata
+        _supabase.from('profiles').upsert({ username: currentUser, full_name: name }, { onConflict: 'username' });
     }
 
     window.addEventListener('click', (e) => {
@@ -1030,10 +1038,10 @@
       const nextMins = (data ? data.minutes : 0) + 1;
       document.getElementById('pMenuMins').textContent = nextMins + 'm';
 
+      // CORRECTED: Upserting ONLY leaderboard data here
       await _supabase.from('leaderboard').upsert({ 
         username: currentUser, 
         minutes: nextMins,
-        full_name: localStorage.getItem('asteroid_full_name') || null,
         updated_at: new Date().toISOString()
       }, { onConflict: 'username' });
     }
