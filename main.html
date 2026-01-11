@@ -77,6 +77,20 @@
 
     .nav-right { display: flex; gap: 0.75rem; align-items: center; }
 
+    /* Badges */
+    .mod-badge {
+        background: var(--accent);
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: 6px;
+        vertical-align: middle;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
     /* PROFILE STYLES */
     .profile-container { position: relative; }
     .profile-trigger {
@@ -161,6 +175,7 @@
 
     .message { background: var(--bg-card); padding: 1rem; border-radius: 16px; border: 1px solid var(--border); max-width: 80%; align-self: flex-start; }
     .message.own { align-self: flex-end; background: var(--primary); border-color: var(--primary-glow); }
+    .message.private { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
     .msg-header { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.75rem; margin-bottom: 0.5rem; }
     .msg-user { font-weight: 800; color: var(--accent); }
     .message.own .msg-user { color: white; opacity: 0.9; }
@@ -175,8 +190,11 @@
     }
     .system-title { font-weight: 800; display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
 
-    .msg-reply-link { cursor: pointer; color: var(--primary); font-size: 0.7rem; font-weight: 700; margin-top: 0.5rem; display: inline-block; }
-    .message.own .msg-reply-link { color: white; opacity: 0.8; }
+    .msg-footer { display: flex; gap: 10px; margin-top: 0.5rem; font-size: 0.7rem; font-weight: 700; }
+    .msg-link { cursor: pointer; color: var(--primary); }
+    .msg-link.delete { color: #ef4444; }
+    .message.own .msg-link { color: white; opacity: 0.8; }
+
     .msg-parent { background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.8rem; border-left: 3px solid var(--accent); }
 
     .chat-input-area { 
@@ -671,6 +689,8 @@
 
     const retrievedLogin = sessionStorage.getItem("usernamePassword");
     let currentUser = null; 
+    let isModUser = false;
+    let modUsernames = new Set();
 
     if (retrievedLogin) {
       try {
@@ -800,7 +820,9 @@
         const { data: leaderboard } = await _supabase.from('leaderboard').select('*');
         
         if (profiles) {
+            modUsernames.clear();
             modUserCache = profiles.map(p => {
+                if (p.is_mod || p.username === 'admin') modUsernames.add(p.username);
                 const lb = (leaderboard || []).find(l => l.username === p.username);
                 return {
                     username: p.username,
@@ -933,6 +955,7 @@
 
     // CHAT LOGIC
     let currentReplyToId = null;
+    let currentRecipient = null;
     let allMessages = [];
     let chatChannel = null;
     let typingTimeout = null;
@@ -954,11 +977,21 @@
     }
 
     async function fetchMessages() {
-      const { data, error } = await _supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(100);
+      const { data, error } = await _supabase.from('messages')
+        .select('*')
+        .or(`recipient.is.null,recipient.eq.${currentUser},username.eq.${currentUser}`)
+        .order('created_at', { ascending: true })
+        .limit(100);
       if (data) {
         allMessages = data;
         renderMessages();
       }
+    }
+
+    async function deleteMessage(id) {
+        if (!confirm("Delete this message permanently?")) return;
+        const { error } = await _supabase.from('messages').delete().eq('id', id);
+        if (error) alert(error.message);
     }
 
     function renderMessages() {
@@ -968,16 +1001,26 @@
         const isBlockedStr = msg.content === "Message blocked due to policy violations";
         const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const parentMsg = msg.parent_id ? allMessages.find(m => m.id === msg.parent_id) : null;
+        const isPM = msg.recipient !== null;
+        const isModSender = modUsernames.has(msg.username);
         
         return `
-          <div class="message ${isOwn ? 'own' : ''} ${isBlockedStr ? 'blocked-content' : ''}">
+          <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''}">
             <div class="msg-header">
-              <span class="msg-user">${msg.username}</span>
+              <span class="msg-user">
+                ${msg.username} 
+                ${isModSender ? '<span class="mod-badge">MOD</span>' : ''}
+                ${isPM ? `<small style="color:#f59e0b; margin-left:5px;">(Private to ${msg.recipient === currentUser ? 'You' : msg.recipient})</small>` : ''}
+              </span>
               <span class="msg-time">${time}</span>
             </div>
             ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${parentMsg.content.substring(0, 30)}...</div>` : ''}
             <div class="msg-content">${msg.content}</div>
-            <span class="msg-reply-link" onclick="setReply(${msg.id}, '${msg.username}')">Reply</span>
+            <div class="msg-footer">
+                <span class="msg-link" onclick="setReply(${msg.id}, '${msg.username}')">Reply</span>
+                ${(isModUser && !isOwn) ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
+                ${(isModUser || isOwn) ? `<span class="msg-link delete" onclick="deleteMessage(${msg.id})">Delete</span>` : ''}
+            </div>
           </div>
         `;
       }).join('');
@@ -986,14 +1029,25 @@
 
     function setReply(id, user) {
       currentReplyToId = id;
+      currentRecipient = null;
       const preview = document.getElementById('replyPreview');
       preview.style.display = 'flex';
       document.getElementById('replyText').innerText = `Replying to ${user}...`;
       document.getElementById('chatInput').focus();
     }
 
+    function setDM(user) {
+        currentRecipient = user;
+        currentReplyToId = null;
+        const preview = document.getElementById('replyPreview');
+        preview.style.display = 'flex';
+        document.getElementById('replyText').innerText = `DM to ${user} (Private)...`;
+        document.getElementById('chatInput').focus();
+    }
+
     function cancelReply() {
       currentReplyToId = null;
+      currentRecipient = null;
       document.getElementById('replyPreview').style.display = 'none';
     }
 
@@ -1025,7 +1079,8 @@
       const { error } = await _supabase.from('messages').insert({
         username: currentUser,
         content: content,
-        parent_id: currentReplyToId
+        parent_id: currentReplyToId,
+        recipient: currentRecipient
       });
 
       if (!error) {
@@ -1041,8 +1096,15 @@
       });
 
       chatChannel
-        .on('postgres_changes', { event: 'INSERT', table: 'messages', schema: 'public' }, payload => {
-          allMessages.push(payload.new);
+        .on('postgres_changes', { event: '*', table: 'messages', schema: 'public' }, payload => {
+          if (payload.eventType === 'INSERT') {
+            const msg = payload.new;
+            if (!msg.recipient || msg.recipient === currentUser || msg.username === currentUser) {
+                allMessages.push(msg);
+            }
+          } else if (payload.eventType === 'DELETE') {
+            allMessages = allMessages.filter(m => m.id !== payload.old.id);
+          }
           renderMessages();
         })
         .on('presence', { event: 'sync' }, () => {
@@ -1069,7 +1131,9 @@
         const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
         
         if (data) {
-            if (data.is_mod || data.username === 'admin') {
+            isModUser = data.is_mod || data.username === 'admin';
+            
+            if (isModUser) {
                 document.getElementById('modNavBtn').style.display = 'block';
                 document.getElementById('pMenuStatus').textContent = data.username === 'admin' ? 'Owner' : 'Moderator';
                 document.getElementById('pMenuStatus').style.color = 'var(--accent)';
@@ -1093,6 +1157,10 @@
                 navInitial.style.display = 'block';
             }
         }
+        
+        // Initial mod list fetch for badges
+        const { data: mods } = await _supabase.from('profiles').select('username').or('is_mod.eq.true,username.eq.admin');
+        if (mods) mods.forEach(m => modUsernames.add(m.username));
     }
 
     function toggleProfileMenu() {
@@ -1146,9 +1214,10 @@
     }
 
     async function fetchLeaderboard() {
+      // Join leaderboard with profiles to get mod status
       const { data, error } = await _supabase
         .from('leaderboard')
-        .select('username, minutes')
+        .select('username, minutes, profiles(is_mod)')
         .order('minutes', { ascending: false })
         .limit(10);
 
@@ -1160,11 +1229,16 @@
         body.innerHTML = data.map((entry, index) => {
             let rowName = entry.username;
             const isMe = (rowName === currentUser);
+            const isRowMod = entry.profiles?.is_mod || rowName === 'admin';
 
             return `
               <tr class="${isMe ? 'current-user' : ''}">
                 <td class="rank-cell">#${index + 1}</td>
-                <td class="user-cell">${rowName} ${isMe ? '<small>(You)</small>' : ''}</td>
+                <td class="user-cell">
+                    ${rowName} 
+                    ${isMe ? '<small>(You)</small>' : ''} 
+                    ${isRowMod ? '<span class="mod-badge">MOD</span>' : ''}
+                </td>
                 <td class="mins-cell">${entry.minutes}m</td>
               </tr>
             `;
