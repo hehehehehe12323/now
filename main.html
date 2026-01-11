@@ -691,7 +691,7 @@
     </div>
     <div class="nav-right">
       <button id="modNavBtn" class="btn" style="display:none; background: var(--accent); border:none;" onclick="openModPanel()">Mod Panel</button>
-      <button class="btn btn-primary" onclick="openChat()">Asteroid Chat</button>
+      <button class="btn btn-primary" onclick="openChat()">Asteroid Chat <span id="unreadBadge" style="background:#ef4444; color:white; border-radius:50%; padding:2px 7px; font-size:0.75rem; margin-left:6px; display:none;">0</span></button>
       <button class="btn" onclick="saveData()">Save</button>
       <button class="btn" onclick="document.getElementById('file').click()">Load</button>
       <a href="https://docs.google.com/forms/d/e/1FAIpQLSfTZ5mk7aVxGnheE0Zo7kbVrV_XVCuTXSVMVElE5yYZbs5A6Q/viewform?usp=publish-editor" class="btn btn-danger" target="_blank" rel="noopener noreferrer">Report A Bug</a>
@@ -1206,10 +1206,16 @@
     let allMessages = [];
     let chatChannel = null;
     let typingTimeout = null;
+    let unreadCount = 0;
 
     async function openChat() {
       const ban = await checkActiveBan(true);
       if (ban === 'site') return; 
+
+      // Reset unread count when opening
+      unreadCount = 0;
+      document.getElementById('unreadBadge').style.display = "none";
+
       document.getElementById('chatViewer').style.display = "flex";
       document.body.style.overflow = "hidden";
       await fetchMessages();
@@ -1355,6 +1361,15 @@
             const msg = payload.new;
             if (!msg.recipient || msg.recipient === currentUser || msg.username === currentUser) {
                 allMessages.push(msg);
+
+                // Start: unread logic
+                if (msg.username !== currentUser && document.getElementById('chatViewer').style.display !== "flex") {
+                    unreadCount++;
+                    const badge = document.getElementById('unreadBadge');
+                    badge.innerText = unreadCount;
+                    badge.style.display = "inline-block";
+                }
+                // End: unread logic
             }
           } else if (payload.eventType === 'DELETE') {
             allMessages = allMessages.filter(m => m.id !== payload.old.id);
