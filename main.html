@@ -1352,6 +1352,15 @@
         const overlay = document.getElementById('broadcastOverlay');
         const text = document.getElementById('broadcastText');
         text.innerText = message;
+        
+        // ADDED: FULLSCREEN AWARENESS
+        // If the browser is in fullscreen mode, move overlay into the fullscreen element
+        if (document.fullscreenElement) {
+            document.fullscreenElement.appendChild(overlay);
+        } else {
+            document.body.appendChild(overlay);
+        }
+
         overlay.style.display = 'flex';
         
         // Play alert sound if available
@@ -1360,6 +1369,8 @@
 
     function closeBroadcast() {
         document.getElementById('broadcastOverlay').style.display = 'none';
+        // Cleanup: Return to body if it was moved during fullscreen
+        document.body.appendChild(document.getElementById('broadcastOverlay'));
     }
 
     function subscribeBroadcasts() {
