@@ -389,7 +389,7 @@
       font-family: inherit; 
       font-size: 1rem;
       resize: none;
-      scrollbar-width: thin;
+      height: 40px;
     }
     #chatInput:focus { outline: none; }
 
@@ -901,7 +901,7 @@
         <div class="chat-controls">
           <textarea id="chatInput" placeholder="Type a message..." maxlength="500" 
                  onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); postMessage(); }"
-                 oninput="handleTyping()" rows="1"></textarea>
+                 oninput="handleTyping()"></textarea>
           <button class="btn btn-primary" onclick="postMessage()">Send</button>
         </div>
       </div>
