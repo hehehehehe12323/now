@@ -829,14 +829,16 @@
     async function handleModBan(user, isCurrentlyBanned) {
         if (isCurrentlyBanned) {
             if (confirm(`Unban ${user}?`)) {
-                await _supabase.from('profiles').update({ ban_until: null }).eq('username', user);
+                // Use UPSERT logic to ensure field resets even if profile row is partial
+                await _supabase.from('profiles').upsert({ username: user, ban_until: null }, { onConflict: 'username' });
                 fetchModUsers();
             }
         } else {
             const dur = prompt(`Enter ban duration for ${user} (in minutes):`, "1440");
             if (dur && !isNaN(dur)) {
                 const expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
-                await _supabase.from('profiles').update({ ban_until: expiry }).eq('username', user);
+                // Persist ban duration using UPSERT
+                await _supabase.from('profiles').upsert({ username: user, ban_until: expiry }, { onConflict: 'username' });
                 fetchModUsers();
             }
         }
@@ -1031,6 +1033,7 @@
 
     async function trackMinutes() {
       if (!currentUser) return;
+      // Increased check frequency to 15s to catch server bans faster
       const ban = await checkActiveBan(true);
       if (ban === 'site') return;
       
@@ -1072,7 +1075,11 @@
       }
     }
 
+    // Minute tracking every 60s, but checkActiveBan runs more aggressively
     setInterval(trackMinutes, 60000);
+    // Explicit ban check every 15 seconds
+    setInterval(() => checkActiveBan(true), 15000);
+    
     trackMinutes();
     fetchLeaderboard();
 
