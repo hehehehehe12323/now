@@ -160,6 +160,11 @@
     .status-active { color: var(--accent); font-weight: 800; }
 
     /* CHATROOM RE-STYLING */
+    @keyframes messageSlideIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     #chatViewer {
       position: fixed; 
       inset: 0; 
@@ -182,8 +187,8 @@
       flex: 1; 
       display: flex; 
       flex-direction: column; 
-      max-width: 1000px; 
-      margin: 0 auto; 
+      max-width: 100%; /* CHANGED: FULL SCREEN LENGTH */
+      margin: 0; /* CHANGED: NO MARGIN */
       width: 100%; 
       position: relative; 
       overflow: hidden; 
@@ -193,7 +198,7 @@
     #chatBody { 
       flex: 1; 
       overflow-y: auto; 
-      padding: 2rem; 
+      padding: 3rem 6rem; /* CHANGED: MORE PADDING FOR FULL WIDTH */
       display: flex; 
       flex-direction: column; 
       gap: 1.25rem; 
@@ -216,7 +221,7 @@
       align-self: flex-start;
       position: relative;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease;
+      animation: messageSlideIn 0.35s ease-out forwards; /* CHANGED: SMOOTH ANIMATION */
     }
 
     .message.own { 
@@ -300,7 +305,7 @@
     }
 
     .typing-indicator { 
-      padding: 0.6rem 2.5rem; 
+      padding: 0.6rem 6rem; /* CHANGED: MORE PADDING FOR FULL WIDTH */
       font-size: 0.72rem; 
       color: var(--accent); 
       font-weight: 700; 
@@ -312,7 +317,7 @@
     }
 
     .chat-input-area { 
-      padding: 1.5rem 2.5rem 2.5rem; 
+      padding: 1.5rem 6rem 3rem; /* CHANGED: MORE PADDING FOR FULL WIDTH */
       background: linear-gradient(to top, var(--bg-surface), transparent);
       display: flex; 
       flex-direction: column; 
@@ -603,6 +608,7 @@
       .toolbar { flex-direction: column; align-items: stretch; }
       .nav-right .btn { padding: 8px 12px; font-size: 0.8rem; }
       .hero h2 { font-size: 2.5rem; }
+      #chatBody, .chat-input-area, .typing-indicator { padding-left: 1.5rem; padding-right: 1.5rem; }
     }
   </style>
 
