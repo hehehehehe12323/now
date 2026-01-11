@@ -1540,6 +1540,8 @@
             mods.forEach(m => {
                 if(m.is_mod || m.username === 'Derrick') modUsernames.add(m.username);
             });
+            // REFRESH LEADERBOARD AFTER FETCHING MODS TO ENSURE BADGES SHOW
+            fetchLeaderboard();
         }
     }
 
