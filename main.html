@@ -388,6 +388,8 @@
       color: white; 
       font-family: inherit; 
       font-size: 1rem;
+      resize: none;
+      scrollbar-width: thin;
     }
     #chatInput:focus { outline: none; }
 
@@ -897,9 +899,9 @@
           <span style="cursor:pointer; font-weight: 800;" onclick="cancelReply()">&times;</span>
         </div>
         <div class="chat-controls">
-          <input type="text" id="chatInput" placeholder="Type a message..." maxlength="500" 
-                 onkeypress="if(event.key === 'Enter') postMessage()"
-                 oninput="handleTyping()">
+          <textarea id="chatInput" placeholder="Type a message..." maxlength="500" 
+                 onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); postMessage(); }"
+                 oninput="handleTyping()" rows="1"></textarea>
           <button class="btn btn-primary" onclick="postMessage()">Send</button>
         </div>
       </div>
