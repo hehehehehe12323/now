@@ -790,7 +790,7 @@
 
         <!-- RAP SHEET OVERLAY -->
         <div id="userProfileOverlay">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: space-between; align-items: center;">
                 <h2 id="rapSheetName">User Name's Rap Sheet</h2>
                 <button class="btn" onclick="closeUserProfile()">Back to List</button>
             </div>
@@ -1401,7 +1401,9 @@
       if (ban === 'site') return; 
 
       unreadCount = 0;
-      document.getElementById('unreadBadge').style.display = "none";
+      const badge = document.getElementById('unreadBadge');
+      badge.style.display = "none";
+      badge.innerText = "0";
       document.getElementById('chatViewer').style.display = "flex";
       document.body.style.overflow = "hidden";
 
@@ -1599,7 +1601,19 @@
                 if (msg.username !== currentUser && (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'global')) {
                     unreadCount++;
                     const badge = document.getElementById('unreadBadge');
-                    badge.innerText = unreadCount;
+                    
+                    // Tagging Logic
+                    const lowerContent = (msg.content || "").toLowerCase();
+                    const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
+                                     (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
+                                     (lowerContent.includes("@staff") && isModUser) ||
+                                     (lowerContent.includes("@mod") && isModUser);
+
+                    if (isTagged || badge.innerText === "@") {
+                        badge.innerText = "@";
+                    } else {
+                        badge.innerText = unreadCount;
+                    }
                     badge.style.display = "inline-block";
                 }
             }
@@ -1631,6 +1645,22 @@
                     // Duplicate prevention
                     if (!staffMessages.find(m => m.id === payload.new.id)) {
                         staffMessages.push(payload.new);
+                    }
+                    
+                    // Tagging Logic for Staff room
+                    const msg = payload.new;
+                    if (msg.username !== currentUser && (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'staff')) {
+                        const badge = document.getElementById('unreadBadge');
+                        const lowerContent = (msg.content || "").toLowerCase();
+                        const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
+                                         (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
+                                         (lowerContent.includes("@staff") && isModUser) ||
+                                         (lowerContent.includes("@mod") && isModUser);
+                        
+                        if (isTagged) {
+                            badge.innerText = "@";
+                            badge.style.display = "inline-block";
+                        }
                     }
                 } else if (payload.eventType === 'DELETE') {
                     staffMessages = staffMessages.filter(m => m.id !== payload.old.id);
