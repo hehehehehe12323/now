@@ -815,30 +815,49 @@
         document.getElementById('modModal').classList.remove('active');
     }
 
-    async function fetchModUsers() {
-        const { data: profiles } = await _supabase.from('profiles').select('*');
-        const { data: leaderboard } = await _supabase.from('leaderboard').select('*');
+   async function fetchLeaderboard() {
+  // Remove the join to avoid relationship errors. 
+  // We only need the username and minutes from the leaderboard table.
+  const { data, error } = await _supabase
+    .from('leaderboard')
+    .select('username, minutes')
+    .order('minutes', { ascending: false })
+    .limit(10);
+
+  if (error) {
+    console.error("Leaderboard Error:", error.message);
+    return;
+  }
+
+  if (data) {
+    // Update local UI for the current user's minutes
+    const me = data.find(u => u.username === currentUser);
+    if(me) document.getElementById('pMenuMins').textContent = me.minutes + 'm';
+
+    const body = document.getElementById('leaderboardBody');
+    body.innerHTML = data.map((entry, index) => {
+        const rowName = entry.username;
+        const isMe = (rowName === currentUser);
         
-        if (profiles) {
-            modUsernames.clear();
-            modUserCache = profiles.map(p => {
-                if (p.is_mod || p.username === 'Derrick') modUsernames.add(p.username);
-                const lb = (leaderboard || []).find(l => l.username === p.username);
-                return {
-                    username: p.username,
-                    full_name: p.full_name,
-                    is_mod: p.is_mod,
-                    is_banned: p.is_banned,
-                    ban_until: p.ban_until,
-                    is_chat_banned: p.is_chat_banned,
-                    chat_ban_until: p.chat_ban_until,
-                    minutes: lb ? lb.minutes : 0
-                };
-            }).sort((a,b) => b.minutes - a.minutes);
-            
-            renderModList(modUserCache);
-        }
-    }
+        // Use the modUsernames Set that you already populate in loadProfile()
+        const isRowAdmin = (rowName === 'Derrick');
+        const isRowMod = modUsernames.has(rowName) && !isRowAdmin;
+
+        return `
+          <tr class="${isMe ? 'current-user' : ''}">
+            <td class="rank-cell">#${index + 1}</td>
+            <td class="user-cell">
+                ${rowName} 
+                ${isMe ? '<small>(You)</small>' : ''} 
+                ${isRowAdmin ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
+                ${isRowMod ? '<span class="mod-badge">MOD</span>' : ''}
+            </td>
+            <td class="mins-cell">${entry.minutes}m</td>
+          </tr>
+        `;
+    }).join('');
+  }
+}
 
     function renderModList(users) {
         const body = document.getElementById('modUserBody');
