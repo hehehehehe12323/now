@@ -722,11 +722,11 @@
   <!-- MOD APPLICATION POPUP -->
   <div class="modal-overlay" id="modApplyModal">
     <div class="modal-card">
-        <h2 style="color: var(--accent); letter-spacing: -2px;">Join the Staff!</h2>
-        <p style="margin: 1.5rem 0; color: var(--text-muted);">We're looking for passionate community members to help keep Asteroid safe. Interested in becoming a moderator?</p>
+        <h2 style="color: var(--accent); letter-spacing: -2px;">Become a Moderator!</h2>
+        <p style="margin: 1.5rem 0; color: var(--text-muted);">We are looking for passionate individuals to help moderate our community. Interested in applying for a staff position?</p>
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSdNhfTyWGN2bN2DR_R9z4v3JLCYfLs3C8SZpvX08x0ZWBlJqQ/viewform?usp=dialog" 
-           target="_blank" class="btn btn-primary mod-apply-btn" onclick="closeModApply()">Open Application</a>
-        <button class="btn" style="width: 100%; margin-top: 10px;" onclick="closeModApply()">Maybe Later</button>
+           target="_blank" class="btn btn-primary mod-apply-btn" onclick="closeModApply()">Apply Now</a>
+        <button class="btn" style="width: 100%; margin-top: 10px;" onclick="closeModApply()">Dismiss</button>
     </div>
   </div>
 
@@ -1366,13 +1366,12 @@
 
     // MOD APPLICATION POPUP LOGIC
     function checkModApplyPopup() {
-        // Do not show for existing mods/admins
+        // Only run after profile loaded to avoid showing to existing mods/admins
         if (currentUser === 'Derrick' || isModUser) return;
         
-        let count = parseInt(localStorage.getItem('asteroid_mod_prompt_count') || "0");
-        if (count < 3) {
+        // Show occasionally with a ~30% chance on page load
+        if (Math.random() < 0.3) {
             document.getElementById('modApplyModal').classList.add('active');
-            localStorage.setItem('asteroid_mod_prompt_count', (count + 1).toString());
         }
     }
 
@@ -1453,7 +1452,7 @@
     trackMinutes();
     fetchLeaderboard();
 
-    // Trigger Popup Check after 2 seconds
+    // Trigger Popup Dice Roll after 2 seconds
     setTimeout(checkModApplyPopup, 2000);
 
     window.addEventListener("beforeunload", () => {
