@@ -256,6 +256,12 @@
       animation: messageSlideIn 0.35s ease-out forwards; /* CHANGED: SMOOTH ANIMATION */
     }
 
+    /* Unique Style for Staff Room Messages */
+    .message.staff-msg {
+        background: linear-gradient(135deg, #1e293b, #2d1b1b);
+        border-color: rgba(239, 68, 68, 0.3);
+    }
+
     .message.own { 
       align-self: flex-end; 
       background: linear-gradient(135deg, var(--primary), #4f46e5); 
@@ -1445,7 +1451,10 @@
             .order('created_at', { ascending: true })
             .limit(100);
         if (data) {
-            staffMessages = data;
+            // MERGE Logic: Don't overwrite new messages from realtime
+            const existingIds = new Set(staffMessages.map(m => m.id));
+            const newFetchedData = data.filter(m => !existingIds.has(m.id));
+            staffMessages = [...newFetchedData, ...staffMessages].sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
             renderMessages();
         } else if (error) {
             console.error("Staff access denied.");
@@ -1462,7 +1471,7 @@
 
         const { error } = await _supabase.from(table).delete().eq('id', id);
         if (error) { alert(error.message); } else {
-            logModAction("Deleted Message", msgToDelete.username, `Deleted ${activeChannel} message ID ${id}.`);
+            logModAction("Deleted Message", msgToDelete ? msgToDelete.username : "Unknown", `Deleted ${activeChannel} message ID ${id}.`);
         }
     }
 
@@ -1473,13 +1482,13 @@
       body.innerHTML = messagesToRender.map(msg => {
         const isOwn = msg.username === currentUser;
         const isBlockedStr = msg.content === "Message blocked due to policy violations";
-        const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
         const parentMsg = msg.parent_id ? messagesToRender.find(m => m.id === msg.parent_id) : null;
         const isPM = (activeChannel === 'global') ? msg.recipient !== null : false;
         
         const isAdminSender = msg.username === 'Derrick';
         const isModSender = modUsernames.has(msg.username) && !isAdminSender;
-        const parsedContent = isBlockedStr ? msg.content : marked.parse(msg.content);
+        const parsedContent = isBlockedStr ? msg.content : (window.marked ? marked.parse(msg.content) : msg.content);
 
         return `
           <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''} ${activeChannel === 'staff' ? 'staff-msg' : ''}">
@@ -1495,9 +1504,9 @@
             ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${parentMsg.content.substring(0, 30)}...</div>` : ''}
             <div class="msg-content">${parsedContent}</div>
             <div class="msg-footer">
-                <span class="msg-link" onclick="setReply(${msg.id}, '${msg.username}')">Reply</span>
+                <span class="msg-link" onclick="setReply('${msg.id}', '${msg.username}')">Reply</span>
                 ${(isModUser && !isOwn && activeChannel === 'global') ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
-                ${isModUser ? `<span class="msg-link delete" onclick="deleteMessage(${msg.id})">Delete</span>` : ''}
+                ${isModUser ? `<span class="msg-link delete" onclick="deleteMessage('${msg.id}')">Delete</span>` : ''}
             </div>
           </div>
         `;
@@ -1547,6 +1556,7 @@
       if (!content) return;
 
       const fuzzyText = getFuzzyText(content);
+      // FIXED: corrected 'sensor' typo to 'censor'
       const isBlocked = (activeChannel === 'global') && window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
 
       if (isBlocked) {
@@ -1562,7 +1572,6 @@
             recipient: currentRecipient
           });
       } else {
-          // Staff messages don't support private DMs or parent replies for simplicity
           await _supabase.from('staff_messages').insert({
               username: currentUser,
               content: content
@@ -1582,7 +1591,10 @@
           if (payload.eventType === 'INSERT') {
             const msg = payload.new;
             if (!msg.recipient || msg.recipient === currentUser || msg.username === currentUser) {
-                allMessages.push(msg);
+                // Duplicate prevention
+                if (!allMessages.find(m => m.id === msg.id)) {
+                    allMessages.push(msg);
+                }
                 if (msg.username !== currentUser && (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'global')) {
                     unreadCount++;
                     const badge = document.getElementById('unreadBadge');
@@ -1615,7 +1627,10 @@
         staffChannelSub = _supabase.channel('staff_chat_room')
             .on('postgres_changes', { event: '*', table: 'staff_messages', schema: 'public' }, payload => {
                 if (payload.eventType === 'INSERT') {
-                    staffMessages.push(payload.new);
+                    // Duplicate prevention
+                    if (!staffMessages.find(m => m.id === payload.new.id)) {
+                        staffMessages.push(payload.new);
+                    }
                 } else if (payload.eventType === 'DELETE') {
                     staffMessages = staffMessages.filter(m => m.id !== payload.old.id);
                 }
@@ -1638,6 +1653,11 @@
                 if (user.username === currentUser) {
                     isModUser = user.is_mod || user.username === 'Derrick';
                     document.getElementById('modNavBtn').style.display = isModUser ? 'block' : 'none';
+                    
+                    // FIXED: Immediate visibility check for chat channels
+                    const bar = document.getElementById('chatChannelBar');
+                    if (bar) bar.style.display = isModUser ? 'flex' : 'none';
+
                     const statusEl = document.getElementById('pMenuStatus');
                     if (statusEl) {
                         statusEl.textContent = user.username === 'Derrick' ? 'Admin' : (user.is_mod ? 'Moderator' : 'Explorer');
