@@ -2478,7 +2478,7 @@
         const isBlockedStr = (msg.content === "Message blocked due to policy violations");
         const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
         const parentMsg = msg.parent_id ? messagesToRender.find(function(m) { return m.id === msg.parent_id; }) : null;
-        const isPM = (activeChannel === 'global') ? msg.recipient !== null : false;
+        const isPM = msg.recipient !== null;
         
         const isAdminSender = (msg.username === 'Derrick');
         const isModSender = modUsernames.has(msg.username) && !isAdminSender;
@@ -2601,7 +2601,7 @@
           recordViolation();
       }
 
-      if (currentRecipient || activeChannel === 'global') {
+      if (activeChannel === 'global') {
           await _supabase.from('messages').insert({
             username: currentUser,
             content: content,
@@ -2611,7 +2611,9 @@
       } else {
           await _supabase.from('staff_messages').insert({
               username: currentUser,
-              content: content
+              content: content,
+            parent_id: currentReplyToId,
+            recipient: currentRecipient
           });
       }
 
