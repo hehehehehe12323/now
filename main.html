@@ -3327,40 +3327,6 @@
     }
 
     listZones();
-
-// --- INACTIVITY WATCHER SYSTEM ---
-const IDLE_LIMIT = 3 * 60 * 1000; 
-let lastActivity = Date.now();
-
-function logoutUser() {
-    sessionStorage.removeItem("usernamePassword");
-    window.location.href = "https://asteroid-pixel.github.io"; 
-}
-
-function resetIdleTimer() { 
-    lastActivity = Date.now(); 
-}
-
-function checkIdleStatus() { 
-    if (Date.now() - lastActivity >= IDLE_LIMIT) {
-        logoutUser(); 
-    }
-}
-
-['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(function(evt) {
-    document.addEventListener(evt, resetIdleTimer, true);
-});
-
-setInterval(function() {
-    checkIdleStatus();
-}, 10000);
-
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden === false) {
-        checkIdleStatus();
-    }
-});
-// --------------------------------
   </script>
 </body>
 </html>
