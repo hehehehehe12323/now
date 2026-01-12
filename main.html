@@ -26,7 +26,7 @@
       --text-muted: #94a3b8;
       --glass: rgba(15, 23, 42, 0.8);
       --border: rgba(255, 255, 255, 0.1);
-      --gold: #f59e0b;
+      --gold: #ccac00;
     }
 
     * { 
@@ -336,7 +336,7 @@
 
     .border-gold { 
       border: 3px solid #FFD700 !important; 
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); 
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); 
     }
 
     .border-neon { 
@@ -568,7 +568,7 @@
     }
 
     .type-warning { 
-      color: #f59e0b; 
+      color: var(--gold); 
     }
 
     .type-ban { 
@@ -698,8 +698,8 @@
     }
 
     .message.private { 
-      border-color: #f59e0b; 
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+      border-color: var(--gold); 
+      background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
       border-style: solid;
       backdrop-filter: blur(4px);
     }
@@ -1223,7 +1223,7 @@
       }
 
     .animate-in { 
-      animation: fadeIn 0.6s ease forwards; 
+      animation: fadeIn 0.6sForward ease forwards; 
     }
 
     /* Admin Broadcast Overlay */
@@ -1428,7 +1428,7 @@
     <div class="modal-card" style="max-width: 600px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h2>Asteroid Shop</h2>
-            <div style="font-weight: 800; color: var(--gold); background: rgba(245, 158, 11, 0.1); padding: 5px 15px; border-radius: 10px;">
+            <div style="font-weight: 800; color: var(--gold); background: rgba(255, 215, 0, 0.1); padding: 5px 15px; border-radius: 10px;">
                 Balance: <span id="shopBalance">0</span> 🪙
             </div>
         </div>
@@ -1795,7 +1795,7 @@
             { id: 'color_rose', name: 'Rose Red', price: 200, type: 'color', value: '#f43f5e' },
             { id: 'color_neon', name: 'Neon Green', price: 210, type: 'color', value: '#22c55e' },
             { id: 'color_purple', name: 'Electric Purple', price: 300, type: 'color', value: '#a855f7' },
-            { id: 'color_gold', name: 'Gold Font', price: 500, type: 'color', value: '#f59e0b' },
+            { id: 'color_gold', name: 'Gold Font', price: 500, type: 'color', value: '#FFD700' },
             { id: 'style_sparkle', name: 'Sparkly Name', price: 500, type: 'style', value: 'sparkle' },
             { id: 'style_glow', name: 'Glow Name', price: 550, type: 'style', value: 'glow' },
             { id: 'style_italic', name: 'Italic Name', price: 223, type: 'style', value: 'italic' },
@@ -2530,7 +2530,7 @@
             <div class="msg-content">${parsedContent}</div>
             <div class="msg-footer">
                 <span class="msg-link" onclick="setReply('${msg.id}', '${msg.username}')">Reply</span>
-                ${(canDM && !isOwn && activeChannel === 'global') ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
+                ${(canDM && !isOwn) ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
                 ${isModUser ? `<span class="msg-link delete" onclick="deleteMessage('${msg.id}')">Delete</span>` : ''}
             </div>
           </div>
@@ -2601,7 +2601,7 @@
           recordViolation();
       }
 
-      if (activeChannel === 'global') {
+      if (currentRecipient || activeChannel === 'global') {
           await _supabase.from('messages').insert({
             username: currentUser,
             content: content,
@@ -3228,7 +3228,7 @@
         document.getElementById('gameOfTheDay').innerHTML = `
           <div class="gotd-banner" style="background-image: url('${game.cover.replace("{COVER_URL}", coverURL)}')"></div>
           <div class="gotd-info">
-            <span class="version-badge" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; color: #f59e0b; margin: 0 0 1rem 0;">FEATURED</span>
+            <span class="version-badge" style="background: rgba(255, 215, 0, 0.1); border-color: #FFD700; color: #FFD700; margin: 0 0 1rem 0;">FEATURED</span>
             <h3 style="font-size: 2rem; margin: 0 0 0.5rem 0;">${game.name}</h3>
             <p style="color: var(--text-muted); margin: 0;">Hand-picked for you today.</p>
           </div>
