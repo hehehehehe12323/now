@@ -1509,7 +1509,6 @@
 
         <div class="mod-tabs">
             <button id="tabUsers" class="mod-tab-btn active" onclick="switchModTab('users')">All Users</button>
-            <button class="mod-tab-btn" onclick="openChat(); switchChatChannel('staff'); closeModPanel();">Staff Chat</button>
             <button id="tabLogs" class="mod-tab-btn" onclick="switchModTab('logs')">Audit Logs</button>
         </div>
 
@@ -2438,13 +2437,12 @@
     async function fetchStaffMessages() {
         const { data, error } = await _supabase.from('staff_messages')
             .select('*')
-            // Privacy Fix: Filter DMs
+            // Privacy Fix: Only get DMs intended for user or public staff messages
             .or(`recipient.is.null,recipient.eq.${currentUser},username.eq.${currentUser}`)
             .order('created_at', { ascending: true })
             .limit(100);
         
         if (data) {
-            // Logic Fix: Replace array instead of messy sort-merging
             staffMessages = data;
             renderMessages();
             updateLastSeen();
@@ -2494,7 +2492,7 @@
 
         const canDM = (isModUser || (isPM && (isModSender || isAdminSender) && msg.recipient === currentUser));
         
-        // Style Mapping via Cache
+        // Style Mapping
         const prof = profilesCache[msg.username] || {};
         const nameColor = prof.name_color || '';
         let nameStyleClass = "";
@@ -2531,7 +2529,7 @@
             ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${parentMsg.content.substring(0, 30)}...</div>` : ''}
             <div class="msg-content">${parsedContent}</div>
             <div class="msg-footer">
-                <span class="msg-link" onclick="setReply('${msg.id}', '${msg.username}')">Reply</span>
+                ${!isPM ? `<span class="msg-link" onclick="setReply('${msg.id}', '${msg.username}')">Reply</span>` : ''}
                 ${(canDM && !isOwn) ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
                 ${isModUser ? `<span class="msg-link delete" onclick="deleteMessage('${msg.id}')">Delete</span>` : ''}
             </div>
@@ -2586,7 +2584,7 @@
         return;
       }
 
-      // Permission Logic for DMs
+      // Logic Check: DM Permissions
       if (currentRecipient && !isModUser) {
           const isTargetStaff = modUsernames.has(currentRecipient) || currentRecipient === 'Derrick';
           if (!isTargetStaff) {
@@ -2604,7 +2602,7 @@
           recordViolation();
       }
 
-      // Submission Fix: Ensure correct table routing
+      // Logic Fix: Ensure correct table routing so Staff Room DMs stay isolated
       const table = (activeChannel === 'global') ? 'messages' : 'staff_messages';
 
       const { error } = await _supabase.from(table).insert({
@@ -2615,7 +2613,6 @@
       });
 
       if (error) {
-          console.error("Chat Error:", error.message);
           addSystemMessage("Error", "Failed to send message: " + error.message);
       } else {
           input.value = "";
@@ -2699,16 +2696,12 @@
             .on('postgres_changes', { event: '*', table: 'staff_messages', schema: 'public' }, function(payload) {
                 if (payload.eventType === 'INSERT') {
                     const msg = payload.new;
-                    
-                    // Privacy Fix: Only show if public or involving user
                     if (!msg.recipient || msg.recipient === currentUser || msg.username === currentUser) {
                         if (!staffMessages.find(function(m) { return m.id === msg.id; })) {
                             staffMessages.push(msg);
                         }
-
                         if (msg.username !== currentUser) {
                             if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'staff') {
-                                // Notification Fix: Only notify if visible to you
                                 unreadCount++;
                                 const badge = document.getElementById('unreadBadge');
                                 const lowerContent = (msg.content || "").toLowerCase();
@@ -2759,18 +2752,9 @@
                       document.getElementById('modNavBtn').style.display = 'none';
                     }
                     if (document.getElementById('pMenuStatus')) {
-                      let statusText = "";
-                      if (user.username === 'Derrick') {
-                        statusText = 'Admin';
-                      } else if (user.is_mod) {
-                        statusText = 'Moderator';
-                      } else {
-                        statusText = 'Explorer';
-                      }
+                      let statusText = (user.username === 'Derrick') ? 'Admin' : (user.is_mod ? 'Moderator' : 'Explorer');
                       document.getElementById('pMenuStatus').textContent = statusText;
                     }
-                    updateOnlineStats('site');
-                    updateOnlineStats('chat');
                 }
 
                 if (document.getElementById('chatViewer').style.display === "flex") {
@@ -2782,13 +2766,9 @@
     }
 
     async function sendBroadcast() {
-        if (currentUser !== 'Derrick') {
-          return;
-        }
+        if (currentUser !== 'Derrick') return;
         const msg = document.getElementById('broadcastInput').value.trim();
-        if (msg === "") {
-          return;
-        }
+        if (msg === "") return;
         await _supabase.from('broadcasts').insert({ message: msg, sender: currentUser });
         document.getElementById('broadcastInput').value = "";
     }
@@ -2797,9 +2777,7 @@
         const overlay = document.getElementById('broadcastOverlay');
         document.getElementById('broadcastText').innerText = message;
         overlay.style.display = 'flex';
-        try { 
-          new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); 
-        } catch(e) {}
+        try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch(e) {}
     }
 
     function closeBroadcast() {
@@ -2814,12 +2792,9 @@
             .subscribe();
     }
 
-    // PROFILE SYNCHRONIZATION LOGIC
     async function loadProfile() {
         const ban = await checkActiveBan(true);
-        if (ban === 'site') {
-          return;
-        }
+        if (ban === 'site') return;
 
         const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
         
@@ -2829,9 +2804,7 @@
             
             if (isModUser) {
                 document.getElementById('modNavBtn').style.display = 'block';
-                if (data.username === 'Derrick') {
-                  document.getElementById('adminBroadcastSection').style.display = 'block';
-                }
+                if (data.username === 'Derrick') document.getElementById('adminBroadcastSection').style.display = 'block';
             }
             
             const savedName = localStorage.getItem('asteroid_full_name') || data.full_name;
@@ -2851,14 +2824,11 @@
             updatePersonalRow();
         }
         
-        // Refresh lookup cache
         const { data: allProfs } = await _supabase.from('profiles').select('*');
         if (allProfs) {
-            allProfs.forEach(function(p) {
+            allProfs.forEach(p => {
                 profilesCache[p.username] = p;
-                if(p.is_mod || p.username === 'Derrick') {
-                  modUsernames.add(p.username);
-                }
+                if(p.is_mod || p.username === 'Derrick') modUsernames.add(p.username);
             });
         }
 
@@ -2893,23 +2863,18 @@
         localStorage.setItem('asteroid_pfp', pfp);
         loadProfile();
         closeSettings();
-        _supabase.from('profiles').upsert({ username: currentUser, full_name: name }, { onConflict: 'username' });
+        _supabase.from('profiles').upsert({ username: currentUser, full_name: name });
     }
 
     function checkModApplyPopup() {
-        if (currentUser === 'Derrick' || isModUser) {
-          return;
-        }
-        if (Math.random() < 0.3) {
-          document.getElementById('modApplyModal').classList.add('active');
-        }
+        if (currentUser === 'Derrick' || isModUser) return;
+        if (Math.random() < 0.3) document.getElementById('modApplyModal').classList.add('active');
     }
 
     function closeModApply() {
         document.getElementById('modApplyModal').classList.remove('active');
     }
 
-    // EXPANDED SHOP SYSTEM LOGIC
     function openShop() {
         document.getElementById('shopModal').classList.add('active');
         document.getElementById('shopBalance').textContent = profileData.coins || 0;
@@ -2933,29 +2898,14 @@
 
     function renderShopItems(type) {
         const grid = document.getElementById('shopGrid');
-        let items = [];
-        if (type === 'tags') {
-          items = shopItems.tags;
-        } else {
-          items = shopItems.styles;
-        }
+        let items = (type === 'tags') ? shopItems.tags : shopItems.styles;
         const inventory = profileData.inventory || [];
 
         grid.innerHTML = items.map(function(item) {
             const isOwned = inventory.includes(item.id);
             const isEquipped = (profileData.selected_tag === item.name || profileData.name_color === item.value || profileData.name_style === item.value || profileData.leaderboard_border === item.value);
 
-            let statusText = "";
-            if (isOwned) {
-              if (isEquipped) {
-                statusText = 'EQUIPPED';
-              } else {
-                statusText = 'OWNED';
-              }
-            } else {
-              statusText = item.price + ' 🪙';
-            }
-
+            let statusText = isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : item.price + ' 🪙';
             let ownedClass = isOwned ? 'owned' : '';
             let equippedClass = isEquipped ? 'equipped' : '';
 
@@ -2968,35 +2918,21 @@
     }
 
     async function handleItemAction(itemId, isOwned) {
-        const item = [...shopItems.tags, ...shopItems.styles].find(function(i) { 
-          return i.id === itemId; 
-        });
-        if (!item) {
-          return;
-        }
+        const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
+        if (!item) return;
 
         if (isOwned) {
             let update = {};
-            if (item.type === 'tag') {
-              update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
-            }
-            if (item.type === 'color') {
-              update.name_color = (profileData.name_color === item.value ? null : item.value);
-            }
-            if (item.type === 'style') {
-              update.name_style = (profileData.name_style === item.value ? null : item.value);
-            }
-            if (item.type === 'border') {
-              update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
-            }
+            if (item.type === 'tag') update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
+            if (item.type === 'color') update.name_color = (profileData.name_color === item.value ? null : item.value);
+            if (item.type === 'style') update.name_style = (profileData.name_style === item.value ? null : item.value);
+            if (item.type === 'border') update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
 
             await _supabase.from('profiles').update(update).eq('username', currentUser);
             await loadProfile();
             renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
         } else {
-            if (profileData.coins < item.price) {
-              return alert("Not enough coins!");
-            }
+            if (profileData.coins < item.price) return alert("Not enough coins!");
             if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
                 const newCoins = profileData.coins - item.price;
                 const newInv = [...(profileData.inventory || []), item.id];
@@ -3011,12 +2947,7 @@
     async function toggleFavorite(gameId) {
         event.stopPropagation();
         let favs = profileData.favorites || [];
-        if (favs.includes(gameId)) {
-          favs = favs.filter(function(id) { return id !== gameId; });
-        } else {
-          favs.push(gameId);
-        }
-
+        favs = favs.includes(gameId) ? favs.filter(id => id !== gameId) : [...favs, gameId];
         await _supabase.from('profiles').update({ favorites: favs }).eq('username', currentUser);
         await loadProfile();
         updatePersonalRow();
@@ -3024,29 +2955,23 @@
 
     async function trackRecent(gameId) {
         let recent = profileData.recently_played || [];
-        recent = [gameId, ...recent.filter(function(id) { return id !== gameId; })].slice(0, 4);
+        recent = [gameId, ...recent.filter(id => id !== gameId)].slice(0, 4);
         await _supabase.from('profiles').update({ recently_played: recent }).eq('username', currentUser);
         loadProfile();
     }
 
     function updatePersonalRow() {
-        if (!profileData || !zones.length) {
-          return;
-        }
+        if (!profileData || !zones.length) return;
         const row = document.getElementById('personalRow');
         const section = document.getElementById('personalLibrary');
         const favIds = profileData.favorites || [];
         const recentIds = profileData.recently_played || [];
         const personalIds = [...new Set([...favIds, ...recentIds])];
 
-        if (personalIds.length === 0) { 
-          section.style.display = 'none'; 
-          return; 
-        }
+        if (personalIds.length === 0) { section.style.display = 'none'; return; }
         section.style.display = 'block';
 
-        const myGames = zones.filter(function(z) { return personalIds.includes(z.id); });
-        row.innerHTML = myGames.map(function(game) {
+        row.innerHTML = zones.filter(z => personalIds.includes(z.id)).map(game => {
           let favClass = favIds.includes(game.id) ? 'active' : '';
           return `
             <div class="lib-card animate-in">
@@ -3059,108 +2984,67 @@
         }).join('');
     }
 
-    window.addEventListener('click', function(e) {
-        if (!e.target.closest('.profile-container')) {
-          document.getElementById('profileMenu').classList.remove('active');
-        }
-        if (!e.target.closest('.chat-tools-container')) {
-          document.getElementById('toolsMenu').classList.remove('active');
-        }
-        if (e.target.classList.contains('modal-overlay')) {
-          e.target.classList.remove('active');
-        }
+    window.addEventListener('click', e => {
+        if (!e.target.closest('.profile-container')) document.getElementById('profileMenu').classList.remove('active');
+        if (!e.target.closest('.chat-tools-container')) document.getElementById('toolsMenu').classList.remove('active');
+        if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('active');
     });
 
-    // Start initialization
     loadProfile();
     subscribeBroadcasts();
     subscribeMessages();
     subscribeProfiles();
 
     async function trackMinutes() {
-      if (!currentUser) {
-        return;
-      }
+      if (!currentUser) return;
       const ban = await checkActiveBan(true);
-      if (ban === 'site') {
-        return;
-      }
+      if (ban === 'site') return;
       
       const { data } = await _supabase.from('leaderboard').select('minutes').eq('username', currentUser).maybeSingle();
       const nextMins = (data ? data.minutes : 0) + 1;
-      
       const { data: profData } = await _supabase.from('profiles').select('total_minutes, coins').eq('username', currentUser).maybeSingle();
       const nextTotal = (profData ? (profData.total_minutes || 0) : 0) + 1;
-      
-      // Economy calculation: 1 coin per active minute
       let newCoins = (profData ? (profData.coins || 0) : 0) + 1;
 
       document.getElementById('pMenuMins').textContent = nextTotal + 'm';
       document.getElementById('pMenuCoins').textContent = newCoins;
 
-      await _supabase.from('leaderboard').upsert({ 
-        username: currentUser, 
-        minutes: nextMins,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'username' });
-
+      await _supabase.from('leaderboard').upsert({ username: currentUser, minutes: nextMins });
       await _supabase.from('profiles').update({ total_minutes: nextTotal, coins: newCoins }).eq('username', currentUser);
     }
 
     async function fetchLeaderboard() {
       const { data } = await _supabase.from('leaderboard').select('username, minutes').order('minutes', { ascending: false }).limit(10);
       if (data) {
-        const body = document.getElementById('leaderboardBody');
-        body.innerHTML = data.map(function(entry, index) {
+        document.getElementById('leaderboardBody').innerHTML = data.map((entry, index) => {
             const isMe = (entry.username === currentUser);
+            const prof = profilesCache[entry.username] || {};
             const isAdmin = (entry.username === 'Derrick');
             const isMod = modUsernames.has(entry.username) && !isAdmin;
-            const prof = profilesCache[entry.username] || {};
-            
-            const nameColor = prof.name_color || '';
-            let nameStyleClass = "";
-            if (prof.name_style === 'sparkle') {
-              nameStyleClass = 'name-sparkle';
-            } else if (prof.name_style === 'glow') {
-              nameStyleClass = 'name-glow';
-            } else if (prof.name_style === 'italic') {
-              nameStyleClass = 'name-italic';
-            }
-            const tagText = prof.selected_tag || '';
-
-            let borderClass = "";
-            if (prof.leaderboard_border) {
-              borderClass = 'border-' + prof.leaderboard_border;
-            }
-
-            let currentUserClass = isMe ? 'current-user' : '';
+            const styleClass = (prof.name_style === 'sparkle') ? 'name-sparkle' : ((prof.name_style === 'glow') ? 'name-glow' : ((prof.name_style === 'italic') ? 'name-italic' : ''));
+            const borderClass = prof.leaderboard_border ? 'border-' + prof.leaderboard_border : '';
 
             return `
-              <tr class="${currentUserClass} ${borderClass}">
+              <tr class="${isMe ? 'current-user' : ''} ${borderClass}">
                 <td class="rank-cell">#${index + 1}</td>
                 <td class="user-cell">
-                    ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${tagText}</span>` : ''}
-                    <span class="${nameStyleClass}" style="color: ${nameColor || 'inherit'}">${entry.username}</span>
+                    ${prof.selected_tag ? `<span style="opacity:0.6;font-size:0.7rem;margin-right:5px;">${prof.selected_tag}</span>` : ''}
+                    <span class="${styleClass}" style="color:${prof.name_color || 'inherit'}">${entry.username}</span>
                     ${isAdmin ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
                     ${isMod ? '<span class="mod-badge">MOD</span>' : ''}
                 </td>
                 <td class="mins-cell">${entry.minutes}m</td>
-              </tr>
-            `;
+              </tr>`;
         }).join('');
       }
     }
 
     setInterval(trackMinutes, 60000);
-    setInterval(function() { 
-      checkActiveBan(true); 
-    }, 15000);
-    
+    setInterval(() => checkActiveBan(true), 15000);
     trackMinutes();
     fetchLeaderboard();
     setTimeout(checkModApplyPopup, 2000);
 
-    // CATALOG LOADING LOGIC
     const zonesURL = "zones.json";
     const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
     const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
@@ -3174,8 +3058,8 @@
         zones = await response.json();
         await fetchPopularity();
         sortZones();
-      } catch (error) {
-        document.getElementById('container').innerHTML = `<div style="grid-column: 1/-1; text-align: center;">Connection error</div>`;
+      } catch (e) {
+        document.getElementById('container').innerHTML = `Connection error`;
       }
     }
 
@@ -3183,49 +3067,32 @@
       try {
         const response = await fetch("https://data.jsdelivr.com/v1/stats/packages/gh/gn-math/html@main/files?period=year");
         const data = await response.json();
-        data.forEach(function(file) {
+        data.forEach(file => {
           const idMatch = file.name.match(/\/(\d+)\.html$/);
-          if (idMatch) {
-            popularityData[parseInt(idMatch[1])] = file.hits.total;
-          }
+          if (idMatch) popularityData[parseInt(idMatch[1])] = file.hits.total;
         });
-      } catch (e) { 
-        console.warn("Popularity metrics offline"); 
-      }
+      } catch (e) {}
     }
 
     function sortZones() {
       const sortBy = document.getElementById('sortOptions').value;
-      if (sortBy === 'name') {
-        zones.sort(function(a, b) { return a.name.localeCompare(b.name); });
-      } else if (sortBy === 'id') {
-        zones.sort(function(a, b) { return a.id - b.id; });
-      } else if (sortBy === 'popular') {
-        zones.sort(function(a, b) { return (popularityData[b.id] || 0) - (popularityData[a.id] || 0); });
-      }
-      
+      if (sortBy === 'name') zones.sort((a,b) => a.name.localeCompare(b.name));
+      else if (sortBy === 'id') zones.sort((a,b) => a.id - b.id);
+      else if (sortBy === 'popular') zones.sort((a,b) => (popularityData[b.id] || 0) - (popularityData[a.id] || 0));
       displayZones(zones);
       displayGameOfTheDay();
       updatePersonalRow();
     }
 
     function displayZones(zonesToDisplay) {
-        const container = document.getElementById('container');
+      const container = document.getElementById('container');
       container.innerHTML = "";
-      const favIds = profileData ? (profileData.favorites || []) : [];
-      zonesToDisplay.forEach(function(game, index) {
+      zonesToDisplay.forEach((game, index) => {
         const card = document.createElement("div");
         card.className = "game-card animate-in";
         card.style.animationDelay = `${index * 0.02}s`;
-        card.onclick = function() { 
-          trackRecent(game.id); 
-          openZone(game); 
-        };
-        let favClass = favIds.includes(game.id) ? 'active' : '';
-        card.innerHTML = `
-            <div class="star-btn ${favClass}" style="top:5px; right:5px; width:25px; height:25px; font-size:12px;" onclick="toggleFavorite(${game.id})">★</div>
-            <img src="${game.cover.replace("{COVER_URL}", coverURL)}">
-            <div class="game-info"><h3>${game.name}</h3></div>`;
+        card.onclick = () => { trackRecent(game.id); openZone(game); };
+        card.innerHTML = `<img src="${game.cover.replace("{COVER_URL}", coverURL)}"><div class="game-info"><h3>${game.name}</h3></div>`;
         container.appendChild(card);
       });
       document.getElementById("zoneCount").textContent = `${zonesToDisplay.length} Games Available`;
@@ -3236,50 +3103,28 @@
       if (game) {
         document.getElementById('gameOfTheDay').innerHTML = `
           <div class="gotd-banner" style="background-image: url('${game.cover.replace("{COVER_URL}", coverURL)}')"></div>
-          <div class="gotd-info">
-            <span class="version-badge" style="background: rgba(255, 215, 0, 0.1); border-color: #FFD700; color: #FFD700; margin: 0 0 1rem 0;">FEATURED</span>
-            <h3 style="font-size: 2rem; margin: 0 0 0.5rem 0;">${game.name}</h3>
-            <p style="color: var(--text-muted); margin: 0;">Hand-picked for you today.</p>
-          </div>
-        `;
-        document.getElementById('gameOfTheDay').onclick = function() { 
-          trackRecent(game.id); 
-          openZone(game); 
-        };
+          <div class="gotd-info"><h3 style="font-size:2rem;margin:0;">${game.name}</h3></div>`;
+        document.getElementById('gameOfTheDay').onclick = () => { trackRecent(game.id); openZone(game); };
       }
     }
 
     function getGameOfTheDay() {
-      if (zones.length === 0) {
-        return null;
-      }
+      if (!zones.length) return null;
       const seed = new Date().toDateString();
       let hash = 0;
-      for (let i = 0; i < seed.length; i++) {
-        hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-      }
+      for (let i = 0; i < seed.length; i++) hash = seed.charCodeAt(i) + ((hash << 5) - hash);
       return zones[Math.abs(hash) % zones.length];
     }
 
     function filterZones() { 
       const query = document.getElementById('searchBar').value.toLowerCase();
-      displayZones(zones.filter(function(z) { 
-        return z.name.toLowerCase().includes(query); 
-      })); 
+      displayZones(zones.filter(z => z.name.toLowerCase().includes(query))); 
     }
 
     async function openZone(file) {
-      if (await checkActiveBan() === 'site') {
-        return;
-      }
-
-      if (file.url.startsWith("http")) { 
-        window.location.href = file.url; 
-        return; 
-      }
-      fetch(file.url.replace("{HTML_URL}", htmlURL)).then(function(res) { 
-        return res.text(); 
-      }).then(function(html) {
+      if (await checkActiveBan() === 'site') return;
+      if (file.url.startsWith("http")) { window.location.href = file.url; return; }
+      fetch(file.url.replace("{HTML_URL}", htmlURL)).then(res => res.text()).then(html => {
         document.getElementById('zoneViewer').style.display = "flex";
         document.body.style.overflow = "hidden";
         document.getElementById('zoneFrame').contentDocument.open();
@@ -3296,26 +3141,16 @@
       document.getElementById('zoneFrame').src = "about:blank"; 
     }
 
-    function fullscreenZone() { 
-      if (document.getElementById('zoneFrame').requestFullscreen) {
-        document.getElementById('zoneFrame').requestFullscreen(); 
-      }
-    }
+    function fullscreenZone() { if (document.getElementById('zoneFrame').requestFullscreen) document.getElementById('zoneFrame').requestFullscreen(); }
 
     function aboutBlank() { 
       const nw = window.open("about:blank", "_blank"); 
-      if (nw) { 
-        nw.document.write(document.getElementById('zoneFrame').contentDocument.documentElement.outerHTML); 
-        nw.document.close(); 
-      } 
+      if (nw) { nw.document.write(document.getElementById('zoneFrame').contentDocument.documentElement.outerHTML); nw.document.close(); } 
     }
 
     function saveData() {
       let storageObj = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        let key = localStorage.key(i);
-        storageObj[key] = localStorage.getItem(key);
-      }
+      for (let i = 0; i < localStorage.length; i++) { let key = localStorage.key(i); storageObj[key] = localStorage.getItem(key); }
       let blob = new Blob([JSON.stringify(storageObj)], { type: "text/plain" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -3325,11 +3160,9 @@
 
     function loadData(event) {
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = e => {
         const parsed = JSON.parse(e.target.result);
-        for (let k in parsed) {
-          localStorage.setItem(k, parsed[k]);
-        }
+        for (let k in parsed) localStorage.setItem(k, parsed[k]);
         location.reload();
       };
       reader.readAsText(event.target.files[0]);
@@ -3337,43 +3170,17 @@
 
     listZones();
 
-// --- INACTIVITY WATCHER SYSTEM ---
-const IDLE_LIMIT = 3 * 60 * 1000; 
-let lastActivity = Date.now();
-
-function logoutUser() {
-    sessionStorage.removeItem("usernamePassword");
-    window.location.href = "https://asteroid-pixel.github.io"; 
-}
-
-function resetIdleTimer() { 
-    lastActivity = Date.now(); 
-}
-
-function checkIdleStatus() { 
-    // Fix: Detect if the user is focused on the game iframe
-    if (document.activeElement === document.getElementById('zoneFrame')) {
-        resetIdleTimer();
-    }
-    if (Date.now() - lastActivity >= IDLE_LIMIT) {
-        logoutUser(); 
-    }
-}
-
-['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(function(evt) {
-    document.addEventListener(evt, resetIdleTimer, true);
-});
-
-setInterval(function() {
-    checkIdleStatus();
-}, 10000);
-
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden === false) {
-        checkIdleStatus();
-    }
-});
-// --------------------------------
+    // --- IDLE WATCHER BUG FIX ---
+    const IDLE_LIMIT = 3 * 60 * 1000; 
+    let lastActivity = Date.now();
+    function logoutUser() { sessionStorage.removeItem("usernamePassword"); window.location.href = "https://asteroid-pixel.github.io"; }
+    function resetIdleTimer() { lastActivity = Date.now(); }
+    ['mousedown', 'keydown', 'scroll'].forEach(evt => document.addEventListener(evt, resetIdleTimer, true));
+    setInterval(() => {
+        // Fix: If game iframe is active, reset timer to prevent logout while playing
+        if (document.activeElement === document.getElementById('zoneFrame')) resetIdleTimer();
+        if (Date.now() - lastActivity >= IDLE_LIMIT) logoutUser();
+    }, 10000);
   </script>
 </body>
 </html>
