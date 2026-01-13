@@ -2724,22 +2724,36 @@
       }
 
       try {
-          if (currentRecipient || activeChannel === 'global') {
+          // STRICT ROUTING LOGIC: If a recipient is set, it MUST be a DM in the 'messages' table.
+          // Otherwise, route strictly based on the active channel.
+          if (currentRecipient) {
+              // DMs are ALWAYS in the 'messages' table.
+              // We null out parent_id if it's from the staff table to prevent DB constraint errors.
               const { error } = await _supabase.from('messages').insert({
                   username: currentUser,
                   content: content,
-                  parent_id: currentReplyToId,
-                  recipient: currentRecipient
+                  recipient: currentRecipient,
+                  parent_id: activeChannel === 'global' ? currentReplyToId : null 
               });
               if(error) throw error;
           } else if (activeChannel === 'staff') {
+              // Regular staff messages MUST go to 'staff_messages'.
               const { error } = await _supabase.from('staff_messages').insert({
                   username: currentUser,
                   content: content,
                   parent_id: currentReplyToId
               });
               if(error) throw error;
+          } else {
+              // activeChannel === 'global'
+              const { error } = await _supabase.from('messages').insert({
+                  username: currentUser,
+                  content: content,
+                  parent_id: currentReplyToId
+              });
+              if(error) throw error;
           }
+          
           input.value = "";
           cancelReply();
       } catch (e) {
