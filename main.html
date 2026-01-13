@@ -1793,17 +1793,16 @@
     });
 
     // Custom renderer for Markdown to handle modern Marked.js API and make links open in a new tab
-    const mdRenderer = new marked.Renderer();
-    mdRenderer.link = function(hrefOrObj, title, text) {
-      let href = hrefOrObj;
-      if (typeof hrefOrObj === 'object') {
-        href = hrefOrObj.href;
-        title = hrefOrObj.title;
-        text = hrefOrObj.text;
-      }
-      return `<a href="${href}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-    };
-    marked.use({ renderer: mdRenderer });
+    marked.use({ 
+      renderer: {
+        link(token) {
+          const href = token.href;
+          const title = token.title;
+          const text = token.text;
+          return `<a href="${href}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+        }
+      } 
+    });
 
     // Integrated Supabase Cloud Database Client
     const supabaseUrl = 'https://lnlnuoylmumabscobtsl.supabase.co';
@@ -2246,7 +2245,7 @@
                     <button class="btn ${siteClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
                         ${siteText}
                     </button>
-                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isCurrentlyBanned})">
+                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
                         ${chatText}
                     </button>`;
                 
@@ -2707,30 +2706,33 @@
       }
 
       const fuzzyText = getFuzzyText(content);
-      const isBlocked = (activeChannel === 'global') && window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
+      const isBlocked = (activeChannel === 'global') && window.censor && censor.isReady && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
 
       if (isBlocked) {
           content = "Message blocked due to policy violations";
           recordViolation();
       }
 
-      if (currentRecipient || activeChannel === 'global') {
-          await _supabase.from('messages').insert({
-            username: currentUser,
-            content: content,
-            parent_id: currentReplyToId,
-            recipient: currentRecipient
-          });
-      } else {
-          await _supabase.from('staff_messages').insert({
-              username: currentUser,
-              content: content,
-              parent_id: currentReplyToId
-          });
+      try {
+          if (currentRecipient || activeChannel === 'global') {
+              await _supabase.from('messages').insert({
+                  username: currentUser,
+                  content: content,
+                  parent_id: currentReplyToId,
+                  recipient: currentRecipient
+              });
+          } else {
+              await _supabase.from('staff_messages').insert({
+                  username: currentUser,
+                  content: content,
+                  parent_id: currentReplyToId
+              });
+          }
+          input.value = "";
+          cancelReply();
+      } catch (e) {
+          console.error("Message failed to send:", e);
       }
-
-      input.value = "";
-      cancelReply();
     }
 
     function subscribeMessages() {
