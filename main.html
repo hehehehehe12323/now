@@ -2490,6 +2490,7 @@
 
     function switchChatChannel(channel) {
         activeChannel = channel;
+        cancelReply(); // Reset reply/DM state to prevent cross-channel database errors
         document.querySelectorAll('.channel-btn').forEach(function(b) { 
           b.classList.remove('active'); 
         });
@@ -2731,7 +2732,7 @@
                   recipient: currentRecipient
               });
               if(error) throw error;
-          } else {
+          } else if (activeChannel === 'staff') {
               const { error } = await _supabase.from('staff_messages').insert({
                   username: currentUser,
                   content: content,
@@ -2742,7 +2743,13 @@
           input.value = "";
           cancelReply();
       } catch (e) {
-          console.error("Message failed to send:", e);
+          console.error("Chat Error:", e);
+          // Fallback cleanup to prevent input freezing
+          if (e.message && e.message.includes("RLS")) {
+              addSystemMessage("Connection Error", "Your session may have expired or you lack permissions for this channel.");
+          }
+          input.value = "";
+          cancelReply();
       }
     }
 
