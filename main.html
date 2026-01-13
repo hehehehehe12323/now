@@ -108,18 +108,6 @@
         letter-spacing: 0.5px;
     }
 
-    /* Notification bubble style for channel selectors */
-    .chan-unread-badge {
-        background: #ef4444;
-        color: white;
-        border-radius: 50%;
-        padding: 2px 6px;
-        font-size: 0.65rem;
-        margin-left: 6px;
-        display: none;
-        vertical-align: middle;
-    }
-
     .online-stats {
         font-size: 0.65rem;
         font-weight: 800;
@@ -606,8 +594,18 @@
         border: 1px solid var(--border);
         color: var(--text-muted); 
         transition: all 0.2s;
-        display: inline-flex;
+        display: flex;
         align-items: center;
+        gap: 5px;
+    }
+
+    .channel-badge {
+        background: #ef4444;
+        color: white;
+        font-size: 0.65rem;
+        padding: 1px 6px;
+        border-radius: 50%;
+        line-height: 1.4;
     }
 
     .channel-btn.active { 
@@ -1237,7 +1235,7 @@
       }
 
     .animate-in { 
-      animation: fadeIn 0.6s ease forwards; 
+      animation: fadeIn 0.6sForward ease forwards; 
     }
 
     /* Admin Broadcast Overlay */
@@ -1374,23 +1372,29 @@
       background: rgba(99, 102, 241, 0.1); 
     }
 
-    /* Pop-up Notification System Styles */
-    .asteroid-notification {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      background: var(--bg-card);
-      border: 2px solid var(--primary);
-      padding: 1.25rem;
-      border-radius: 20px;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-      z-index: 9999;
-      animation: notifyIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-      max-width: 320px;
-      cursor: pointer;
-      backdrop-filter: blur(10px);
+    /* Chat Popup Notifications */
+    .chat-popup-toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--bg-card);
+        border: 1px solid var(--primary);
+        padding: 12px 18px;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: chatSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        cursor: pointer;
+        max-width: 320px;
     }
-    @keyframes notifyIn { from { transform: translateX(100%) scale(0.9); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
+
+    @keyframes chatSlideIn {
+        from { transform: translateX(110%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
   </style>
 
   <script>
@@ -1448,7 +1452,7 @@
           <div class="menu-items">
             <a class="menu-link" onclick="location.reload()">Refresh Data</a>
             <a class="menu-link" onclick="openSettings()">Settings</a>
-            <a href="https://asteroid-pixel.github.io" class="menu-link logout" target="_blank" rel="noopener noreferrer">Log Out</a>
+            <a href="https://asteroid-pixel.github.io" class="menu-link logout">Log Out</a>
           </div>
         </div>
       </div>
@@ -1619,7 +1623,7 @@
         <h2 style="color: var(--accent); letter-spacing: -2px;">Become a Moderator!</h2>
         <p style="margin: 1.5rem 0; color: var(--text-muted);">We are looking for passionate individuals to help moderate our community. Interested in applying for a staff position?</p>
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSdNhfTyWGN2bN2DR_R9z4v3JLCYfLs3C8SZpvX08x0ZWBlJqQ/viewform?usp=dialog" 
-           target="_blank" class="btn btn-primary mod-apply-btn" onclick="closeModApply()" rel="noopener noreferrer">Apply Now</a>
+           target="_blank" class="btn btn-primary mod-apply-btn" onclick="closeModApply()">Apply Now</a>
         <button class="btn" style="width: 100%; margin-top: 10px;" onclick="closeModApply()">Dismiss</button>
     </div>
   </div>
@@ -1679,7 +1683,7 @@
       <option value="name">Alphabetical</option>
       <option value="id">Numeric ID</option>
     </select>
-    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGjJMErXtdt4AJZ4juio21Mp-M6zBfZRsd9flU3lEbTEl1EA/viewform" target="_blank" class="btn btn-success" rel="noopener noreferrer">Submit Game</a>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGjJMErXtdt4AJZ4juio21Mp-M6zBfZRsd9flU3lEbTEl1EA/viewform" target="_blank" class="btn btn-success">Submit Game</a>
   </div>
 
   <div id="zoneCount" style="text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem;"></div>
@@ -1731,8 +1735,14 @@
       
       <!-- STAFF PRIVATE CHANNEL UI -->
       <div id="chatChannelBar" class="chat-channels" style="display: none;">
-          <div id="chanGlobal" class="channel-btn active" onclick="switchChatChannel('global')"># Global-Chat <span id="globalChanBadge" class="chan-unread-badge">0</span></div>
-          <div id="chanStaff" class="channel-btn staff-channel" onclick="switchChatChannel('staff')"># Staff-Room <span id="staffChanBadge" class="chan-unread-badge">0</span></div>
+          <div id="chanGlobal" class="channel-btn active" onclick="switchChatChannel('global')">
+              # Global-Chat
+              <span id="chanGlobalBadge" class="channel-badge" style="display:none;">0</span>
+          </div>
+          <div id="chanStaff" class="channel-btn staff-channel" onclick="switchChatChannel('staff')">
+              # Staff-Room
+              <span id="chanStaffBadge" class="channel-badge" style="display:none;">0</span>
+          </div>
       </div>
 
       <div id="chatBody"></div>
@@ -1775,8 +1785,8 @@
 
   <footer>
     <p>
-      <a href="https://asteroid-pixel.github.io" target="_blank" rel="noopener noreferrer">Asteroid</a> &copy; 2025 by 
-      <a href="https://derrickrichard.github.io/profile/" target="_blank" rel="noopener noreferrer">Derrick Richard</a>
+      <a href="https://asteroid-pixel.github.io">Asteroid</a> &copy; 2025 by 
+      <a href="https://derrickrichard.github.io/profile/">Derrick Richard</a>
     </p>
     <div style="margin-top: 1rem; opacity: 0.6;">
       Licensed under Creative Commons BY-NC-ND 4.0
@@ -1789,19 +1799,9 @@
     marked.setOptions({
       gfm: true,
       breaks: true,
+      headerIds: false,
+      mangle: false,
       sanitize: false
-    });
-
-    // Custom renderer for Markdown to handle modern Marked.js API and make links open in a new tab
-    marked.use({ 
-      renderer: {
-        link(token) {
-          const href = token.href;
-          const title = token.title;
-          const text = token.text;
-          return `<a href="${href}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
-        }
-      } 
     });
 
     // Integrated Supabase Cloud Database Client
@@ -1815,12 +1815,9 @@
     let isModUser = false;
     let modUsernames = new Set();
     let unreadCount = 0;
+    let unreadGlobal = 0;
+    let unreadStaff = 0;
     
-    // Per-channel unread tracking
-    let unreadGlobalCount = 0;
-    let unreadStaffCount = 0;
-    let clearUnreadTimer = null;
-
     // Cloud Profile Synchronization Logic
     let profileData = null;
     let profilesCache = {};
@@ -1959,33 +1956,6 @@
         document.getElementById('onlineListModal').classList.remove('active');
     }
 
-    // POP-UP NOTIFICATION HANDLER
-    function showPopupNotification(sender, content, isDM, isReply) {
-        const popup = document.createElement('div');
-        popup.className = 'asteroid-notification';
-        const type = isDM ? 'Private DM' : (isReply ? 'Reply Received' : 'Mentioned');
-        popup.innerHTML = `
-            <div style="font-weight: 800; color: ${isReply ? 'var(--primary)' : 'var(--accent)'}; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 8px;">${type}</div>
-            <div style="font-weight: 800; color: white; margin-bottom: 4px;">${sender}</div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${content}</div>
-        `;
-        popup.onclick = function() { openChat(); popup.remove(); };
-        
-        // Fullscreen Visibility & Iframe Support Logic
-        const container = document.fullscreenElement || document.body;
-        container.appendChild(popup);
-        if (document.fullscreenElement) {
-            popup.style.zIndex = '2147483647';
-        }
-
-        setTimeout(function() {
-           popup.style.transition = 'all 0.5s ease-in';
-           popup.style.opacity = '0';
-           popup.style.transform = 'translateX(50px)';
-           setTimeout(function() { popup.remove(); }, 500);
-        }, 6000);
-    }
-
     // MODERATOR UTILITY METHODS
     async function logModAction(action, target, details) {
         await _supabase.from('audit_logs').insert({
@@ -2028,7 +1998,6 @@
 
         if (violations === 1) {
             const expiry = Date.now() + (10 * 60 * 1000);
-            localStorage.setItem('asteroid_violations_expiry', expiry);
             localStorage.setItem('asteroid_ban_expiry', expiry);
             localStorage.setItem('asteroid_ban_type', 'chat');
             addSystemMessage("System Warning", "This is your 1st violation of the community policy. You have been banned from chatting for 10 minutes.");
@@ -2245,7 +2214,7 @@
                     <button class="btn ${siteClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
                         ${siteText}
                     </button>
-                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
+                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isCurrentlyBanned})">
                         ${chatText}
                     </button>`;
                 
@@ -2395,15 +2364,32 @@
         let all = [];
         if (activeChannel === 'global') {
           all = allMessages;
+          unreadGlobal = 0;
+          document.getElementById('chanGlobalBadge').style.display = 'none';
         } else {
           all = staffMessages;
+          unreadStaff = 0;
+          document.getElementById('chanStaffBadge').style.display = 'none';
         }
+        
+        updateTotalUnread();
 
         if (all.length > 0) {
             const newest = all[all.length - 1];
             if (newest && newest.created_at) {
                 localStorage.setItem(`asteroid_last_seen_${activeChannel}`, newest.created_at);
             }
+        }
+    }
+
+    function updateTotalUnread() {
+        unreadCount = unreadGlobal + unreadStaff;
+        const badge = document.getElementById('unreadBadge');
+        if (unreadCount > 0) {
+            badge.innerText = unreadCount;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
         }
     }
 
@@ -2426,44 +2412,47 @@
             staffMissed = data || [];
         }
 
-        // Handle navigation badge
-        const combined = (globalMissed || []).concat(staffMissed);
-        if (combined.length > 0) {
-            unreadCount = combined.length;
-            const badge = document.getElementById('unreadBadge');
-            let hasMention = false;
-            
-            combined.forEach(function(msg) {
-                const lower = (msg.content || "").toLowerCase();
-                if (lower.includes(`@${currentUser.toLowerCase()}`) || 
-                    (lower.includes("@admin") && currentUser === 'Derrick') ||
-                    (lower.includes("@staff") && isModUser) ||
-                    (lower.includes("@mod") && isModUser)) {
-                    hasMention = true;
-                }
-            });
-
-            if (hasMention) {
-              badge.innerText = "@";
-            } else {
-              badge.innerText = unreadCount;
-            }
-            badge.style.display = "inline-block";
+        unreadGlobal = globalMissed ? globalMissed.length : 0;
+        unreadStaff = staffMissed ? staffMissed.length : 0;
+        
+        if (unreadGlobal > 0) {
+            document.getElementById('chanGlobalBadge').innerText = unreadGlobal;
+            document.getElementById('chanGlobalBadge').style.display = 'inline-block';
+        }
+        if (unreadStaff > 0) {
+            document.getElementById('chanStaffBadge').innerText = unreadStaff;
+            document.getElementById('chanStaffBadge').style.display = 'inline-block';
         }
 
-        // Handle channel-specific selector badges
-        if (globalMissed && globalMissed.length > 0) {
-            unreadGlobalCount = globalMissed.length;
-            const gBadge = document.getElementById('globalChanBadge');
-            gBadge.innerText = unreadGlobalCount;
-            if (activeChannel !== 'global') gBadge.style.display = 'inline-block';
-        }
-        if (staffMissed && staffMissed.length > 0) {
-            unreadStaffCount = staffMissed.length;
-            const sBadge = document.getElementById('staffChanBadge');
-            sBadge.innerText = unreadStaffCount;
-            if (activeChannel !== 'staff') sBadge.style.display = 'inline-block';
-        }
+        updateTotalUnread();
+    }
+
+    function showChatPopup(msg, channelName) {
+        if (document.getElementById('chatViewer').style.display === "flex") return;
+        
+        const popup = document.createElement('div');
+        popup.className = 'chat-popup-toast';
+        popup.innerHTML = `
+            <div style="background: var(--primary); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem;">${msg.username[0].toUpperCase()}</div>
+            <div style="flex: 1;">
+                <div style="font-size: 0.65rem; color: var(--accent); font-weight: 800; text-transform: uppercase; margin-bottom: 2px;"># ${channelName} Message</div>
+                <div style="font-size: 0.85rem; font-weight: 600; line-height: 1.2;">${msg.username}: <span style="font-weight: 400; opacity: 0.8;">${msg.content.substring(0, 30)}${msg.content.length > 30 ? '...' : ''}</span></div>
+            </div>
+        `;
+        document.body.appendChild(popup);
+        
+        popup.onclick = () => {
+            openChat();
+            switchChatChannel(channelName === 'Staff-Room' ? 'staff' : 'global');
+            popup.remove();
+        };
+
+        setTimeout(() => {
+            popup.style.opacity = '0';
+            popup.style.transform = 'translateX(20px)';
+            popup.style.transition = 'all 0.4s';
+            setTimeout(() => popup.remove(), 400);
+        }, 5000);
     }
 
     async function openChat() {
@@ -2472,10 +2461,6 @@
         return; 
       }
 
-      unreadCount = 0;
-      const badge = document.getElementById('unreadBadge');
-      badge.style.display = "none";
-      badge.innerText = "0";
       document.getElementById('chatViewer').style.display = "flex";
       document.body.style.overflow = "hidden";
 
@@ -2485,16 +2470,14 @@
           document.getElementById('chatChannelBar').style.display = 'none';
       }
 
-      switchChatChannel(activeChannel || 'global');
+      switchChatChannel(activeChannel);
     }
 
     function switchChatChannel(channel) {
         activeChannel = channel;
-        cancelReply(); // Reset reply/DM state to prevent cross-channel database errors
         document.querySelectorAll('.channel-btn').forEach(function(b) { 
           b.classList.remove('active'); 
         });
-        
         if(channel === 'global') {
             document.getElementById('chanGlobal').classList.add('active');
             fetchMessages();
@@ -2504,19 +2487,7 @@
             fetchStaffMessages();
             subscribeStaffMessages();
         }
-
-        // Clear unread counter after 3 seconds of being in the selected chatroom
-        if (clearUnreadTimer) clearTimeout(clearUnreadTimer);
-        clearUnreadTimer = setTimeout(() => {
-            if (channel === 'global') {
-                unreadGlobalCount = 0;
-                document.getElementById('globalChanBadge').style.display = 'none';
-            } else if (channel === 'staff') {
-                unreadStaffCount = 0;
-                document.getElementById('staffChanBadge').style.display = 'none';
-            }
-            updateLastSeen();
-        }, 3000);
+        updateLastSeen();
     }
 
     function closeChat() {
@@ -2529,45 +2500,22 @@
       const { data } = await _supabase.from('messages')
         .select('*')
         .or(`recipient.is.null,recipient.eq.${currentUser},username.eq.${currentUser}`)
-        .order('created_at', { ascending: false }) // Fetch newest first
+        .order('created_at', { ascending: true })
         .limit(100);
       if (data) {
-        allMessages = data.reverse(); // Restore chronological order
-        if (activeChannel === 'global') {
-          renderMessages();
-          unreadCount = Math.max(0, unreadCount - unreadGlobalCount);
-          if (unreadCount === 0) document.getElementById('unreadBadge').style.display = 'none';
-        }
+        allMessages = data;
+        renderMessages();
       }
     }
 
     async function fetchStaffMessages() {
-        if (!isModUser) return;
         const { data, error } = await _supabase.from('staff_messages')
             .select('*')
-            .order('created_at', { ascending: false })
+            .order('created_at', { ascending: true })
             .limit(100);
-            
-        if (error) {
-            console.error("Staff fetch error:", error);
-            return;
-        }
-
         if (data) {
-            const reversedData = data.reverse();
-            // Filter out existing to avoid duplication with real-time pushes
-            const existingIds = new Set(staffMessages.map(m => m.id));
-            const newFetchedData = reversedData.filter(m => !existingIds.has(m.id));
-            
-            staffMessages = [...staffMessages, ...newFetchedData].sort((a,b) => 
-               new Date(a.created_at) - new Date(b.created_at)
-            );
-
-            if (activeChannel === 'staff') {
-                renderMessages();
-                unreadCount = Math.max(0, unreadCount - unreadStaffCount);
-                if (unreadCount === 0) document.getElementById('unreadBadge').style.display = 'none';
-            }
+            staffMessages = data;
+            renderMessages();
         }
     }
 
@@ -2599,7 +2547,7 @@
         const isOwn = msg.username === currentUser;
         const isBlockedStr = (msg.content === "Message blocked due to policy violations");
         const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
-        const parentMsg = msg.parent_id ? messagesToRender.find(function(m) { return m.id == msg.parent_id; }) : null;
+        const parentMsg = msg.parent_id ? messagesToRender.find(function(m) { return m.id === msg.parent_id; }) : null;
         const isPM = (activeChannel === 'global') ? msg.recipient !== null : false;
         
         const isAdminSender = (msg.username === 'Derrick');
@@ -2716,55 +2664,29 @@
       }
 
       const fuzzyText = getFuzzyText(content);
-      const isBlocked = (activeChannel === 'global') && window.censor && censor.isReady && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
+      const isBlocked = (activeChannel === 'global') && window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
 
       if (isBlocked) {
           content = "Message blocked due to policy violations";
           recordViolation();
       }
 
-      try {
-          // STRICT ROUTING LOGIC: If a recipient is set, it MUST be a DM in the 'messages' table.
-          // Otherwise, route strictly based on the active channel.
-          if (currentRecipient) {
-              // DMs are ALWAYS in the 'messages' table.
-              // We null out parent_id if it's from the staff table to prevent DB constraint errors.
-              const { error } = await _supabase.from('messages').insert({
-                  username: currentUser,
-                  content: content,
-                  recipient: currentRecipient,
-                  parent_id: activeChannel === 'global' ? currentReplyToId : null 
-              });
-              if(error) throw error;
-          } else if (activeChannel === 'staff') {
-              // Regular staff messages MUST go to 'staff_messages'.
-              const { error } = await _supabase.from('staff_messages').insert({
-                  username: currentUser,
-                  content: content,
-                  parent_id: currentReplyToId
-              });
-              if(error) throw error;
-          } else {
-              // activeChannel === 'global'
-              const { error } = await _supabase.from('messages').insert({
-                  username: currentUser,
-                  content: content,
-                  parent_id: currentReplyToId
-              });
-              if(error) throw error;
-          }
-          
-          input.value = "";
-          cancelReply();
-      } catch (e) {
-          console.error("Chat Error:", e);
-          // Fallback cleanup to prevent input freezing
-          if (e.message && e.message.includes("RLS")) {
-              addSystemMessage("Connection Error", "Your session may have expired or you lack permissions for this channel.");
-          }
-          input.value = "";
-          cancelReply();
+      if (currentRecipient || activeChannel === 'global') {
+          await _supabase.from('messages').insert({
+            username: currentUser,
+            content: content,
+            parent_id: currentReplyToId,
+            recipient: currentRecipient
+          });
+      } else {
+          await _supabase.from('staff_messages').insert({
+              username: currentUser,
+              content: content
+          });
       }
+
+      input.value = "";
+      cancelReply();
     }
 
     function subscribeMessages() {
@@ -2782,44 +2704,14 @@
                     allMessages.push(msg);
                 }
                 if (msg.username !== currentUser) {
-                    const lowerContent = (msg.content || "").toLowerCase();
-                    const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
-                                    (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
-                                    (lowerContent.includes("@staff") && isModUser) ||
-                                    (lowerContent.includes("@mod") && isModUser);
-                    const isDM = msg.recipient === currentUser;
-
-                    // Message reply detection for notification
-                    let isReplyToMe = false;
-                    if (msg.parent_id) {
-                        const parent = allMessages.find(function(m) { return m.id == msg.parent_id; });
-                        if (parent && parent.username === currentUser) {
-                           isReplyToMe = true;
-                        }
-                    }
-
-                    if (document.getElementById('chatViewer').style.display !== "flex") {
-                      unreadCount++;
-                      const badge = document.getElementById('unreadBadge');
-                      if (isTagged || isReplyToMe || badge.innerText === "@") {
-                          badge.innerText = "@";
-                      } else {
-                          badge.innerText = unreadCount;
-                      }
-                      badge.style.display = "inline-block";
-                    }
-
-                    // Channel badge update
-                    if (activeChannel !== 'global' || document.getElementById('chatViewer').style.display !== "flex") {
-                        unreadGlobalCount++;
-                        const gBadge = document.getElementById('globalChanBadge');
-                        gBadge.innerText = unreadGlobalCount;
-                        gBadge.style.display = 'inline-block';
-                    }
-
-                    // EXCLUSIVE POP-UP NOTIFICATION LOGIC (Mentions, DMs, or Replies)
-                    if (isTagged || isDM || isReplyToMe) {
-                        showPopupNotification(msg.username, msg.content, isDM, isReplyToMe);
+                    if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'global') {
+                      unreadGlobal++;
+                      document.getElementById('chanGlobalBadge').innerText = unreadGlobal;
+                      document.getElementById('chanGlobalBadge').style.display = 'inline-block';
+                      updateTotalUnread();
+                      showChatPopup(msg, 'Global-Chat');
+                    } else {
+                      updateLastSeen();
                     }
                 }
             }
@@ -2864,47 +2756,18 @@
         staffChannelSub = _supabase.channel('staff_chat_room')
             .on('postgres_changes', { event: '*', table: 'staff_messages', schema: 'public' }, function(payload) {
                 if (payload.eventType === 'INSERT') {
-                    if (!staffMessages.some(function(m) { return m.id === payload.new.id; })) {
+                    if (!staffMessages.find(function(m) { return m.id === payload.new.id; })) {
                         staffMessages.push(payload.new);
                     }
                     if (payload.new.username !== currentUser) {
-                        const lowerContent = (payload.new.content || "").toLowerCase();
-                        const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
-                                        (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
-                                        (lowerContent.includes("@staff") && isModUser) ||
-                                        (lowerContent.includes("@mod") && isModUser);
-
-                        // Staff channel reply detection
-                        let isReplyToMe = false;
-                        if (payload.new.parent_id) {
-                            const parent = staffMessages.find(function(m) { return m.id == payload.new.parent_id; });
-                            if (parent && parent.username === currentUser) {
-                               isReplyToMe = true;
-                            }
-                        }
-
-                        if (document.getElementById('chatViewer').style.display !== "flex") {
-                          unreadCount++;
-                          const badge = document.getElementById('unreadBadge');
-                          if (isTagged || isReplyToMe || badge.innerText === "@") {
-                              badge.innerText = "@";
-                          } else {
-                              badge.innerText = unreadCount;
-                          }
-                          badge.style.display = "inline-block";
-                        }
-
-                        // Channel badge update
-                        if (activeChannel !== 'staff' || document.getElementById('chatViewer').style.display !== "flex") {
-                            unreadStaffCount++;
-                            const sBadge = document.getElementById('staffChanBadge');
-                            sBadge.innerText = unreadStaffCount;
-                            sBadge.style.display = 'inline-block';
-                        }
-
-                        // EXCLUSIVE POP-UP NOTIFICATION (MENTIONS OR REPLIES IN STAFF ROOM)
-                        if (isTagged || isReplyToMe) {
-                            showPopupNotification(payload.new.username, payload.new.content, false, isReplyToMe);
+                        if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'staff') {
+                          unreadStaff++;
+                          document.getElementById('chanStaffBadge').innerText = unreadStaff;
+                          document.getElementById('chanStaffBadge').style.display = 'inline-block';
+                          updateTotalUnread();
+                          showChatPopup(payload.new, 'Staff-Room');
+                        } else {
+                          updateLastSeen();
                         }
                     }
                 } else if (payload.eventType === 'DELETE') {
@@ -2912,14 +2775,11 @@
                       return m.id !== payload.old.id; 
                     });
                 }
-                
                 if(activeChannel === 'staff') {
                   renderMessages();
                 }
             })
-            .subscribe((status) => {
-                if(status !== 'SUBSCRIBED') console.warn("Staff Room Connection:", status);
-            });
+            .subscribe();
     }
 
     function subscribeProfiles() {
@@ -2938,14 +2798,8 @@
                     isModUser = user.is_mod || user.username === 'Derrick';
                     if (isModUser) {
                       document.getElementById('modNavBtn').style.display = 'block';
-                      if(document.getElementById('chatViewer').style.display === "flex") {
-                        document.getElementById('chatChannelBar').style.display = 'flex';
-                      }
-                      // Proactively subscribe if we just became a mod
-                      subscribeStaffMessages();
                     } else {
                       document.getElementById('modNavBtn').style.display = 'none';
-                      document.getElementById('chatChannelBar').style.display = 'none';
                     }
                     if (document.getElementById('pMenuStatus')) {
                       let statusText = "";
@@ -2965,12 +2819,6 @@
                 if (document.getElementById('chatViewer').style.display === "flex") {
                   renderMessages();
                 }
-                
-                /* STAFF OPERATIONAL SYNC: Refreshes mod panel view for all staff when a user profile is updated (banned/suspended) */
-                if (isModUser && document.getElementById('modModal').classList.contains('active')) {
-                   fetchModUsers();
-                }
-
                 fetchLeaderboard();
             })
             .subscribe();
@@ -3027,7 +2875,6 @@
                 if (data.username === 'Derrick') {
                   document.getElementById('adminBroadcastSection').style.display = 'block';
                 }
-                // Ensure mod-only chat subscriptions are active
                 subscribeStaffMessages();
             }
             
@@ -3352,25 +3199,6 @@
     setInterval(function() { 
       checkActiveBan(true); 
     }, 15000);
-
-    // Inactivity Logout System
-    let idleMinutes = 0;
-    const idleThreshold = 15; 
-    function resetIdle() { idleMinutes = 0; }
-    ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll'].forEach(evt => 
-        window.addEventListener(evt, resetIdle, true)
-    );
-    setInterval(function() {
-        if (document.fullscreenElement) {
-            idleMinutes = 0; 
-        } else {
-            idleMinutes++;
-            if (idleMinutes >= idleThreshold) {
-                sessionStorage.clear();
-                window.location.href = "https://asteroid-pixel.github.io";
-            }
-        }
-    }, 60000);
     
     trackMinutes();
     fetchLeaderboard();
@@ -3552,6 +3380,40 @@
     }
 
     listZones();
+
+// --- INACTIVITY WATCHER SYSTEM ---
+const IDLE_LIMIT = 3 * 60 * 1000; 
+let lastActivity = Date.now();
+
+function logoutUser() {
+    sessionStorage.removeItem("usernamePassword");
+    window.location.href = "https://asteroid-pixel.github.io"; 
+}
+
+function resetIdleTimer() { 
+    lastActivity = Date.now(); 
+}
+
+function checkIdleStatus() { 
+    if (Date.now() - lastActivity >= IDLE_LIMIT) {
+        logoutUser(); 
+    }
+}
+
+['mousedown', 'keydown', 'scroll', 'touchstart'].forEach(function(evt) {
+    document.addEventListener(evt, resetIdleTimer, true);
+});
+
+setInterval(function() {
+    checkIdleStatus();
+}, 10000);
+
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden === false) {
+        checkIdleStatus();
+    }
+});
+// --------------------------------
   </script>
 </body>
 </html>
