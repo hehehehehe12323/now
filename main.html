@@ -1235,7 +1235,7 @@
       }
 
     .animate-in { 
-      animation: fadeIn 0.6s ease forwards; 
+      animation: fadeIn 0.6sForward ease forwards; 
     }
 
     /* Admin Broadcast Overlay */
@@ -1766,7 +1766,7 @@
               </div>
               <div class="tool-item">
                 <span class="tool-title">@ User Mentions</span>
-                <span class="tool-desc">Type @username to tag someone. Use @everyone, @staff, @admin or @mod for priority alerts.</span>
+                <span class="tool-desc">Type @username to tag someone. Use @staff or @admin or @mod for priority alerts.</span>
               </div>
               <div class="tool-item">
                 <span class="tool-title">Reply & PM</span>
@@ -2715,7 +2715,7 @@
 
                       // Logic: Counter ALWAYS updates, but popups only trigger for DMs, Mentions, or Replies
                       const isDm = msg.recipient === currentUser;
-                      const isMention = msg.content.includes('@' + currentUser) || msg.content.includes('@everyone');
+                      const isMention = msg.content.includes('@' + currentUser);
                       const isReply = msg.parent_id && allMessages.find(m => m.id === msg.parent_id && m.username === currentUser);
 
                       if (isDm || isMention || isReply) {
@@ -2778,7 +2778,7 @@
                           updateTotalUnread();
                           
                           // Popups for staff messages only if mentioned or replied
-                          const isMention = payload.new.content.includes('@' + currentUser) || payload.new.content.includes('@staff') || payload.new.content.includes('@mod') || payload.new.content.includes('@everyone');
+                          const isMention = payload.new.content.includes('@' + currentUser) || payload.new.content.includes('@staff') || payload.new.content.includes('@mod');
                           const isReply = payload.new.parent_id && staffMessages.find(m => m.id === payload.new.parent_id && m.username === currentUser);
 
                           if (isMention || isReply) {
@@ -2856,11 +2856,6 @@
 
     function showBroadcastAlert(message) {
         const overlay = document.getElementById('broadcastOverlay');
-        const fsElement = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-        
-        // Ensure broadcast displays over fullscreen and iframes
-        (fsElement || document.body).appendChild(overlay);
-        
         document.getElementById('broadcastText').innerText = message;
         overlay.style.display = 'flex';
         try { 
@@ -3358,8 +3353,6 @@
     }
 
     function closeZone() { 
-      // Safety: Ensure broadcasts aren't trapped in hidden container
-      document.body.appendChild(document.getElementById('broadcastOverlay'));
       document.getElementById('zoneViewer').style.display = "none"; 
       document.body.style.overflow = "auto"; 
       document.getElementById('zoneFrame').src = "about:blank"; 
@@ -3367,17 +3360,8 @@
 
     function fullscreenZone() { 
       const viewer = document.getElementById('zoneViewer');
-      const rfs = viewer.requestFullscreen || viewer.webkitRequestFullscreen || viewer.mozRequestFullScreen || viewer.msRequestFullscreen;
-      if (rfs) {
-        rfs.call(viewer).catch(err => {
-          console.warn("Fullscreen error:", err.message);
-        });
-        
-        // Instant sync for active broadcasts
-        const overlay = document.getElementById('broadcastOverlay');
-        if (overlay && overlay.style.display === 'flex') {
-          viewer.appendChild(overlay);
-        }
+      if (viewer.requestFullscreen) {
+        viewer.requestFullscreen(); 
       }
     }
 
