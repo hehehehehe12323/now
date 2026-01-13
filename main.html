@@ -1235,7 +1235,7 @@
       }
 
     .animate-in { 
-      animation: fadeIn 0.6sForward ease forwards; 
+      animation: fadeIn 0.6s ease forwards; 
     }
 
     /* Admin Broadcast Overlay */
@@ -2214,7 +2214,7 @@
                     <button class="btn ${siteClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
                         ${siteText}
                     </button>
-                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isCurrentlyBanned})">
+                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
                         ${chatText}
                     </button>`;
                 
@@ -2856,6 +2856,11 @@
 
     function showBroadcastAlert(message) {
         const overlay = document.getElementById('broadcastOverlay');
+        const fsElement = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        
+        // Ensure broadcast displays over fullscreen and iframes
+        (fsElement || document.body).appendChild(overlay);
+        
         document.getElementById('broadcastText').innerText = message;
         overlay.style.display = 'flex';
         try { 
@@ -3353,6 +3358,8 @@
     }
 
     function closeZone() { 
+      // Safety: Ensure broadcasts aren't trapped in hidden container
+      document.body.appendChild(document.getElementById('broadcastOverlay'));
       document.getElementById('zoneViewer').style.display = "none"; 
       document.body.style.overflow = "auto"; 
       document.getElementById('zoneFrame').src = "about:blank"; 
@@ -3360,8 +3367,17 @@
 
     function fullscreenZone() { 
       const viewer = document.getElementById('zoneViewer');
-      if (viewer.requestFullscreen) {
-        viewer.requestFullscreen(); 
+      const rfs = viewer.requestFullscreen || viewer.webkitRequestFullscreen || viewer.mozRequestFullScreen || viewer.msRequestFullscreen;
+      if (rfs) {
+        rfs.call(viewer).catch(err => {
+          console.warn("Fullscreen error:", err.message);
+        });
+        
+        // Instant sync for active broadcasts
+        const overlay = document.getElementById('broadcastOverlay');
+        if (overlay && overlay.style.display === 'flex') {
+          viewer.appendChild(overlay);
+        }
       }
     }
 
