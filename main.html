@@ -108,6 +108,18 @@
         letter-spacing: 0.5px;
     }
 
+    /* Notification bubble style for channel selectors */
+    .chan-unread-badge {
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        padding: 2px 6px;
+        font-size: 0.65rem;
+        margin-left: 6px;
+        display: none;
+        vertical-align: middle;
+    }
+
     .online-stats {
         font-size: 0.65rem;
         font-weight: 800;
@@ -594,6 +606,8 @@
         border: 1px solid var(--border);
         color: var(--text-muted); 
         transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
     }
 
     .channel-btn.active { 
@@ -1434,7 +1448,7 @@
           <div class="menu-items">
             <a class="menu-link" onclick="location.reload()">Refresh Data</a>
             <a class="menu-link" onclick="openSettings()">Settings</a>
-            <a href="https://asteroid-pixel.github.io" class="menu-link logout">Log Out</a>
+            <a href="https://asteroid-pixel.github.io" class="menu-link logout" target="_blank" rel="noopener noreferrer">Log Out</a>
           </div>
         </div>
       </div>
@@ -1605,7 +1619,7 @@
         <h2 style="color: var(--accent); letter-spacing: -2px;">Become a Moderator!</h2>
         <p style="margin: 1.5rem 0; color: var(--text-muted);">We are looking for passionate individuals to help moderate our community. Interested in applying for a staff position?</p>
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSdNhfTyWGN2bN2DR_R9z4v3JLCYfLs3C8SZpvX08x0ZWBlJqQ/viewform?usp=dialog" 
-           target="_blank" class="btn btn-primary mod-apply-btn" onclick="closeModApply()">Apply Now</a>
+           target="_blank" class="btn btn-primary mod-apply-btn" onclick="closeModApply()" rel="noopener noreferrer">Apply Now</a>
         <button class="btn" style="width: 100%; margin-top: 10px;" onclick="closeModApply()">Dismiss</button>
     </div>
   </div>
@@ -1665,7 +1679,7 @@
       <option value="name">Alphabetical</option>
       <option value="id">Numeric ID</option>
     </select>
-    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGjJMErXtdt4AJZ4juio21Mp-M6zBfZRsd9flU3lEbTEl1EA/viewform" target="_blank" class="btn btn-success">Submit Game</a>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGjJMErXtdt4AJZ4juio21Mp-M6zBfZRsd9flU3lEbTEl1EA/viewform" target="_blank" class="btn btn-success" rel="noopener noreferrer">Submit Game</a>
   </div>
 
   <div id="zoneCount" style="text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem;"></div>
@@ -1717,8 +1731,8 @@
       
       <!-- STAFF PRIVATE CHANNEL UI -->
       <div id="chatChannelBar" class="chat-channels" style="display: none;">
-          <div id="chanGlobal" class="channel-btn active" onclick="switchChatChannel('global')"># Global-Chat</div>
-          <div id="chanStaff" class="channel-btn staff-channel" onclick="switchChatChannel('staff')"># Staff-Room</div>
+          <div id="chanGlobal" class="channel-btn active" onclick="switchChatChannel('global')"># Global-Chat <span id="globalChanBadge" class="chan-unread-badge">0</span></div>
+          <div id="chanStaff" class="channel-btn staff-channel" onclick="switchChatChannel('staff')"># Staff-Room <span id="staffChanBadge" class="chan-unread-badge">0</span></div>
       </div>
 
       <div id="chatBody"></div>
@@ -1761,8 +1775,8 @@
 
   <footer>
     <p>
-      <a href="https://asteroid-pixel.github.io">Asteroid</a> &copy; 2025 by 
-      <a href="https://derrickrichard.github.io/profile/">Derrick Richard</a>
+      <a href="https://asteroid-pixel.github.io" target="_blank" rel="noopener noreferrer">Asteroid</a> &copy; 2025 by 
+      <a href="https://derrickrichard.github.io/profile/" target="_blank" rel="noopener noreferrer">Derrick Richard</a>
     </p>
     <div style="margin-top: 1rem; opacity: 0.6;">
       Licensed under Creative Commons BY-NC-ND 4.0
@@ -1780,6 +1794,13 @@
       sanitize: false
     });
 
+    // Custom renderer to make all links open in a new tab
+    const renderer = new marked.Renderer();
+    renderer.link = function(href, title, text) {
+      return `<a href="${href}" title="${title || ''}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+    };
+    marked.setOptions({ renderer: renderer });
+
     // Integrated Supabase Cloud Database Client
     const supabaseUrl = 'https://lnlnuoylmumabscobtsl.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
@@ -1792,6 +1813,11 @@
     let modUsernames = new Set();
     let unreadCount = 0;
     
+    // Per-channel unread tracking
+    let unreadGlobalCount = 0;
+    let unreadStaffCount = 0;
+    let clearUnreadTimer = null;
+
     // Cloud Profile Synchronization Logic
     let profileData = null;
     let profilesCache = {};
@@ -2390,6 +2416,7 @@
             staffMissed = data || [];
         }
 
+        // Handle navigation badge
         const combined = (globalMissed || []).concat(staffMissed);
         if (combined.length > 0) {
             unreadCount = combined.length;
@@ -2413,6 +2440,20 @@
             }
             badge.style.display = "inline-block";
         }
+
+        // Handle channel-specific selector badges
+        if (globalMissed && globalMissed.length > 0) {
+            unreadGlobalCount = globalMissed.length;
+            const gBadge = document.getElementById('globalChanBadge');
+            gBadge.innerText = unreadGlobalCount;
+            if (activeChannel !== 'global') gBadge.style.display = 'inline-block';
+        }
+        if (staffMissed && staffMissed.length > 0) {
+            unreadStaffCount = staffMissed.length;
+            const sBadge = document.getElementById('staffChanBadge');
+            sBadge.innerText = unreadStaffCount;
+            if (activeChannel !== 'staff') sBadge.style.display = 'inline-block';
+        }
     }
 
     async function openChat() {
@@ -2434,7 +2475,7 @@
           document.getElementById('chatChannelBar').style.display = 'none';
       }
 
-      switchChatChannel('global');
+      switchChatChannel(activeChannel || 'global');
     }
 
     function switchChatChannel(channel) {
@@ -2442,6 +2483,7 @@
         document.querySelectorAll('.channel-btn').forEach(function(b) { 
           b.classList.remove('active'); 
         });
+        
         if(channel === 'global') {
             document.getElementById('chanGlobal').classList.add('active');
             fetchMessages();
@@ -2451,6 +2493,19 @@
             fetchStaffMessages();
             subscribeStaffMessages();
         }
+
+        // Clear unread counter after 3 seconds of being in the selected chatroom
+        if (clearUnreadTimer) clearTimeout(clearUnreadTimer);
+        clearUnreadTimer = setTimeout(() => {
+            if (channel === 'global') {
+                unreadGlobalCount = 0;
+                document.getElementById('globalChanBadge').style.display = 'none';
+            } else if (channel === 'staff') {
+                unreadStaffCount = 0;
+                document.getElementById('staffChanBadge').style.display = 'none';
+            }
+            updateLastSeen();
+        }, 3000);
     }
 
     function closeChat() {
@@ -2468,7 +2523,11 @@
       if (data) {
         allMessages = data;
         renderMessages();
-        updateLastSeen();
+        // Since we are in the channel, clear current counts
+        if (activeChannel === 'global') {
+            unreadCount = Math.max(0, unreadCount - unreadGlobalCount);
+            if (unreadCount === 0) document.getElementById('unreadBadge').style.display = 'none';
+        }
       }
     }
 
@@ -2484,7 +2543,10 @@
               return new Date(a.created_at) - new Date(b.created_at); 
             });
             renderMessages();
-            updateLastSeen();
+            if (activeChannel === 'staff') {
+                unreadCount = Math.max(0, unreadCount - unreadStaffCount);
+                if (unreadCount === 0) document.getElementById('unreadBadge').style.display = 'none';
+            }
         }
     }
 
@@ -2680,23 +2742,28 @@
                                     (lowerContent.includes("@mod") && isModUser);
                     const isDM = msg.recipient === currentUser;
 
-                    if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'global') {
+                    if (document.getElementById('chatViewer').style.display !== "flex") {
                       unreadCount++;
                       const badge = document.getElementById('unreadBadge');
-                      
                       if (isTagged || badge.innerText === "@") {
                           badge.innerText = "@";
                       } else {
                           badge.innerText = unreadCount;
                       }
                       badge.style.display = "inline-block";
+                    }
 
-                      // EXCLUSIVE POP-UP NOTIFICATION LOGIC (Only Mentions or DMs)
-                      if (isTagged || isDM) {
-                          showPopupNotification(msg.username, msg.content, isDM);
-                      }
-                    } else {
-                      updateLastSeen();
+                    // Channel badge update
+                    if (activeChannel !== 'global' || document.getElementById('chatViewer').style.display !== "flex") {
+                        unreadGlobalCount++;
+                        const gBadge = document.getElementById('globalChanBadge');
+                        gBadge.innerText = unreadGlobalCount;
+                        gBadge.style.display = 'inline-block';
+                    }
+
+                    // EXCLUSIVE POP-UP NOTIFICATION LOGIC (Only Mentions or DMs)
+                    if (isTagged || isDM) {
+                        showPopupNotification(msg.username, msg.content, isDM);
                     }
                 }
             }
@@ -2751,23 +2818,28 @@
                                         (lowerContent.includes("@staff") && isModUser) ||
                                         (lowerContent.includes("@mod") && isModUser);
 
-                        if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'staff') {
+                        if (document.getElementById('chatViewer').style.display !== "flex") {
                           unreadCount++;
                           const badge = document.getElementById('unreadBadge');
-                          
                           if (isTagged || badge.innerText === "@") {
                               badge.innerText = "@";
                           } else {
                               badge.innerText = unreadCount;
                           }
                           badge.style.display = "inline-block";
+                        }
 
-                          // EXCLUSIVE POP-UP NOTIFICATION (MENTIONS IN STAFF ROOM)
-                          if (isTagged) {
-                              showPopupNotification(payload.new.username, payload.new.content, false);
-                          }
-                        } else {
-                          updateLastSeen();
+                        // Channel badge update
+                        if (activeChannel !== 'staff' || document.getElementById('chatViewer').style.display !== "flex") {
+                            unreadStaffCount++;
+                            const sBadge = document.getElementById('staffChanBadge');
+                            sBadge.innerText = unreadStaffCount;
+                            sBadge.style.display = 'inline-block';
+                        }
+
+                        // EXCLUSIVE POP-UP NOTIFICATION (MENTIONS IN STAFF ROOM)
+                        if (isTagged) {
+                            showPopupNotification(payload.new.username, payload.new.content, false);
                         }
                     }
                 } else if (payload.eventType === 'DELETE') {
