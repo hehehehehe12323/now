@@ -2691,7 +2691,7 @@
                       }
                       badge.style.display = "inline-block";
 
-                      // POP-UP NOTIFICATION LOGIC
+                      // EXCLUSIVE POP-UP NOTIFICATION LOGIC (Only Mentions or DMs)
                       if (isTagged || isDM) {
                           showPopupNotification(msg.username, msg.content, isDM);
                       }
@@ -2762,7 +2762,7 @@
                           }
                           badge.style.display = "inline-block";
 
-                          // MENTION POP-UP FOR STAFF ROOM
+                          // EXCLUSIVE POP-UP NOTIFICATION (MENTIONS IN STAFF ROOM)
                           if (isTagged) {
                               showPopupNotification(payload.new.username, payload.new.content, false);
                           }
@@ -2819,6 +2819,12 @@
                 if (document.getElementById('chatViewer').style.display === "flex") {
                   renderMessages();
                 }
+                
+                /* STAFF OPERATIONAL SYNC: Refreshes mod panel view for all staff when a user profile is updated (banned/suspended) */
+                if (isModUser && document.getElementById('modModal').classList.contains('active')) {
+                   fetchModUsers();
+                }
+
                 fetchLeaderboard();
             })
             .subscribe();
