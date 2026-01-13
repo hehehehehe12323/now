@@ -1359,6 +1359,24 @@
       border-color: var(--primary); 
       background: rgba(99, 102, 241, 0.1); 
     }
+
+    /* Pop-up Notification System Styles */
+    .asteroid-notification {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-card);
+      border: 2px solid var(--primary);
+      padding: 1.25rem;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+      z-index: 9999;
+      animation: notifyIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      max-width: 320px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+    }
+    @keyframes notifyIn { from { transform: translateX(100%) scale(0.9); opacity: 0; } to { transform: translateX(0) scale(1); opacity: 1; } }
   </style>
 
   <script>
@@ -1910,6 +1928,26 @@
 
     function closeOnlineList() {
         document.getElementById('onlineListModal').classList.remove('active');
+    }
+
+    // POP-UP NOTIFICATION HANDLER
+    function showPopupNotification(sender, content, isDM) {
+        const popup = document.createElement('div');
+        popup.className = 'asteroid-notification';
+        const type = isDM ? 'Private DM' : 'Mentioned';
+        popup.innerHTML = `
+            <div style="font-weight: 800; color: var(--accent); font-size: 0.7rem; text-transform: uppercase; margin-bottom: 8px;">${type}</div>
+            <div style="font-weight: 800; color: white; margin-bottom: 4px;">${sender}</div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${content}</div>
+        `;
+        popup.onclick = function() { openChat(); popup.remove(); };
+        document.body.appendChild(popup);
+        setTimeout(function() {
+           popup.style.transition = 'all 0.5s ease-in';
+           popup.style.opacity = '0';
+           popup.style.transform = 'translateX(50px)';
+           setTimeout(function() { popup.remove(); }, 500);
+        }, 6000);
     }
 
     // MODERATOR UTILITY METHODS
@@ -2635,21 +2673,28 @@
                     allMessages.push(msg);
                 }
                 if (msg.username !== currentUser) {
+                    const lowerContent = (msg.content || "").toLowerCase();
+                    const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
+                                    (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
+                                    (lowerContent.includes("@staff") && isModUser) ||
+                                    (lowerContent.includes("@mod") && isModUser);
+                    const isDM = msg.recipient === currentUser;
+
                     if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'global') {
                       unreadCount++;
                       const badge = document.getElementById('unreadBadge');
-                      const lowerContent = (msg.content || "").toLowerCase();
-                      const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
-                                      (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
-                                      (lowerContent.includes("@staff") && isModUser) ||
-                                      (lowerContent.includes("@mod") && isModUser);
-
+                      
                       if (isTagged || badge.innerText === "@") {
                           badge.innerText = "@";
                       } else {
                           badge.innerText = unreadCount;
                       }
                       badge.style.display = "inline-block";
+
+                      // POP-UP NOTIFICATION LOGIC
+                      if (isTagged || isDM) {
+                          showPopupNotification(msg.username, msg.content, isDM);
+                      }
                     } else {
                       updateLastSeen();
                     }
@@ -2700,14 +2745,15 @@
                         staffMessages.push(payload.new);
                     }
                     if (payload.new.username !== currentUser) {
+                        const lowerContent = (payload.new.content || "").toLowerCase();
+                        const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
+                                        (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
+                                        (lowerContent.includes("@staff") && isModUser) ||
+                                        (lowerContent.includes("@mod") && isModUser);
+
                         if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'staff') {
                           unreadCount++;
                           const badge = document.getElementById('unreadBadge');
-                          const lowerContent = (payload.new.content || "").toLowerCase();
-                          const isTagged = lowerContent.includes(`@${currentUser.toLowerCase()}`) || 
-                                          (lowerContent.includes("@admin") && currentUser === 'Derrick') ||
-                                          (lowerContent.includes("@staff") && isModUser) ||
-                                          (lowerContent.includes("@mod") && isModUser);
                           
                           if (isTagged || badge.innerText === "@") {
                               badge.innerText = "@";
@@ -2715,6 +2761,11 @@
                               badge.innerText = unreadCount;
                           }
                           badge.style.display = "inline-block";
+
+                          // MENTION POP-UP FOR STAFF ROOM
+                          if (isTagged) {
+                              showPopupNotification(payload.new.username, payload.new.content, false);
+                          }
                         } else {
                           updateLastSeen();
                         }
@@ -3161,6 +3212,7 @@
         } else {
             idleMinutes++;
             if (idleMinutes >= idleThreshold) {
+                sessionStorage.clear();
                 window.location.href = "https://asteroid-pixel.github.io";
             }
         }
