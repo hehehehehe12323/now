@@ -2532,29 +2532,38 @@
         .limit(100);
       if (data) {
         allMessages = data.reverse(); // Restore chronological order
-        renderMessages();
-        // Since we are in the channel, clear current counts
         if (activeChannel === 'global') {
-            unreadCount = Math.max(0, unreadCount - unreadGlobalCount);
-            if (unreadCount === 0) document.getElementById('unreadBadge').style.display = 'none';
+          renderMessages();
+          unreadCount = Math.max(0, unreadCount - unreadGlobalCount);
+          if (unreadCount === 0) document.getElementById('unreadBadge').style.display = 'none';
         }
       }
     }
 
     async function fetchStaffMessages() {
+        if (!isModUser) return;
         const { data, error } = await _supabase.from('staff_messages')
             .select('*')
-            .order('created_at', { ascending: false }) // Fetch newest first
+            .order('created_at', { ascending: false })
             .limit(100);
+            
+        if (error) {
+            console.error("Staff fetch error:", error);
+            return;
+        }
+
         if (data) {
             const reversedData = data.reverse();
-            const existingIds = new Set(staffMessages.map(function(m) { return m.id; }));
-            const newFetchedData = reversedData.filter(function(m) { return !existingIds.has(m.id); });
-            staffMessages = [...staffMessages, ...newFetchedData].sort(function(a, b) { 
-              return new Date(a.created_at) - new Date(b.created_at); 
-            });
-            renderMessages();
+            // Filter out existing to avoid duplication with real-time pushes
+            const existingIds = new Set(staffMessages.map(m => m.id));
+            const newFetchedData = reversedData.filter(m => !existingIds.has(m.id));
+            
+            staffMessages = [...staffMessages, ...newFetchedData].sort((a,b) => 
+               new Date(a.created_at) - new Date(b.created_at)
+            );
+
             if (activeChannel === 'staff') {
+                renderMessages();
                 unreadCount = Math.max(0, unreadCount - unreadStaffCount);
                 if (unreadCount === 0) document.getElementById('unreadBadge').style.display = 'none';
             }
@@ -2715,18 +2724,20 @@
 
       try {
           if (currentRecipient || activeChannel === 'global') {
-              await _supabase.from('messages').insert({
+              const { error } = await _supabase.from('messages').insert({
                   username: currentUser,
                   content: content,
                   parent_id: currentReplyToId,
                   recipient: currentRecipient
               });
+              if(error) throw error;
           } else {
-              await _supabase.from('staff_messages').insert({
+              const { error } = await _supabase.from('staff_messages').insert({
                   username: currentUser,
                   content: content,
                   parent_id: currentReplyToId
               });
+              if(error) throw error;
           }
           input.value = "";
           cancelReply();
@@ -2832,7 +2843,7 @@
         staffChannelSub = _supabase.channel('staff_chat_room')
             .on('postgres_changes', { event: '*', table: 'staff_messages', schema: 'public' }, function(payload) {
                 if (payload.eventType === 'INSERT') {
-                    if (!staffMessages.find(function(m) { return m.id === payload.new.id; })) {
+                    if (!staffMessages.some(function(m) { return m.id === payload.new.id; })) {
                         staffMessages.push(payload.new);
                     }
                     if (payload.new.username !== currentUser) {
@@ -2880,11 +2891,14 @@
                       return m.id !== payload.old.id; 
                     });
                 }
+                
                 if(activeChannel === 'staff') {
                   renderMessages();
                 }
             })
-            .subscribe();
+            .subscribe((status) => {
+                if(status !== 'SUBSCRIBED') console.warn("Staff Room Connection:", status);
+            });
     }
 
     function subscribeProfiles() {
@@ -2906,6 +2920,8 @@
                       if(document.getElementById('chatViewer').style.display === "flex") {
                         document.getElementById('chatChannelBar').style.display = 'flex';
                       }
+                      // Proactively subscribe if we just became a mod
+                      subscribeStaffMessages();
                     } else {
                       document.getElementById('modNavBtn').style.display = 'none';
                       document.getElementById('chatChannelBar').style.display = 'none';
@@ -2990,6 +3006,8 @@
                 if (data.username === 'Derrick') {
                   document.getElementById('adminBroadcastSection').style.display = 'block';
                 }
+                // Ensure mod-only chat subscriptions are active
+                subscribeStaffMessages();
             }
             
             const savedName = localStorage.getItem('asteroid_full_name') || data.full_name;
