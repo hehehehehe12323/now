@@ -1425,7 +1425,7 @@
       <button id="modNavBtn" class="btn" style="display:none; background: var(--accent); border:none;" onclick="openModPanel()">Mod Panel</button>
       <button class="btn btn-primary" onclick="openChat()">Asteroid Chat <span id="unreadBadge" style="background:#ef4444; color:white; border-radius:50%; padding:2px 7px; font-size:0.75rem; margin-left:6px; display:none;">0</span></button>
       <button class="btn" onclick="saveData()">Save</button>
-      <button class="btn" onclick="document.getElementById('file').click()" >Load</button>
+      <button class="btn" onclick="document.getElementById('file').click()">Load</button>
       <a href="https://docs.google.com/forms/d/e/1FAIpQLSfTZ5mk7aVxGnheE0Zo7kbVrV_XVCuTXSVMVElE5yYZbs5A6Q/viewform?usp=publish-editor" class="btn btn-danger" target="_blank" rel="noopener noreferrer">Report A Bug</a>
       
       <!-- User Profile Dropdown Component -->
@@ -2214,7 +2214,7 @@
                     <button class="btn ${siteClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
                         ${siteText}
                     </button>
-                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isCurrentlyBanned})">
+                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
                         ${chatText}
                     </button>`;
                 
@@ -2684,8 +2684,7 @@
       } else {
           await _supabase.from('staff_messages').insert({
               username: currentUser,
-              content: content,
-              parent_id: currentReplyToId
+              content: content
           });
       }
 
