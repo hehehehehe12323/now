@@ -2439,9 +2439,12 @@
                 <div style="font-size: 0.85rem; font-weight: 600; line-height: 1.2;">${msg.username}: <span style="font-weight: 400; opacity: 0.8;">${msg.content.substring(0, 30)}${msg.content.length > 30 ? '...' : ''}</span></div>
             </div>
         `;
-        document.body.appendChild(popup);
+
+        // Ensure notifications appear even in Fullscreen mode or iframes
+        (document.fullscreenElement || document.body).appendChild(popup);
         
         popup.onclick = () => {
+            if (document.fullscreenElement) document.exitFullscreen();
             openChat();
             switchChatChannel(channelName === 'Staff-Room' ? 'staff' : 'global');
             popup.remove();
@@ -2709,7 +2712,15 @@
                       document.getElementById('chanGlobalBadge').innerText = unreadGlobal;
                       document.getElementById('chanGlobalBadge').style.display = 'inline-block';
                       updateTotalUnread();
-                      showChatPopup(msg, 'Global-Chat');
+
+                      // Logic: Counter ALWAYS updates, but popups only trigger for DMs, Mentions, or Replies
+                      const isDm = msg.recipient === currentUser;
+                      const isMention = msg.content.includes('@' + currentUser);
+                      const isReply = msg.parent_id && allMessages.find(m => m.id === msg.parent_id && m.username === currentUser);
+
+                      if (isDm || isMention || isReply) {
+                         showChatPopup(msg, 'Global-Chat');
+                      }
                     } else {
                       updateLastSeen();
                     }
@@ -2765,7 +2776,14 @@
                           document.getElementById('chanStaffBadge').innerText = unreadStaff;
                           document.getElementById('chanStaffBadge').style.display = 'inline-block';
                           updateTotalUnread();
-                          showChatPopup(payload.new, 'Staff-Room');
+                          
+                          // Popups for staff messages only if mentioned or replied
+                          const isMention = payload.new.content.includes('@' + currentUser) || payload.new.content.includes('@staff') || payload.new.content.includes('@mod');
+                          const isReply = payload.new.parent_id && staffMessages.find(m => m.id === payload.new.parent_id && m.username === currentUser);
+
+                          if (isMention || isReply) {
+                            showChatPopup(payload.new, 'Staff-Room');
+                          }
                         } else {
                           updateLastSeen();
                         }
@@ -3225,7 +3243,7 @@
 
     async function fetchPopularity() {
       try {
-        const response = await fetch("https://data.jsdelivr.com/v1/stats/packages/gh/gn-math/html@main/files?period=year");
+        const response = await fetch("https://data.jsdelivr.net/v1/stats/packages/gh/gn-math/html@main/files?period=year");
         const data = await response.json();
         data.forEach(function(file) {
           const idMatch = file.name.match(/\/(\d+)\.html$/);
@@ -3341,8 +3359,9 @@
     }
 
     function fullscreenZone() { 
-      if (document.getElementById('zoneFrame').requestFullscreen) {
-        document.getElementById('zoneFrame').requestFullscreen(); 
+      const viewer = document.getElementById('zoneViewer');
+      if (viewer.requestFullscreen) {
+        viewer.requestFullscreen(); 
       }
     }
 
