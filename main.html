@@ -1954,6 +1954,7 @@
 
         if (violations === 1) {
             const expiry = Date.now() + (10 * 60 * 1000);
+            localStorage.setItem('asteroid_violations_expiry', expiry);
             localStorage.setItem('asteroid_ban_expiry', expiry);
             localStorage.setItem('asteroid_ban_type', 'chat');
             addSystemMessage("System Warning", "This is your 1st violation of the community policy. You have been banned from chatting for 10 minutes.");
@@ -3146,6 +3147,24 @@
     setInterval(function() { 
       checkActiveBan(true); 
     }, 15000);
+
+    // Inactivity Logout System
+    let idleMinutes = 0;
+    const idleThreshold = 15; 
+    function resetIdle() { idleMinutes = 0; }
+    ['mousemove', 'mousedown', 'keypress', 'touchstart', 'scroll'].forEach(evt => 
+        window.addEventListener(evt, resetIdle, true)
+    );
+    setInterval(function() {
+        if (document.fullscreenElement) {
+            idleMinutes = 0; 
+        } else {
+            idleMinutes++;
+            if (idleMinutes >= idleThreshold) {
+                window.location.href = "https://asteroid-pixel.github.io";
+            }
+        }
+    }, 60000);
     
     trackMinutes();
     fetchLeaderboard();
