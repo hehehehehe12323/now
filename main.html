@@ -1766,7 +1766,7 @@
               </div>
               <div class="tool-item">
                 <span class="tool-title">@ User Mentions</span>
-                <span class="tool-desc">Type @username to tag someone. Use @staff or @admin or @mod for priority alerts.</span>
+                <span class="tool-desc">Type @username to tag someone. Use @everyone, @staff, @admin or @mod for priority alerts.</span>
               </div>
               <div class="tool-item">
                 <span class="tool-title">Reply & PM</span>
@@ -2214,7 +2214,7 @@
                     <button class="btn ${siteClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
                         ${siteText}
                     </button>
-                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
+                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isCurrentlyBanned})">
                         ${chatText}
                     </button>`;
                 
@@ -2715,7 +2715,7 @@
 
                       // Logic: Counter ALWAYS updates, but popups only trigger for DMs, Mentions, or Replies
                       const isDm = msg.recipient === currentUser;
-                      const isMention = msg.content.includes('@' + currentUser);
+                      const isMention = msg.content.includes('@' + currentUser) || msg.content.includes('@everyone');
                       const isReply = msg.parent_id && allMessages.find(m => m.id === msg.parent_id && m.username === currentUser);
 
                       if (isDm || isMention || isReply) {
@@ -2778,7 +2778,7 @@
                           updateTotalUnread();
                           
                           // Popups for staff messages only if mentioned or replied
-                          const isMention = payload.new.content.includes('@' + currentUser) || payload.new.content.includes('@staff') || payload.new.content.includes('@mod');
+                          const isMention = payload.new.content.includes('@' + currentUser) || payload.new.content.includes('@staff') || payload.new.content.includes('@mod') || payload.new.content.includes('@everyone');
                           const isReply = payload.new.parent_id && staffMessages.find(m => m.id === payload.new.parent_id && m.username === currentUser);
 
                           if (isMention || isReply) {
