@@ -1957,17 +1957,24 @@
     }
 
     // POP-UP NOTIFICATION HANDLER
-    function showPopupNotification(sender, content, isDM) {
+    function showPopupNotification(sender, content, isDM, isReply) {
         const popup = document.createElement('div');
         popup.className = 'asteroid-notification';
-        const type = isDM ? 'Private DM' : 'Mentioned';
+        const type = isDM ? 'Private DM' : (isReply ? 'Reply Received' : 'Mentioned');
         popup.innerHTML = `
-            <div style="font-weight: 800; color: var(--accent); font-size: 0.7rem; text-transform: uppercase; margin-bottom: 8px;">${type}</div>
+            <div style="font-weight: 800; color: ${isReply ? 'var(--primary)' : 'var(--accent)'}; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 8px;">${type}</div>
             <div style="font-weight: 800; color: white; margin-bottom: 4px;">${sender}</div>
             <div style="font-size: 0.85rem; color: var(--text-muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${content}</div>
         `;
         popup.onclick = function() { openChat(); popup.remove(); };
-        document.body.appendChild(popup);
+        
+        // Fullscreen Visibility & Iframe Support Logic
+        const container = document.fullscreenElement || document.body;
+        container.appendChild(popup);
+        if (document.fullscreenElement) {
+            popup.style.zIndex = '2147483647';
+        }
+
         setTimeout(function() {
            popup.style.transition = 'all 0.5s ease-in';
            popup.style.opacity = '0';
@@ -2578,7 +2585,7 @@
         const isOwn = msg.username === currentUser;
         const isBlockedStr = (msg.content === "Message blocked due to policy violations");
         const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
-        const parentMsg = msg.parent_id ? messagesToRender.find(function(m) { return m.id === msg.parent_id; }) : null;
+        const parentMsg = msg.parent_id ? messagesToRender.find(function(m) { return m.id == msg.parent_id; }) : null;
         const isPM = (activeChannel === 'global') ? msg.recipient !== null : false;
         
         const isAdminSender = (msg.username === 'Derrick');
@@ -2712,7 +2719,8 @@
       } else {
           await _supabase.from('staff_messages').insert({
               username: currentUser,
-              content: content
+              content: content,
+              parent_id: currentReplyToId
           });
       }
 
@@ -2742,10 +2750,19 @@
                                     (lowerContent.includes("@mod") && isModUser);
                     const isDM = msg.recipient === currentUser;
 
+                    // Message reply detection for notification
+                    let isReplyToMe = false;
+                    if (msg.parent_id) {
+                        const parent = allMessages.find(function(m) { return m.id == msg.parent_id; });
+                        if (parent && parent.username === currentUser) {
+                           isReplyToMe = true;
+                        }
+                    }
+
                     if (document.getElementById('chatViewer').style.display !== "flex") {
                       unreadCount++;
                       const badge = document.getElementById('unreadBadge');
-                      if (isTagged || badge.innerText === "@") {
+                      if (isTagged || isReplyToMe || badge.innerText === "@") {
                           badge.innerText = "@";
                       } else {
                           badge.innerText = unreadCount;
@@ -2761,9 +2778,9 @@
                         gBadge.style.display = 'inline-block';
                     }
 
-                    // EXCLUSIVE POP-UP NOTIFICATION LOGIC (Only Mentions or DMs)
-                    if (isTagged || isDM) {
-                        showPopupNotification(msg.username, msg.content, isDM);
+                    // EXCLUSIVE POP-UP NOTIFICATION LOGIC (Mentions, DMs, or Replies)
+                    if (isTagged || isDM || isReplyToMe) {
+                        showPopupNotification(msg.username, msg.content, isDM, isReplyToMe);
                     }
                 }
             }
@@ -2818,10 +2835,19 @@
                                         (lowerContent.includes("@staff") && isModUser) ||
                                         (lowerContent.includes("@mod") && isModUser);
 
+                        // Staff channel reply detection
+                        let isReplyToMe = false;
+                        if (payload.new.parent_id) {
+                            const parent = staffMessages.find(function(m) { return m.id == payload.new.parent_id; });
+                            if (parent && parent.username === currentUser) {
+                               isReplyToMe = true;
+                            }
+                        }
+
                         if (document.getElementById('chatViewer').style.display !== "flex") {
                           unreadCount++;
                           const badge = document.getElementById('unreadBadge');
-                          if (isTagged || badge.innerText === "@") {
+                          if (isTagged || isReplyToMe || badge.innerText === "@") {
                               badge.innerText = "@";
                           } else {
                               badge.innerText = unreadCount;
@@ -2837,9 +2863,9 @@
                             sBadge.style.display = 'inline-block';
                         }
 
-                        // EXCLUSIVE POP-UP NOTIFICATION (MENTIONS IN STAFF ROOM)
-                        if (isTagged) {
-                            showPopupNotification(payload.new.username, payload.new.content, false);
+                        // EXCLUSIVE POP-UP NOTIFICATION (MENTIONS OR REPLIES IN STAFF ROOM)
+                        if (isTagged || isReplyToMe) {
+                            showPopupNotification(payload.new.username, payload.new.content, false, isReplyToMe);
                         }
                     }
                 } else if (payload.eventType === 'DELETE') {
