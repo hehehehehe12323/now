@@ -3414,6 +3414,21 @@ document.addEventListener('visibilitychange', function() {
     }
 });
 // --------------------------------
+    // --- Sleep Mode Logout System ---
+let lastTick = Date.now();
+
+setInterval(function() {
+    const currentTick = Date.now();
+    const elapsed = currentTick - lastTick;
+
+    // Detects if the computer was asleep for 1 minute or more
+    if (elapsed > 60000) { 
+        sessionStorage.removeItem("usernamePassword");
+        window.location.href = "https://asteroid-pixel.github.io";
+    }
+    
+    lastTick = currentTick;
+}, 2000); 
   </script>
 </body>
 </html>
