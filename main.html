@@ -2016,17 +2016,22 @@
     async function checkActiveBan(silent = false) {
         const expiry = localStorage.getItem('asteroid_ban_expiry');
         const type = localStorage.getItem('asteroid_ban_type');
-        if (expiry && Date.now() < parseInt(expiry)) {
-            const mins = Math.ceil((parseInt(expiry) - Date.now()) / 60000);
-            if (type === 'chat') {
-                if (!silent) {
-                  addSystemMessage("Account Restricted", `You are currently chat-banned for policy violations. Remaining: ${mins}m`);
+        if (expiry) {
+            if (Date.now() < parseInt(expiry)) {
+                const mins = Math.ceil((parseInt(expiry) - Date.now()) / 60000);
+                if (type === 'chat') {
+                    if (!silent) {
+                      addSystemMessage("Account Restricted", `You are currently chat-banned for policy violations. Remaining: ${mins}m`);
+                    }
+                    return 'chat';
                 }
-                return 'chat';
-            }
-            if (type === 'site') {
-                renderBanScreen(mins, "Violation of Community Policy");
-                return 'site';
+                if (type === 'site') {
+                    renderBanScreen(mins, "Violation of Community Policy");
+                    return 'site';
+                }
+            } else {
+                localStorage.removeItem('asteroid_ban_expiry');
+                localStorage.removeItem('asteroid_ban_type');
             }
         }
 
@@ -2042,6 +2047,9 @@
                     const mins = Math.ceil((serverExpiry - Date.now()) / 60000);
                     renderBanScreen(mins, data.ban_reason);
                     return 'site';
+                } else {
+                    await _supabase.from('profiles').update({ is_banned: false, ban_until: null, ban_reason: null }).eq('username', currentUser);
+                    return false;
                 }
             }
             if (data.is_chat_banned) {
@@ -2058,6 +2066,9 @@
                       addSystemMessage("Chat Suspended", `Remaining: ${mins}m. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
                     }
                     return 'chat';
+                } else {
+                    await _supabase.from('profiles').update({ is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null }).eq('username', currentUser);
+                    return false;
                 }
             }
         }
@@ -2431,6 +2442,14 @@
     function showChatPopup(msg, channelName) {
         if (document.getElementById('chatViewer').style.display === "flex") return;
         
+        // Notification logic: Mention (@everyone or @username), DM recipient, or Reply to currentUser
+        const isMentioned = msg.content.includes("@everyone") || msg.content.includes("@" + currentUser);
+        const isDM = msg.recipient === currentUser;
+        const msgList = (channelName === 'Staff-Room' ? staffMessages : allMessages);
+        const isReplyToMe = msg.parent_id && msgList.some(m => m.id === msg.parent_id && m.username === currentUser);
+
+        if (!(isMentioned || isDM || isReplyToMe)) return;
+
         const popup = document.createElement('div');
         popup.className = 'chat-popup-toast';
         popup.innerHTML = `
@@ -2682,7 +2701,8 @@
       } else {
           await _supabase.from('staff_messages').insert({
               username: currentUser,
-              content: content
+              content: content,
+              parent_id: currentReplyToId
           });
       }
 
@@ -3242,7 +3262,7 @@
 
     async function fetchPopularity() {
       try {
-        const response = await fetch("https://data.jsdelivr.com/v1/stats/packages/gh/gn-math/html@main/files?period=year");
+        const response = await fetch("https://data.jsdelivr.net/v1/stats/packages/gh/gn-math/html@main/files?period=year");
         const data = await response.json();
         data.forEach(function(file) {
           const idMatch = file.name.match(/\/(\d+)\.html$/);
@@ -3397,7 +3417,7 @@
     }
 
     listZones();
-
+/*
 // --- INACTIVITY WATCHER SYSTEM ---
 const IDLE_LIMIT = 3 * 60 * 1000; 
 let lastActivity = Date.now();
@@ -3431,6 +3451,7 @@ document.addEventListener('visibilitychange', function() {
     }
 });
 // --------------------------------
+*/
     // --- Sleep Mode Logout System ---
 let lastTick = Date.now();
 
