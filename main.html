@@ -1235,7 +1235,7 @@
       }
 
     .animate-in { 
-      animation: fadeIn 0.6s ease forwards; 
+      animation: fadeIn 0.6sForward ease forwards; 
     }
 
     /* Admin Broadcast Overlay */
@@ -2016,22 +2016,17 @@
     async function checkActiveBan(silent = false) {
         const expiry = localStorage.getItem('asteroid_ban_expiry');
         const type = localStorage.getItem('asteroid_ban_type');
-        if (expiry) {
-            if (Date.now() < parseInt(expiry)) {
-                const mins = Math.ceil((parseInt(expiry) - Date.now()) / 60000);
-                if (type === 'chat') {
-                    if (!silent) {
-                      addSystemMessage("Account Restricted", `You are currently chat-banned for policy violations. Remaining: ${mins}m`);
-                    }
-                    return 'chat';
+        if (expiry && Date.now() < parseInt(expiry)) {
+            const mins = Math.ceil((parseInt(expiry) - Date.now()) / 60000);
+            if (type === 'chat') {
+                if (!silent) {
+                  addSystemMessage("Account Restricted", `You are currently chat-banned for policy violations. Remaining: ${mins}m`);
                 }
-                if (type === 'site') {
-                    renderBanScreen(mins, "Violation of Community Policy");
-                    return 'site';
-                }
-            } else {
-                localStorage.removeItem('asteroid_ban_expiry');
-                localStorage.removeItem('asteroid_ban_type');
+                return 'chat';
+            }
+            if (type === 'site') {
+                renderBanScreen(mins, "Violation of Community Policy");
+                return 'site';
             }
         }
 
@@ -2047,9 +2042,6 @@
                     const mins = Math.ceil((serverExpiry - Date.now()) / 60000);
                     renderBanScreen(mins, data.ban_reason);
                     return 'site';
-                } else {
-                    await _supabase.from('profiles').update({ is_banned: false, ban_until: null, ban_reason: null }).eq('username', currentUser);
-                    return false;
                 }
             }
             if (data.is_chat_banned) {
@@ -2066,9 +2058,6 @@
                       addSystemMessage("Chat Suspended", `Remaining: ${mins}m. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
                     }
                     return 'chat';
-                } else {
-                    await _supabase.from('profiles').update({ is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null }).eq('username', currentUser);
-                    return false;
                 }
             }
         }
@@ -2442,14 +2431,6 @@
     function showChatPopup(msg, channelName) {
         if (document.getElementById('chatViewer').style.display === "flex") return;
         
-        // Notification logic: Mention (@everyone or @username), DM recipient, or Reply to currentUser
-        const isMentioned = msg.content.includes("@everyone") || msg.content.includes("@" + currentUser);
-        const isDM = msg.recipient === currentUser;
-        const msgList = (channelName === 'Staff-Room' ? staffMessages : allMessages);
-        const isReplyToMe = msg.parent_id && msgList.some(m => m.id === msg.parent_id && m.username === currentUser);
-
-        if (!(isMentioned || isDM || isReplyToMe)) return;
-
         const popup = document.createElement('div');
         popup.className = 'chat-popup-toast';
         popup.innerHTML = `
@@ -2561,42 +2542,52 @@
 
     function renderMessages() {
       const body = document.getElementById('chatBody');
-      
-      let messagesToRender = [];
-      if (activeChannel === 'global') {
-          messagesToRender = allMessages;
-      } else {
-          // In staff room, show all staff channel messages PLUS personal DMs
-          const dms = allMessages.filter(m => m.recipient !== null);
-          messagesToRender = [...staffMessages, ...dms].sort((a, b) => 
-              new Date(a.created_at) - new Date(b.created_at)
-          ).slice(-100);
-      }
+      const messagesToRender = (activeChannel === 'global') ? allMessages : staffMessages;
 
       body.innerHTML = messagesToRender.map(function(msg) {
         const isOwn = msg.username === currentUser;
         const isBlockedStr = (msg.content === "Message blocked due to policy violations");
         const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
+        const parentMsg = msg.parent_id ? messagesToRender.find(function(m) { return m.id === msg.parent_id; }) : null;
+        const isPM = (activeChannel === 'global') ? msg.recipient !== null : false;
         
-        // Parent lookup should check full unified pool when in staff room
-        const pool = (activeChannel === 'global' ? allMessages : [...staffMessages, ...allMessages.filter(m => m.recipient !== null)]);
-        const parentMsg = msg.parent_id ? pool.find(m => m.id === msg.parent_id) : null;
-        
-        const isPM = msg.recipient !== null;
         const isAdminSender = (msg.username === 'Derrick');
         const isModSender = modUsernames.has(msg.username) && !isAdminSender;
         
-        let parsedContent = isBlockedStr ? msg.content : (window.marked ? marked.parse(msg.content) : msg.content);
+        let parsedContent = "";
+        if (isBlockedStr) {
+          parsedContent = msg.content;
+        } else {
+          parsedContent = window.marked ? marked.parse(msg.content) : msg.content;
+        }
+
         const canDM = (isModUser || (isPM && (isModSender || isAdminSender) && msg.recipient === currentUser));
         
+        // Style Mapping via Cache
         const prof = profilesCache[msg.username] || {};
         const nameColor = prof.name_color || '';
-        let nameStyleClass = prof.name_style === 'sparkle' ? 'name-sparkle' : (prof.name_style === 'glow' ? 'name-glow' : (prof.name_style === 'italic' ? 'name-italic' : ''));
+        let nameStyleClass = "";
+        if (prof.name_style === 'sparkle') {
+          nameStyleClass = 'name-sparkle';
+        } else if (prof.name_style === 'glow') {
+          nameStyleClass = 'name-glow';
+        } else if (prof.name_style === 'italic') {
+          nameStyleClass = 'name-italic';
+        }
         const tagText = prof.selected_tag || '';
-        let borderClass = prof.leaderboard_border ? 'border-' + prof.leaderboard_border : "";
+        
+        let borderClass = "";
+        if (prof.leaderboard_border) {
+          borderClass = 'border-' + prof.leaderboard_border;
+        }
+
+        let ownClass = isOwn ? 'own' : '';
+        let privateClass = isPM ? 'private' : '';
+        let blockedClass = isBlockedStr ? 'blocked-content' : '';
+        let staffRoomClass = (activeChannel === 'staff') ? 'staff-msg' : '';
 
         return `
-          <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''} ${activeChannel === 'staff' ? 'staff-msg' : ''} ${borderClass}">
+          <div class="message ${ownClass} ${privateClass} ${blockedClass} ${staffRoomClass} ${borderClass}">
             <div class="msg-header">
               <span class="msg-user">
                 ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${tagText}</span>` : ''}
@@ -2654,15 +2645,15 @@
 
     async function postMessage() {
       const ban = await checkActiveBan();
-      
-      // Permit mods to chat in staff room even if restricted globally
-      if ((ban === 'chat' || ban === 'site') && activeChannel !== 'staff') {
+      if (ban === 'chat' || ban === 'site') {
         return; 
       }
 
       const input = document.getElementById('chatInput');
       let content = input.value.trim();
-      if (content === "" || !currentUser) return;
+      if (content === "") {
+        return;
+      }
 
       if (currentRecipient && !isModUser) {
           const isTargetStaff = modUsernames.has(currentRecipient) || currentRecipient === 'Derrick';
@@ -2681,31 +2672,18 @@
           recordViolation();
       }
 
-      const table = (currentRecipient || activeChannel === 'global') ? 'messages' : 'staff_messages';
-      const msgPayload = {
-          username: currentUser,
-          content: content,
-          parent_id: currentReplyToId
-      };
-      if (currentRecipient) msgPayload.recipient = currentRecipient;
-
-      // Inserting with .select() ensures we get the ID back for Optimistic UI
-      const { data, error } = await _supabase.from(table).insert(msgPayload).select();
-
-      if (error) {
-          console.error("Messaging Error:", error);
-          alert("Message failed to send. Please check your connection.");
-          return;
-      }
-
-      // Locally render immediately if insert was successful
-      if (data && data[0]) {
-          const newMsg = data[0];
-          const targetList = (table === 'messages') ? allMessages : staffMessages;
-          if (!targetList.find(m => m.id === newMsg.id)) {
-              targetList.push(newMsg);
-              renderMessages();
-          }
+      if (currentRecipient || activeChannel === 'global') {
+          await _supabase.from('messages').insert({
+            username: currentUser,
+            content: content,
+            parent_id: currentReplyToId,
+            recipient: currentRecipient
+          });
+      } else {
+          await _supabase.from('staff_messages').insert({
+              username: currentUser,
+              content: content
+          });
       }
 
       input.value = "";
@@ -2777,38 +2755,32 @@
           return;
         }
         staffChannelSub = _supabase.channel('staff_chat_room')
-            .on('postgres_changes', { event: 'INSERT', table: 'staff_messages', schema: 'public' }, function(payload) {
+            .on('postgres_changes', { event: '*', table: 'staff_messages', schema: 'public' }, function(payload) {
                 if (payload.eventType === 'INSERT') {
-                    const msg = payload.new;
-                    // Avoid duplicating messages from the Optimistic UI insert
-                    if (!staffMessages.find(m => m.id === msg.id)) {
-                        staffMessages.push(msg);
-                        if (activeChannel === 'staff') renderMessages();
+                    if (!staffMessages.find(function(m) { return m.id === payload.new.id; })) {
+                        staffMessages.push(payload.new);
                     }
-                    
-                    if (msg.username !== currentUser) {
+                    if (payload.new.username !== currentUser) {
                         if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'staff') {
                           unreadStaff++;
-                          const badge = document.getElementById('chanStaffBadge');
-                          if (badge) {
-                              badge.innerText = unreadStaff;
-                              badge.style.display = 'inline-block';
-                          }
+                          document.getElementById('chanStaffBadge').innerText = unreadStaff;
+                          document.getElementById('chanStaffBadge').style.display = 'inline-block';
                           updateTotalUnread();
-                          showChatPopup(msg, 'Staff-Room');
+                          showChatPopup(payload.new, 'Staff-Room');
                         } else {
                           updateLastSeen();
                         }
                     }
+                } else if (payload.eventType === 'DELETE') {
+                    staffMessages = staffMessages.filter(function(m) { 
+                      return m.id !== payload.old.id; 
+                    });
+                }
+                if(activeChannel === 'staff') {
+                  renderMessages();
                 }
             })
-            .on('postgres_changes', { event: 'DELETE', table: 'staff_messages', schema: 'public' }, function(payload) {
-                staffMessages = staffMessages.filter(m => m.id !== payload.old.id);
-                if (activeChannel === 'staff') renderMessages();
-            })
-            .subscribe((status) => {
-                console.log("Staff Channel Sub Status:", status);
-            });
+            .subscribe();
     }
 
     function subscribeProfiles() {
@@ -3045,7 +3017,7 @@
               statusText = item.price + ' 🪙';
             }
 
-            let ownedClass = isOwned ? 'owned' : '';+
+            let ownedClass = isOwned ? 'owned' : '';
             let equippedClass = isEquipped ? 'equipped' : '';
 
             return `
@@ -3270,7 +3242,7 @@
 
     async function fetchPopularity() {
       try {
-        const response = await fetch("https://data.jsdelivr.net/v1/stats/packages/gh/gn-math/html@main/files?period=year");
+        const response = await fetch("https://data.jsdelivr.com/v1/stats/packages/gh/gn-math/html@main/files?period=year");
         const data = await response.json();
         data.forEach(function(file) {
           const idMatch = file.name.match(/\/(\d+)\.html$/);
@@ -3425,7 +3397,7 @@
     }
 
     listZones();
-/*
+
 // --- INACTIVITY WATCHER SYSTEM ---
 const IDLE_LIMIT = 3 * 60 * 1000; 
 let lastActivity = Date.now();
@@ -3459,7 +3431,6 @@ document.addEventListener('visibilitychange', function() {
     }
 });
 // --------------------------------
-*/
     // --- Sleep Mode Logout System ---
 let lastTick = Date.now();
 
