@@ -2662,11 +2662,9 @@
       }, 2000);
     }
 
-        async function postMessage() {
+    async function postMessage() {
       const ban = await checkActiveBan();
-      
-      // Permit staff to communicate in the staff room even if restricted globally
-      if ((ban === 'chat' || ban === 'site') && activeChannel !== 'staff') {
+      if (ban === 'chat' || ban === 'site') {
         return; 
       }
 
@@ -2676,7 +2674,6 @@
         return;
       }
 
-      // Security check for DMs from non-staff users
       if (currentRecipient && !isModUser) {
           const isTargetStaff = modUsernames.has(currentRecipient) || currentRecipient === 'Derrick';
           if (!isTargetStaff) {
@@ -2687,7 +2684,6 @@
       }
 
       const fuzzyText = getFuzzyText(content);
-      // Censorship logic - only active in global channel
       const isBlocked = (activeChannel === 'global') && window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
 
       if (isBlocked) {
@@ -2695,8 +2691,6 @@
           recordViolation();
       }
 
-      // Route to correct Supabase table: DMs and global messages go to 'messages'
-      // Staff-specific channel messages go to 'staff_messages'
       if (currentRecipient || activeChannel === 'global') {
           await _supabase.from('messages').insert({
             username: currentUser,
@@ -2708,8 +2702,7 @@
           await _supabase.from('staff_messages').insert({
               username: currentUser,
               content: content,
-              parent_id: currentReplyToId,
-              recipient: null // Ensuring consistent object structure
+              parent_id: currentReplyToId
           });
       }
 
@@ -2717,62 +2710,64 @@
       cancelReply();
     }
 
-    // Updated render filter to ensure DMs are visible in both rooms
-    function renderMessages() {
-      const body = document.getElementById('chatBody');
-      
-      let messagesToRender = [];
-      if (activeChannel === 'global') {
-          messagesToRender = allMessages;
-      } else {
-          // In staff room, show all staff channel messages PLUS personal DMs
-          const dms = allMessages.filter(m => m.recipient !== null);
-          messagesToRender = [...staffMessages, ...dms].sort((a, b) => 
-              new Date(a.created_at) - new Date(b.created_at)
-          ).slice(-100);
+    function subscribeMessages() {
+      if (chatChannel) {
+        return;
       }
+      chatChannel = _supabase.channel('global_chat_room', { config: { presence: { key: currentUser } } });
 
-      body.innerHTML = messagesToRender.map(function(msg) {
-        const isOwn = msg.username === currentUser;
-        const isBlockedStr = (msg.content === "Message blocked due to policy violations");
-        const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
-        const parentMsg = msg.parent_id ? (activeChannel === 'global' ? allMessages : staffMessages).find(m => m.id === msg.parent_id) : null;
-        const isPM = msg.recipient !== null;
-        
-        const isAdminSender = (msg.username === 'Derrick');
-        const isModSender = modUsernames.has(msg.username) && !isAdminSender;
-        
-        let parsedContent = isBlockedStr ? msg.content : (window.marked ? marked.parse(msg.content) : msg.content);
-        const canDM = (isModUser || (isPM && (isModSender || isAdminSender) && msg.recipient === currentUser));
-        
-        const prof = profilesCache[msg.username] || {};
-        const nameColor = prof.name_color || '';
-        let nameStyleClass = prof.name_style === 'sparkle' ? 'name-sparkle' : (prof.name_style === 'glow' ? 'name-glow' : (prof.name_style === 'italic' ? 'name-italic' : ''));
-        const tagText = prof.selected_tag || '';
-        let borderClass = prof.leaderboard_border ? 'border-' + prof.leaderboard_border : "";
-
-        return `
-          <div class="message ${isOwn ? 'own' : ''} ${isPM ? 'private' : ''} ${isBlockedStr ? 'blocked-content' : ''} ${activeChannel === 'staff' ? 'staff-msg' : ''} ${borderClass}">
-            <div class="msg-header">
-              <span class="msg-user">
-                ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${tagText}</span>` : ''}
-                <span class="${nameStyleClass}" style="color: ${nameColor || 'inherit'}">${msg.username}</span>
-                ${isAdminSender ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
-                ${isModSender ? '<span class="mod-badge">MOD</span>' : ''}
-              </span>
-              <span class="msg-time">${time}</span>
-            </div>
-            ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${parentMsg.content.substring(0, 30)}...</div>` : ''}
-            <div class="msg-content">${parsedContent}</div>
-            <div class="msg-footer">
-                <span class="msg-link" onclick="setReply('${msg.id}', '${msg.username}')">Reply</span>
-                ${(canDM && !isOwn) ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
-                ${isModUser ? `<span class="msg-link delete" onclick="deleteMessage('${msg.id}')">Delete</span>` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
-      body.scrollTop = body.scrollHeight;
+      chatChannel
+        .on('postgres_changes', { event: '*', table: 'messages', schema: 'public' }, function(payload) {
+          if (payload.eventType === 'INSERT') {
+            const msg = payload.new;
+            if (!msg.recipient || msg.recipient === currentUser || msg.username === currentUser) {
+                if (!allMessages.find(function(m) { return m.id === msg.id; })) {
+                    allMessages.push(msg);
+                }
+                if (msg.username !== currentUser) {
+                    if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'global') {
+                      unreadGlobal++;
+                      document.getElementById('chanGlobalBadge').innerText = unreadGlobal;
+                      document.getElementById('chanGlobalBadge').style.display = 'inline-block';
+                      updateTotalUnread();
+                      showChatPopup(msg, 'Global-Chat');
+                    } else {
+                      updateLastSeen();
+                    }
+                }
+            }
+          } else if (payload.eventType === 'DELETE') {
+            allMessages = allMessages.filter(function(m) { 
+              return m.id !== payload.old.id; 
+            });
+          }
+          if(activeChannel === 'global') {
+            renderMessages();
+          }
+        })
+        .on('presence', { event: 'sync' }, function() {
+          chatPresence = chatChannel.presenceState();
+          updateOnlineStats('chat');
+          
+          const typers = [];
+          for (const id in chatPresence) {
+            const userStateList = chatPresence[id];
+            if (userStateList && userStateList[0].isTyping && userStateList[0].user !== currentUser) {
+              typers.push(userStateList[0].user);
+            }
+          }
+          const indicator = document.getElementById('typingIndicator');
+          if (typers.length > 0) {
+            indicator.innerText = `${typers.join(', ')} typing...`;
+          } else {
+            indicator.innerText = '';
+          }
+        })
+        .subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') { 
+              await chatChannel.track({ user: currentUser }); 
+            }
+        });
     }
 
     function subscribeStaffMessages() {
