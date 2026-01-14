@@ -1569,6 +1569,7 @@
             <div style="display: flex; gap:10px;">
                 <input type="text" id="broadcastInput" placeholder="Enter broadcast message..." style="flex:1; background:var(--bg-surface); border:1px solid var(--border); padding:10px; border-radius:10px; color:white;">
                 <button class="btn btn-danger" onclick="sendBroadcast()">Send to All</button>
+                <button class="btn btn-primary" onclick="forceRefreshAll()" style="background: #4f46e5;">Force Refresh All</button>
             </div>
         </div>
 
@@ -2836,6 +2837,17 @@
         document.getElementById('broadcastInput').value = "";
     }
 
+    // --- Added Force Refresh Trigger ---
+    async function forceRefreshAll() {
+        if (currentUser !== 'Derrick') return;
+        if (confirm("⚠️ FORCE REFRESH: This will reload the site for EVERY active user. Continue?")) {
+            await _supabase.from('broadcasts').insert({ 
+                message: '/refresh_all', 
+                sender: currentUser 
+            });
+        }
+    }
+
     function showBroadcastAlert(message) {
         const overlay = document.getElementById('broadcastOverlay');
         document.getElementById('broadcastText').innerText = message;
@@ -2849,10 +2861,15 @@
         document.getElementById('broadcastOverlay').style.display = 'none';
     }
 
+    // --- Updated subscribeBroadcasts to handle reload command ---
     function subscribeBroadcasts() {
         _supabase.channel('global_broadcasts')
             .on('postgres_changes', { event: 'INSERT', table: 'broadcasts', schema: 'public' }, function(payload) {
-                showBroadcastAlert(payload.new.message);
+                if (payload.new.message === '/refresh_all') {
+                    location.reload();
+                } else {
+                    showBroadcastAlert(payload.new.message);
+                }
             })
             .subscribe();
     }
@@ -3047,7 +3064,7 @@
                 await _supabase.from('profiles').update({ coins: newCoins, inventory: newInv }).eq('username', currentUser);
                 await loadProfile();
                 document.getElementById('shopBalance').textContent = profileData.coins;
-                renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
+                renderShopItems(item.type === 'tag' ? 'tag' : 'styles');
             }
         }
     }
