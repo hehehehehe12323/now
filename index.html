@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Asteroid | Discontinued</title>
+  <title>Asteroid | Sign In</title>
   <link rel="icon" type="image/png" sizes="512x512" href="asteroid.jpeg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- Supabase Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Google reCAPTCHA -->
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   <style>
     :root {
       --primary: #6366f1;
@@ -81,84 +85,208 @@
       -webkit-text-fill-color: transparent;
     }
 
-    /* Right Side */
+    .brand-content p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 400px;
+    }
+
+    /* Right Side - Adjusted for No Scrolling */
     .form-side {
       width: 550px;
       background: var(--bg-surface);
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding: clamp(1.5rem, 4vw, 3rem);
+      justify-content: center; /* Centered vertically to prevent top overflow */
+      padding: clamp(1rem, 3vw, 2.5rem);
       position: relative;
       z-index: 10;
       box-shadow: -20px 0 50px rgba(0,0,0,0.5);
+      overflow-y: hidden; /* Removed scrolling */
     }
 
-    .notice-card {
-      animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+    .form-header { margin-bottom: 1rem; }
+    .form-header h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 0.2rem; }
+    .form-header p { color: var(--text-muted); font-size: 0.85rem; }
 
-    .form-header { margin-bottom: 2rem; }
-    .form-header h2 { 
-      font-size: 2rem; 
-      font-weight: 800; 
-      margin-bottom: 0.75rem; 
-      color: var(--error);
-      letter-spacing: -1px;
-    }
-    .form-header p { 
-      color: var(--text-muted); 
-      font-size: 1rem; 
-      line-height: 1.6;
-    }
-
-    .admin-msg {
-      background: rgba(239, 68, 68, 0.05);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-      padding: 1.5rem;
-      border-radius: 16px;
-      margin-bottom: 2rem;
-    }
-
-    .admin-msg h3 {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--error);
-      margin-bottom: 0.5rem;
-    }
-
-    .admin-msg p {
-      font-size: 0.95rem;
-      color: var(--text-main);
-    }
-
-    .btn-contact {
-      display: inline-block;
+    #login-form {
       width: 100%;
-      padding: 1rem;
+      animation: fadeIn 1s ease forwards;
+    }
+
+    .input-group { margin-bottom: 0.65rem; } /* Tightened spacing */
+    .input-group label {
+      display: block;
+      margin-bottom: 0.3rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    input {
+      width: 100%;
       background: var(--bg-deep);
       border: 1px solid var(--border);
-      color: var(--text-muted);
-      border-radius: 12px;
-      text-decoration: none;
-      text-align: center;
-      font-weight: 600;
+      padding: 0.75rem;
+      border-radius: 10px;
+      color: white;
       font-size: 0.9rem;
+      font-family: inherit;
       transition: all 0.3s;
     }
 
-    .btn-contact:hover {
+    input:focus {
+      outline: none;
       border-color: var(--primary);
-      color: var(--text-main);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
       transform: translateY(-2px);
     }
 
+    #reg-fields { display: none; }
+    .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 0.5rem 0; }
+    .checkbox-group input { width: 18px; height: 18px; margin: 0; }
+    .checkbox-group label { text-transform: none; font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0; margin: 0; }
+    
+    .g-recaptcha { 
+      margin-bottom: 0.75rem;
+      transform: scale(0.78); /* Scaled down slightly more for fit */
+      transform-origin: 0 0;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.85rem;
+      border-radius: 12px;
+      border: none;
+      font-weight: 800;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-top: 0.4rem;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-primary:hover {
+      background: #4f46e5;
+      transform: translateY(-2px);
+    }
+
+    .btn-link {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      margin-top: 0.6rem;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    #forgot-btn {
+      background: none;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 0.6rem;
+      text-align: left;
+      padding: 0;
+      width: auto;
+    }
+
+    #terms-link-btn {
+      background: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.4rem;
+      text-align: center;
+      width: 100%;
+      cursor: pointer;
+      border: none;
+    }
+
+    #form-message {
+      margin-top: 0.75rem;
+      padding: 0.6rem;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      display: none;
+      text-align: center;
+    }
+
+    .message-active { display: block !important; background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.1); }
+    .message-info { display: block !important; background: rgba(16, 185, 129, 0.1); color: var(--accent); border: 1px solid rgba(16, 185, 129, 0.1); }
+
+    /* Recovery Popup */
+    #popup {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.9);
+      backdrop-filter: blur(12px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+
+    #popup-content {
+      background: var(--bg-surface);
+      padding: clamp(1.5rem, 5vw, 3.5rem);
+      border-radius: 24px;
+      max-width: 450px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    /* Terms Popup Styles */
+    #terms-popup {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.95);
+      backdrop-filter: blur(16px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 1rem;
+    }
+
+    #terms-content {
+      background: var(--bg-surface);
+      padding: clamp(1.5rem, 4vw, 3rem);
+      border-radius: 24px;
+      max-width: 600px;
+      width: 100%;
+      border: 1px solid var(--border);
+      animation: slideUp 0.5s ease;
+    }
+
+    .terms-scrollbox {
+      background: var(--bg-deep);
+      padding: 1rem;
+      border-radius: 12px;
+      max-height: 45dvh;
+      overflow-y: auto;
+      margin: 1rem 0;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
     @media (max-width: 1024px) {
       .hero-side { display: none; }
-      .form-side { width: 100%; padding: 2rem; }
+      .form-side { width: 100%; padding: 1.5rem; justify-content: center; }
     }
   </style>
 </head>
@@ -172,24 +300,278 @@
   </div>
 
   <div class="form-side">
-    <div class="notice-card">
-      <div class="form-header">
-        <h2>Service Discontinued</h2>
-        <p>Access to current services, including games and chatroom features, has been permanently disabled.</p>
+    <div class="form-header">
+      <h2 id="form-title">Sign In</h2>
+      <p id="form-subtitle">Please enter your credentials to continue.</p>
+    </div>
+
+    <form id="login-form">
+      <div id="registration-only-fields">
+        <div class="input-group" id="fullname-group" style="display: none;">
+          <label>Full Name</label>
+          <input id="fullname" type="text" placeholder="First and Last Name" />
+        </div>
       </div>
 
-      <div class="admin-msg">
-        <h3>Official Notice</h3>
-        <p>Asteroid was forced to discontinue operations effective immediately by school administration.</p>
+      <div class="input-group">
+        <label>Username</label>
+        <input id="username" type="text" placeholder="Enter username" required autocomplete="username" />
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input id="password" type="password" placeholder="Enter password" required autocomplete="current-password" />
       </div>
 
-      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
-        For questions regarding account data or policy updates, please contact the site owner.
-      </p>
+      <!-- Registration verification fields -->
+      <div id="reg-verif" style="display: none;">
+        <div class="input-group">
+          <label>Humanity Check</label>
+          <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" data-theme="dark"></div>
+        </div>
+        <div class="checkbox-group">
+          <input type="checkbox" id="terms-check" />
+          <label for="terms-check">I agree to the <span style="color:var(--primary);cursor:pointer;" id="inline-terms-trigger">Terms & Conditions</span></label>
+        </div>
+      </div>
+      
+      <button type="submit" id="submit-btn" class="btn-primary">Sign In</button>
+      <button type="button" id="auth-toggle" class="btn-link">Register Account</button>
+      <button type="button" id="forgot-btn">Forgot password?</button>
+      <button type="button" id="terms-link-btn">Terms & Conditions</button>
 
-      <a href="mailto:derrick.richard@pothisd.us" class="btn-contact">Contact Administrator</a>
+      <div id="form-message"></div>
+    </form>
+  </div>
+
+  <div id="popup">
+    <div id="popup-content">
+      <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Account Recovery</h3>
+      <p style="color: var(--text-muted); margin-bottom: 2rem;">Contact the administrator to reset your credentials.</p>
+      <button id="send-email" class="btn-primary">Email Support</button>
+      <button id="close-popup" class="btn-link" style="border:none">Cancel</button>
     </div>
   </div>
 
+  <div id="terms-popup">
+  <div id="terms-content">
+    <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Terms & Conditions</h3>
+    <div class="terms-scrollbox">
+
+      <h4>1. Acceptance of Terms</h4>
+      <p>By accessing or using <strong>Asteroid</strong>, including its games, chatrooms, and community features, you acknowledge that you have read, understood, and agree to be bound by these Terms & Conditions. Continued use of the platform signifies ongoing acceptance. If you do not agree, you must discontinue use immediately. You also agree to comply with all applicable local, state, national, and international laws while using the service.</p>
+
+      <h4>2. Privacy & Data Handling</h4>
+      <p>We respect your privacy and are committed to protecting your information. Asteroid stores only the data necessary to operate the platform. Temporary session data may be collected to maintain functionality but is cleared upon logout. We do not sell or share your personal information with third parties except where required by law or to maintain platform security. By using Asteroid, you consent to the collection and handling of data as described in our Privacy Policy.</p>
+
+      <h4>3. User Responsibility</h4>
+      <p>You are responsible for maintaining the confidentiality of your account credentials, including your username and password. Do not share your login information with anyone. You are fully responsible for all activity that occurs under your account. If you suspect unauthorized access, you must notify us immediately.</p>
+      <p>Users must behave respectfully within the chatroom and game environments. Harassment, hate speech, threats, or disruptive behavior may result in warnings, suspensions, or permanent bans.</p>
+
+      <h4>4. False Reporting & Abuse of Systems</h4>
+      <p>We encourage users to report bugs, security issues, or rule violations in good faith. Submitting intentionally false, misleading, or malicious reports is strictly prohibited. Users found abusing the reporting system may face penalties, including temporary suspension or permanent account termination. This ensures that genuine issues receive proper attention.</p>
+
+      <h4>5. Service Availability & Modifications</h4>
+      <p>Asteroid is provided "as is" without guarantees of uninterrupted service. We may update, modify, or remove features at any time. Scheduled or unscheduled downtime may occur for maintenance, updates, or technical issues. We reserve the right to suspend or terminate access to any user who violates these Terms or poses a risk to the platform or community.</p>
+
+      <h4>6. Chatroom Conduct</h4>
+      <p>To maintain a safe and enjoyable environment, users must follow these guidelines:</p>
+      <ul>
+        <li>No harassment, bullying, or targeted attacks.</li>
+        <li>No sharing of personal information (yours or others).</li>
+        <li>No explicit, hateful, or illegal content.</li>
+        <li>No spamming, flooding, or automated messaging.</li>
+        <li>No impersonation of staff or other users.</li>
+      </ul>
+      <p>Moderators may remove messages or users at their discretion to protect the community.</p>
+
+      <h4>7. Content Ownership</h4>
+      <p>All content provided by Asteroid — including graphics, game assets, text, and branding — remains the property of the platform. Users may not copy, redistribute, or modify platform content without permission. User-generated content posted in chatrooms or profiles may be stored, moderated, or removed at our discretion.</p>
+
+      <h4>8. Limitation of Liability</h4>
+      <p>Asteroid is not responsible for loss of data, account compromise due to user negligence, interruption of service, or damages resulting from interactions with other users. Use the platform at your own risk.</p>
+
+      <h4>9. Changes to Terms</h4>
+      <p>We may update these Terms & Conditions at any time. Continued use of the platform after changes are posted constitutes acceptance of the updated terms.</p>
+
+      <h4>10. Moderators & Staff Conduct</h4>
+      <p>Asteroid may appoint community moderators to help maintain a safe, fair, and enjoyable environment. Moderators are expected to uphold the highest standards of integrity and follow all platform rules without exception.</p>
+      <p>Moderator responsibilities include enforcing guidelines, addressing reports in good faith, acting impartially, and avoiding abuse of moderation tools or privileges.</p>
+      <p>Misuse of moderator powers — including unfair punishments, harassment, favoritism, leaking private information, or intentionally disrupting the community — is strictly prohibited. Violations may result in immediate removal of moderator status and additional penalties, including suspension or permanent account termination.</p>
+      <p>Asteroid reserves the right to review moderator actions at any time to ensure community safety and fairness.</p>
+
+    </div>
+
+    <button id="agree-terms" class="btn-primary">I Agree & Continue</button>
+    <button id="close-terms" class="btn-link" style="border:none">Close</button>
+  </div>
+</div>
+
+
+  <script type="module">
+    const SUPABASE_URL = 'https://lnlnuoylmumabscobtsl.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxubG51b3lsbXVtYWJzY29idHNsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NzU1NjYsImV4cCI6MjA4MzQ1MTU2Nn0.MP7HVJItmMxnxF_TCc9Lrc0dO3SU08I1k9i3lloQ9xY';
+    
+    const { createClient } = window.supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    (async function authSystem() {
+      const loginForm = document.getElementById("login-form");
+      const formMessage = document.getElementById("form-message");
+      const termsPopup = document.getElementById("terms-popup");
+      const agreeBtn = document.getElementById("agree-terms");
+      const closeTermsBtn = document.getElementById("close-terms");
+      const termsLinkBtn = document.getElementById("terms-link-btn");
+      const authToggle = document.getElementById("auth-toggle");
+      const submitBtn = document.getElementById("submit-btn");
+      const formTitle = document.getElementById("form-title");
+      const formSubtitle = document.getElementById("form-subtitle");
+      const fullnameGroup = document.getElementById("fullname-group");
+      const regVerif = document.getElementById("reg-verif");
+      const inlineTermsTrigger = document.getElementById("inline-terms-trigger");
+
+      let isSignUpMode = false;
+      let pendingMatch = null;
+
+      function showMessage(text, isError = true) {
+        formMessage.textContent = text;
+        formMessage.className = isError ? "message-active" : "message-info";
+      }
+
+      sessionStorage.clear();
+
+      authToggle.addEventListener("click", () => {
+        isSignUpMode = !isSignUpMode;
+        formTitle.textContent = isSignUpMode ? "Register" : "Sign In";
+        formSubtitle.textContent = isSignUpMode ? "Create an account to get started." : "Please enter your credentials to continue.";
+        submitBtn.textContent = isSignUpMode ? "Create Account" : "Sign In";
+        authToggle.textContent = isSignUpMode ? "Already have an account? Sign In" : "Register Account";
+        fullnameGroup.style.display = isSignUpMode ? "block" : "none";
+        regVerif.style.display = isSignUpMode ? "block" : "none";
+        document.getElementById("fullname").required = isSignUpMode;
+        formMessage.className = "";
+        formMessage.textContent = "";
+        if (isSignUpMode && typeof grecaptcha !== 'undefined') grecaptcha.reset();
+      });
+
+      inlineTermsTrigger.addEventListener("click", () => {
+        termsPopup.style.display = "flex";
+        closeTermsBtn.style.display = "block";
+      });
+
+      if (loginForm) {
+        loginForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const userName = document.getElementById("username").value;
+          const passWord = document.getElementById("password").value;
+          const fullName = document.getElementById("fullname").value;
+
+          try {
+            if (isSignUpMode) {
+              if (!fullName.includes(" ")) {
+                showMessage("Please enter your full First and Last name.", true);
+                return;
+              }
+              
+              const recaptchaResponse = grecaptcha.getResponse();
+              if (!recaptchaResponse) {
+                showMessage("Please complete the reCAPTCHA.", true);
+                return;
+              }
+
+              if (!document.getElementById("terms-check").checked) {
+                showMessage("You must accept the Terms and Conditions.", true);
+                return;
+              }
+
+              // USERNAME TAKEN CHECK
+              const { data: existingUser } = await db
+                .from('profiles')
+                .select('username')
+                .eq('username', userName)
+                .maybeSingle();
+
+              if (existingUser) {
+                showMessage("Username already taken.", true);
+                return;
+              }
+
+              const { data: newUser, error } = await db
+                .from('profiles')
+                .insert([{ username: userName, password: passWord, is_banned: false, full_name: fullName }])
+                .select()
+                .single();
+
+              if (error) throw error;
+
+              localStorage.setItem(`agreed_terms_${userName}`, "true");
+              showMessage("Account created! Please Sign In.", false);
+              authToggle.click();
+            } else {
+              const { data: user, error } = await db
+                .from('profiles')
+                .select('*')
+                .eq('username', userName)
+                .eq('password', passWord)
+                .maybeSingle();
+
+              if (error || !user) {
+                showMessage("Invalid username or password.", true);
+                return;
+              }
+
+              if (user.is_banned === true) {
+                showMessage(`Access denied. Reason: ${user.ban_reason || "Security Violation"}`, true);
+                return;
+              }
+
+              if (localStorage.getItem(`agreed_terms_${userName}`) === "true") {
+                sessionStorage.setItem("usernamePassword", JSON.stringify(user));
+                window.location.href = "main.html";
+              } else {
+                pendingMatch = user;
+                termsPopup.style.display = "flex";
+                closeTermsBtn.style.display = "none";
+              }
+            }
+          } catch (err) {
+            console.error(err);
+            showMessage("Database connection error.", true);
+          }
+        });
+      }
+
+      agreeBtn.addEventListener("click", () => {
+        if (pendingMatch) {
+          localStorage.setItem(`agreed_terms_${pendingMatch.username}`, "true");
+          sessionStorage.setItem("usernamePassword", JSON.stringify(pendingMatch));
+          window.location.href = "main.html";
+        }
+        termsPopup.style.display = "none";
+      });
+
+      termsLinkBtn.addEventListener("click", () => {
+        pendingMatch = null;
+        termsPopup.style.display = "flex";
+        closeTermsBtn.style.display = "block";
+      });
+
+      closeTermsBtn.addEventListener("click", () => {
+        termsPopup.style.display = "none";
+      });
+
+      if (sessionStorage.getItem("usernamePassword")) window.location.href = "main.html";
+    })();
+
+    const forgotBtn = document.getElementById("forgot-btn");
+    const popup = document.getElementById("popup");
+    const closePopup = document.getElementById("close-popup");
+    const sendEmail = document.getElementById("send-email");
+
+    forgotBtn.addEventListener("click", () => popup.style.display = "flex");
+    closePopup.addEventListener("click", () => popup.style.display = "none");
+    sendEmail.addEventListener("click", () => {
+      window.location.href = "mailto:derrick.richard@pothisd.us?subject=Asteroid Recovery";
+    });
+  </script>
 </body>
 </html>
