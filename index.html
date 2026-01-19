@@ -288,6 +288,18 @@
       .hero-side { display: none; }
       .form-side { width: 100%; padding: 1.5rem; justify-content: center; }
     }
+
+    /* Addition: Alert Banner Styles */
+    .alert-banner {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px dashed var(--primary);
+      padding: 1.2rem;
+      border-radius: 16px;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    .alert-banner b { color: var(--primary); }
   </style>
 </head>
 <body>
@@ -300,6 +312,11 @@
   </div>
 
   <div class="form-side">
+    <!-- Addition: Alert Banner Message -->
+    <div class="alert-banner">
+      <b>Attention:</b> Due to a recent system-wide database restoration, all legacy account data has been cleared. We invite all users to <b>register a new account</b> to continue. As a token of our appreciation, all users will receive a <b>650 coin bonus</b> upon registration. Moderator status will be manually reinstated by staff.
+    </div>
+
     <div class="form-header">
       <h2 id="form-title">Sign In</h2>
       <p id="form-subtitle">Please enter your credentials to continue.</p>
