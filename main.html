@@ -1235,7 +1235,7 @@
       }
 
     .animate-in { 
-      animation: fadeIn 0.6sForward ease forwards; 
+      animation: fadeIn 0.6s ease forwards; 
     }
 
     /* Admin Broadcast Overlay */
@@ -1980,6 +1980,8 @@
     // AUTOMATIC MODERATION ENGINE
     function getFuzzyText(text) {
         return text.toLowerCase()
+            .replace(/ /g, '') // Caught bypass: "n i g g a"
+            .replace(/[^a-p0-9]/g, '') // strip punctuation/symbols bypasses
             .replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a')
             .replace(/@/g, 'a').replace(/\$/g, 's').replace(/5/g, 's').replace(/7/g, 't')
             .replace(/8/g, 'b').replace(/!/g, 'i');
@@ -2666,7 +2668,20 @@
       }
 
       const fuzzyText = getFuzzyText(content);
-      const isBlocked = (activeChannel === 'global') && window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText));
+      
+      // CUSTOM BYPASS DETECTION LAYER
+      const cleanLower = content.toLowerCase();
+      const symbolStrip = cleanLower.replace(/[^a-z]/g, '');
+      const dedup = symbolStrip.replace(/(.)\1+/g, '$1');
+      
+      const isManualBypass = 
+        /n+[i1!*l|]+g+g?[a4@]+s*/i.test(cleanLower) || // n-word Variations
+        /n+[i1!*l|]+g+e+r+s*/i.test(cleanLower) || // hard-r Variations
+        /a+s+s+s+/i.test(cleanLower) || // asss, assss
+        /niggas|nigers|asss/i.test(symbolStrip) || // stripped spaces bypass
+        /niga|niger/i.test(dedup); // deduplicated character bypasses
+
+      const isBlocked = (activeChannel === 'global') && (isManualBypass || (window.censor && censor.isReady() && (censor.isBlocked(content) || censor.isBlocked(fuzzyText))));
 
       if (isBlocked) {
           content = "Message blocked due to policy violations";
