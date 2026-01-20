@@ -1754,7 +1754,7 @@
           <span style="cursor:pointer; font-weight: 800;" onclick="cancelReply()">&times;</span>
         </div>
         <div class="chat-controls">
-          <textarea id="chatInput" placeholder="Type a message..." maxlength="500" 
+          <textarea id="chatInput" placeholder="Type a message..." maxlength="500000" 
                  onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); postMessage(); }"
                  oninput="handleTyping()"></textarea>
           <button class="btn btn-primary" onclick="postMessage()">Send</button>
