@@ -2168,31 +2168,75 @@
      * BAN SYSTEM CLARIFICATION ENGINE (FIX FOR TIMED BANS NOT CLEARING)
      * ========================================================================
      */
-    async function checkActiveBan(silent = false) {
+        async function checkActiveBan(silent = false) {
         // 1. Check local storage first
         const expiry = localStorage.getItem('asteroid_ban_expiry');
         const type = localStorage.getItem('asteroid_ban_type');
         
-        // LOCAL EXPIRY CHECK
-        if (expiry) {
-            if (Date.now() >= parseInt(expiry)) {
-                // Time is up, purge local ban cache
-                localStorage.removeItem('asteroid_ban_expiry');
-                localStorage.removeItem('asteroid_ban_type');
-            } else {
-                const mins = Math.ceil((parseInt(expiry) - Date.now()) / 60000);
-                if (type === 'chat') {
-                    if (!silent) {
-                      addSystemMessage("Account Restricted", `You are currently chat-banned for policy violations. Remaining: ${mins}m`);
+        if (expiry && Date.now() >= parseInt(expiry)) {
+            localStorage.removeItem('asteroid_ban_expiry');
+            localStorage.removeItem('asteroid_ban_type');
+        }
+
+        // 2. Cross-reference with Server Profile
+        const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
+        
+        if (data) {
+            // --- SITE BANS ---
+            if (data.is_banned) {
+                if (data.ban_until) {
+                    const serverExpiry = new Date(data.ban_until).getTime();
+                    if (Date.now() >= serverExpiry) {
+                        // TIMER UP: Clear the ban in the database and local storage
+                        await _supabase.from('profiles').update({ 
+                            is_banned: false, 
+                            ban_until: null, 
+                            ban_reason: null 
+                        }).eq('username', currentUser);
+                        
+                        localStorage.removeItem('asteroid_ban_expiry');
+                        localStorage.removeItem('asteroid_ban_type');
+                        
+                        // IMPORTANT: Return false so the user can actually enter the site!
+                        return false; 
+                    } else {
+                        const mins = Math.ceil((serverExpiry - Date.now()) / 60000);
+                        renderBanScreen(mins, data.ban_reason);
+                        return 'site';
                     }
-                    return 'chat';
-                }
-                if (type === 'site') {
-                    renderBanScreen(mins, "Violation of Community Policy");
+                } else {
+                    renderBanScreen("PERMANENT", data.ban_reason);
                     return 'site';
                 }
             }
+
+            // --- CHAT SUSPENSIONS ---
+            if (data.is_chat_banned) {
+                if (data.chat_ban_until) {
+                    const chatExpiry = new Date(data.chat_ban_until).getTime();
+                    if (Date.now() >= chatExpiry) {
+                        // SUSPENSION ENDED: Clear DB fields
+                        await _supabase.from('profiles').update({ 
+                            is_chat_banned: false, 
+                            chat_ban_until: null, 
+                            chat_ban_reason: null 
+                        }).eq('username', currentUser);
+                        
+                        if (!silent) addSystemMessage("System", "Your chat suspension has ended.");
+                        return false; 
+                    } else {
+                        const mins = Math.ceil((chatExpiry - Date.now()) / 60000);
+                        if (!silent) addSystemMessage("Chat Suspended", `Remaining: ${mins}m. Reason: ${data.chat_ban_reason || 'Policy violation'}`);
+                        return 'chat';
+                    }
+                } else {
+                    if (!silent) addSystemMessage("Chat Restricted", `Permanent. Reason: ${data.chat_ban_reason || 'Policy violation'}`);
+                    return 'chat';
+                }
+            }
         }
+        return false;
+    }
 
       // 2. Cross-reference with Server Profile
 const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
