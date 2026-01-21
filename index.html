@@ -536,9 +536,27 @@
                 return;
               }
 
+              // FIX: Sync ban status on login if timer has ended
               if (user.is_banned === true) {
-                showMessage(`Access denied. Reason: ${user.ban_reason || "Security Violation"}`, true);
-                return;
+                if (user.ban_until) {
+                  const expiry = new Date(user.ban_until).getTime();
+                  if (Date.now() >= expiry) {
+                    // Update Database
+                    await db.from('profiles').update({ 
+                      is_banned: false, 
+                      ban_until: null, 
+                      ban_reason: null 
+                    }).eq('username', userName);
+                    // Update local object to allow entry
+                    user.is_banned = false;
+                  } else {
+                    showMessage(`Access denied. Reason: ${user.ban_reason || "Security Violation"}`, true);
+                    return;
+                  }
+                } else {
+                  showMessage(`Access denied. Reason: ${user.ban_reason || "Security Violation"}`, true);
+                  return;
+                }
               }
 
               if (localStorage.getItem(`agreed_terms_${userName}`) === "true") {
