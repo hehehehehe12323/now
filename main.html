@@ -2194,50 +2194,57 @@
             }
         }
 
-        // 2. Cross-reference with Server Profile
-        const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
-        if (data) {
-            // SITE BAN LOGIC
-            if (data.is_banned) {
-                if (!data.ban_until) {
-                    // It's a permanent ban
-                    renderBanScreen("PERMANENT", data.ban_reason);
-                    return 'site';
-                } else {
-                    const serverExpiry = new Date(data.ban_until).getTime();
-                    if (Date.now() >= serverExpiry) {
-                        // DB check says time is up, ignore the 'is_banned' flag
-                        // We don't try to clear it from JS (Mod perms needed), but we allow access
-                    } else {
-                        const mins = Math.ceil((serverExpiry - Date.now()) / 60000);
-                        renderBanScreen(mins, data.ban_reason);
-                        return 'site';
-                    }
-                }
-            }
-            
-            // CHAT BAN LOGIC
-            if (data.is_chat_banned) {
-                if (!data.chat_ban_until) {
-                    if (!silent) {
-                      addSystemMessage("Chat Privileges Revoked", `Permanent. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
-                    }
-                    return 'chat';
-                } else {
-                    const chatExpiry = new Date(data.chat_ban_until).getTime();
-                    if (Date.now() >= chatExpiry) {
-                        // Expired - suppress the suspension UI
-                    } else {
-                        const mins = Math.ceil((chatExpiry - Date.now()) / 60000);
-                        if (!silent) {
-                          addSystemMessage("Chat Suspended", `Remaining: ${mins}m. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
-                        }
-                        return 'chat';
-                    }
-                }
+      // 2. Cross-reference with Server Profile
+const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
+if (data) {
+    if (data.is_banned) {
+        if (!data.ban_until) {
+            renderBanScreen("PERMANENT", data.ban_reason);
+            return 'site';
+        } else {
+            const serverExpiry = new Date(data.ban_until).getTime();
+            if (Date.now() >= serverExpiry) {
+                await _supabase.from('profiles').update({ 
+                    is_banned: false, 
+                    ban_until: null, 
+                    ban_reason: null 
+                }).eq('username', currentUser);
+                // MUST RELOAD: The user is currently looking at doc.body = renderBanScreen
+                location.reload(); 
+            } else {
+                const mins = Math.ceil((serverExpiry - Date.now()) / 60000);
+                renderBanScreen(mins, data.ban_reason);
+                return 'site';
             }
         }
+    }
 
+    if (data.is_chat_banned) {
+        if (!data.chat_ban_until) {
+            if (!silent) {
+                addSystemMessage("Chat Privileges Revoked", `Permanent. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
+            }
+            return 'chat';
+        } else {
+            const chatExpiry = new Date(data.chat_ban_until).getTime();
+            if (Date.now() >= chatExpiry) {
+                await _supabase.from('profiles').update({ 
+                    is_chat_banned: false, 
+                    chat_ban_until: null, 
+                    chat_ban_reason: null 
+                }).eq('username', currentUser);
+                // NOTIFY: Let them know they can talk again
+                if (!silent) addSystemMessage("System", "Your chat suspension has ended. Please follow community guidelines.");
+            } else {
+                const mins = Math.ceil((chatExpiry - Date.now()) / 60000);
+                if (!silent) {
+                    addSystemMessage("Chat Suspended", `Remaining: ${mins}m. Reason: ${data.chat_ban_reason || 'No reason provided.'}`);
+                }
+                return 'chat';
+            }
+        }
+    }
+}
         return false;
     }
 
