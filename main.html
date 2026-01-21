@@ -1450,6 +1450,24 @@
         from { transform: translateX(110%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
     }
+
+    /* FIX: Notification & Broadcast Z-Index for Fullscreen */
+.broadcast-overlay, .chat-popup-toast {
+    z-index: 999999999 !important; /* Extremely high to ensure visibility */
+}
+
+/* Ensure overlays appear even when specific elements are in fullscreen mode */
+:fullscreen .broadcast-overlay, 
+:fullscreen .chat-popup-toast,
+#zoneViewer:fullscreen ~ .broadcast-overlay,
+#zoneViewer:fullscreen ~ .chat-popup-toast {
+    z-index: 2147483647 !important;
+}
+
+/* Prevent overlays from blocking clicks on the game if not needed */
+.broadcast-overlay {
+    pointer-events: auto; /* Keep interactive for the 'X' button */
+}
   </style>
 
   <script>
@@ -3757,6 +3775,72 @@
         }
     });
 
+    /* 
+========================================================================
+FIX: AUTOMATED PENALTY EXPIRY & SUPABASE SYNC
+========================================================================
+*/
+setInterval(async () => {
+    if (!currentUser) return;
+
+    // Fetch latest status directly from source
+    const { data: userStatus, error } = await _supabase
+        .from('profiles')
+        .select('is_banned, ban_until, is_chat_banned, chat_ban_until')
+        .eq('username', currentUser)
+        .maybeSingle();
+
+    if (userStatus) {
+        const now = Date.now();
+        let needsUpdate = false;
+        let updateData = {};
+
+        // 1. Check Site Ban Expiry
+        if (userStatus.is_banned && userStatus.ban_until) {
+            if (now >= new Date(userStatus.ban_until).getTime()) {
+                updateData.is_banned = false;
+                updateData.ban_until = null;
+                updateData.ban_reason = null;
+                needsUpdate = true;
+            }
+        }
+
+        // 2. Check Chat suspension Expiry
+        if (userStatus.is_chat_banned && userStatus.chat_ban_until) {
+            if (now >= new Date(userStatus.chat_ban_until).getTime()) {
+                updateData.is_chat_banned = false;
+                updateData.chat_ban_until = null;
+                updateData.chat_ban_reason = null;
+                
+                // As requested: Ensure these specific fields are explicitly cleared
+                updateData.is_banned = false;
+                updateData.ban_reason = null;
+                needsUpdate = true;
+            }
+        }
+
+        // 3. Apply changes to Supabase if any timer expired
+        if (needsUpdate) {
+            const { error: syncError } = await _supabase
+                .from('profiles')
+                .update(updateData)
+                .eq('username', currentUser);
+
+            if (!syncError) {
+                console.log("[Security] Penalty expired. Database fields reset successfully.");
+                
+                // Clear local caches to match
+                localStorage.removeItem('asteroid_ban_expiry');
+                localStorage.removeItem('asteroid_ban_type');
+                
+                // Refresh to restore access if it was a site ban
+                if (updateData.is_banned === false) {
+                    location.reload();
+                }
+            }
+        }
+    }
+}, 10000); // Checks every 10 seconds
   </script>
   
   <style>
