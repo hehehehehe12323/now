@@ -561,7 +561,7 @@
 
               if (localStorage.getItem(`agreed_terms_${userName}`) === "true") {
                 sessionStorage.setItem("usernamePassword", JSON.stringify(user));
-                window.location.href = "main.html";
+                window.location.href = "maintenance.html";
               } else {
                 pendingMatch = user;
                 termsPopup.style.display = "flex";
@@ -579,7 +579,7 @@
         if (pendingMatch) {
           localStorage.setItem(`agreed_terms_${pendingMatch.username}`, "true");
           sessionStorage.setItem("usernamePassword", JSON.stringify(pendingMatch));
-          window.location.href = "main.html";
+          window.location.href = "maintenance.html";
         }
         termsPopup.style.display = "none";
       });
@@ -594,7 +594,7 @@
         termsPopup.style.display = "none";
       });
 
-      if (sessionStorage.getItem("usernamePassword")) window.location.href = "main.html";
+      if (sessionStorage.getItem("usernamePassword")) window.location.href = "maintenance.html";
     })();
 
     const forgotBtn = document.getElementById("forgot-btn");
