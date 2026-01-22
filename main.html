@@ -1464,13 +1464,10 @@
     z-index: 9990 !important;
 }
 
-/* Fix: Hides the dashboard header and expands the game to fill the empty space in fullscreen */
+/* Optional: Improves the appearance of the game header in fullscreen */
 :fullscreen #zoneHeader {
-    display: none !important;
-}
-
-:fullscreen #zoneFrame {
-    height: 100vh !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(10px);
 }
   </style>
 
@@ -2321,23 +2318,11 @@
     EXTERNAL WINDOW HANDLER (STABLE FIX FOR ISSUE #1)
     ========================================================================
     */
-   async function aboutBlank() {
-  const zoneTitle = document.getElementById('zoneName').textContent;
-  const file = zones.find(z => z.name === zoneTitle);
-  if (!file) return alert("Zone detection failed.");
+    function aboutBlank() {
+      const zoneTitle = document.getElementById('zoneName').textContent;
+      const file = zones.find(z => z.name === zoneTitle);
+      if (!file) return alert("Zone detection failed.");
 
-  const gameUrl = file.url.replace("{HTML_URL}", htmlURL);
-  const win = window.open('about:blank', '_blank');
-  
-  if (!win) return alert("Pop-up blocked! Please allow pop-ups to open this game in a new tab.");
-
-  // This fetches the actual code and writes it directly to the new window so it runs
-  fetch(gameUrl).then(res => res.text()).then(html => {
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-  });
-}
       const gameUrl = file.url.replace("{HTML_URL}", htmlURL);
       const win = window.open('about:blank', '_blank');
       
