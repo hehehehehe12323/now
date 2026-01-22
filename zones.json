@@ -5460,5 +5460,14 @@
     "url": "{HTML_URL}/fallguys.html",
     "author": "",
     "authorLink": "" 
+  },
+  {
+    "id": 618,
+    "name": "Rumble Rush",
+    "cover": "https://ts4.mm.bing.net/th?id=OIP.nFTSOwnVEdofnpVl3KjxMQAAAA&pid=15.1",
+    "url": "{HTML_URL}/rumblerush.html",
+    "author": "",
+    "authorLink": "",
+    "featured": true,
   }
 ]
