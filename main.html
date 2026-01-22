@@ -346,6 +346,20 @@
       font-style: italic; 
     }
 
+    .name-bolditalic { font-weight: 800; font-style: italic; }
+    .name-underline { text-decoration: underline; }
+    .name-strike { text-decoration: line-through; }
+    .name-wavy { text-decoration: underline wavy var(--primary); }
+    .name-jitter { display: inline-block; animation: jitter 0.2s infinite; }
+
+    @keyframes jitter {
+      0% { transform: translate(0,0); }
+      25% { transform: translate(1px, 1px); }
+      50% { transform: translate(-1px, -1px); }
+      75% { transform: translate(1px, -1px); }
+      100% { transform: translate(-1px, 1px); }
+    }
+
     /* 
     ========================================================================
     SHOP BORDER STYLES
@@ -2833,15 +2847,7 @@
         
         const prof = profilesCache[msg.username] || {};
         const nameColor = prof.name_color || '';
-        let nameStyleClass = "";
-        if (prof.name_style === 'sparkle') nameStyleClass = 'name-sparkle';
-        else if (prof.name_style === 'glow') nameStyleClass = 'name-glow';
-        else if (prof.name_style === 'italic') nameStyleClass = 'name-italic';
-        else if (prof.name_style === 'bolditalic') nameStyleClass = 'name-bolditalic';
-        else if (prof.name_style === 'underline') nameStyleClass = 'name-underline';
-        else if (prof.name_style === 'strike') nameStyleClass = 'name-strike';
-        else if (prof.name_style === 'wavy') nameStyleClass = 'name-wavy';
-        else if (prof.name_style === 'jitter') nameStyleClass = 'name-jitter';
+        const nameStyleClass = prof.name_style ? 'name-' + prof.name_style : '';
 
         const tagText = prof.selected_tag || '';
         const borderClass = (prof.leaderboard_border && prof.leaderboard_border !== 'none') ? 'border-' + prof.leaderboard_border : '';
@@ -2855,7 +2861,7 @@
           <div class="message ${ownClass} ${privateClass} ${blockedClass} ${staffRoomClass} ${borderClass}">
             <div class="msg-header">
               <span class="msg-user">
-                ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${tagText}</span>` : ''}
+                ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px; font-style: normal; text-decoration: none;">${tagText}</span>` : ''}
                 <span class="${nameStyleClass}" style="color: ${nameColor || 'inherit'}">${msg.username}</span>
                 ${isAdminSender ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
                 ${isModSender ? '<span class="mod-badge">MOD</span>' : ''}
@@ -3194,13 +3200,13 @@
             pMenuName.style.color = data.name_color || 'inherit';
             pMenuName.className = 'menu-name'; 
 
-            if (data.name_style === 'sparkle') pMenuName.classList.add('name-sparkle');
-            else if (data.name_style === 'glow') pMenuName.classList.add('name-glow');
-            else if (data.name_style === 'bolditalic') pMenuName.classList.add('name-bolditalic');
+            if (data.name_style) {
+                pMenuName.classList.add('name-' + data.name_style);
+            }
 
             const displayName = savedName || currentUser;
             if (data.selected_tag) {
-                pMenuName.innerHTML = `<span style="opacity: 0.6; font-size: 0.75rem; font-weight: 400; margin-right: 5px;">${data.selected_tag}</span>${displayName}`;
+                pMenuName.innerHTML = `<span style="opacity: 0.6; font-size: 0.75rem; font-weight: 400; margin-right: 5px; font-style: normal; text-decoration: none;">${data.selected_tag}</span>${displayName}`;
             } else {
                 pMenuName.textContent = displayName;
             }
@@ -3414,14 +3420,14 @@
             const isMe = (entry.username === currentUser);
             const prof = profilesCache[entry.username] || {};
             const nameColor = prof.name_color || '';
-            let nameStyleClass = (prof.name_style === 'sparkle') ? 'name-sparkle' : (prof.name_style === 'glow') ? 'name-glow' : '';
+            const nameStyleClass = prof.name_style ? 'name-' + prof.name_style : '';
             const borderClass = (prof.leaderboard_border && prof.leaderboard_border !== 'none') ? 'border-' + prof.leaderboard_border : '';
 
             return `
               <tr class="${isMe ? 'current-user' : ''} ${borderClass}">
                 <td class="rank-cell">#${index + 1}</td>
                 <td class="user-cell">
-                    ${prof.selected_tag ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${prof.selected_tag}</span>` : ''}
+                    ${prof.selected_tag ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px; font-style: normal; text-decoration: none;">${prof.selected_tag}</span>` : ''}
                     <span class="${nameStyleClass}" style="color: ${nameColor || 'inherit'}">${entry.username}</span>
                 </td>
                 <td class="mins-cell">${entry.minutes}m</td>
