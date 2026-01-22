@@ -1452,6 +1452,23 @@
         from { transform: translateX(110%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
     }
+
+    /* Fix: Ensure notifications show over fullscreen games */
+:fullscreen .broadcast-overlay, 
+:fullscreen .chat-popup-toast {
+    z-index: 2147483647 !important; /* Maximum possible z-index */
+}
+
+/* Ensure the game viewer stays below the notification layers during fullscreen */
+:fullscreen #zoneViewer {
+    z-index: 9990 !important;
+}
+
+/* Optional: Improves the appearance of the game header in fullscreen */
+:fullscreen #zoneHeader {
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(10px);
+}
   </style>
 
   <script>
@@ -3505,7 +3522,17 @@
     }
 
     function closeZone() { document.getElementById('zoneViewer').style.display = "none"; }
-    function fullscreenZone() { if (document.getElementById('zoneFrame').requestFullscreen) document.getElementById('zoneFrame').requestFullscreen(); }
+    
+    function fullscreenZone() {
+    const target = document.documentElement; // Target the whole page to keep alerts visible
+    if (target.requestFullscreen) {
+        target.requestFullscreen();
+    } else if (target.webkitRequestFullscreen) { 
+        target.webkitRequestFullscreen();
+    } else if (target.msRequestFullscreen) { 
+        target.msRequestFullscreen();
+    }
+}
 
     function saveData() {
       let storageObj = {};
