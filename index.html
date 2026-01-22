@@ -311,12 +311,6 @@
     </div>
   </div>
 
-  <div class="form-side">
-    <!-- Critical Security Alert -->
-    <div class="alert-banner">
-      <b>URGENT SECURITY ALERT:</b> Following a severe external breach, a malicious actor has purged our entire database, resulting in a total loss of user data. We require all members to <b>create a new account</b> to re-access the platform. To compensate for this disruption, we are issuing a <b>650 coin credit</b> to all accounts, and our team will be manually <b>restoring all moderator privileges</b>.
-    </div>
-
     <div class="form-header">
       <h2 id="form-title">Sign In</h2>
       <p id="form-subtitle">Please enter your credentials to continue.</p>
@@ -561,7 +555,7 @@
 
               if (localStorage.getItem(`agreed_terms_${userName}`) === "true") {
                 sessionStorage.setItem("usernamePassword", JSON.stringify(user));
-                window.location.href = "maint.html";
+                window.location.href = "main.html";
               } else {
                 pendingMatch = user;
                 termsPopup.style.display = "flex";
