@@ -455,21 +455,6 @@
       return id;
     }
 
-    function getHardwareFingerprint() {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.textBaseline = "alphabetic";
-      ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
-      ctx.fillStyle = "#069"; ctx.fillText("asteroid_fp", 2, 15);
-      const strData = canvas.toDataURL();
-      let hash = 0;
-      for (let i = 0; i < strData.length; i++) {
-        hash = ((hash << 5) - hash) + strData.charCodeAt(i);
-        hash |= 0;
-      }
-      return hash.toString();
-    }
-
     (async function authSystem() {
       const loginForm = document.getElementById("login-form");
       const formMessage = document.getElementById("form-message");
@@ -540,9 +525,8 @@
               }
 
               const persistentId = getSecureDeviceId();
-              const fingerprint = getHardwareFingerprint();
               
-              // FIX: Catch alts by checking normalized name and hardware fingerprint
+              // FIX: Catch alts by checking normalized name
               const normalizedName = fullName.toLowerCase().trim();
 
               const { data: altAccount } = await db
@@ -575,8 +559,7 @@
                     password: passWord, 
                     is_banned: false, 
                     full_name: fullName,
-                    device_id: persistentId,
-                    fingerprint: fingerprint
+                    device_id: persistentId
                 }])
                 .select()
                 .single();
