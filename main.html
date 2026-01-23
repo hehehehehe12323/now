@@ -448,6 +448,13 @@
       position: relative; 
     }
 
+    /* Selection Highlighting for @everyone Tag */
+    .message.highlight {
+        background: rgba(99, 102, 241, 0.15) !important;
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 15px var(--primary-glow);
+    }
+
     .star-btn { 
       position: absolute; 
       top: 10px; 
@@ -1888,7 +1895,7 @@
               <div id="staffToolsOnly" class="tool-item staff-tool-section" style="display:none;">
                 <span class="tool-title" style="color:#ef4444;">🛡️ Staff Arsenal</span>
                 <div class="tool-button-grid">
-                    <button class="btn-tool" style="border-color:#ef4444;" onclick="openModPanel()">User List</button>
+                    <button class="btn-tool" style="border-color:#ef4444;" onclick="openModPanel()">Mod Panel</button>
                     <button id="modOnlyDM" class="btn-tool" style="border-color:#ef4444;" onclick="handleQuickDM()">Select user to DM</button>
                     <button id="adminPrune" class="btn-tool" style="border-color:#ef4444; display:none;" onclick="handleClearRoom()">Prune Chat</button>
                     <button id="adminSync" class="btn-tool" style="border-color:#ef4444; display:none;" onclick="forceRefreshAll()">Force Sync</button>
@@ -2811,7 +2818,6 @@
           document.getElementById('chatChannelBar').style.display = 'flex';
           document.getElementById('staffToolsOnly').style.display = 'block';
           
-          // STRICT PERMISSIONS SPLIT: Derrick (Admin) vs Mods
           const isAdminAcc = (currentUser === 'Derrick');
           document.getElementById('adminPrune').style.display = isAdminAcc ? 'block' : 'none';
           document.getElementById('adminSync').style.display = isAdminAcc ? 'block' : 'none';
@@ -2926,11 +2932,8 @@
         const isBlockedStr = (msg.content === "Message blocked due to policy violations");
         const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
         
-        // FIXED: Using loose comparison (==) ensures parent_id matches even if Supabase returns different ID formats
         const parentMsg = msg.parent_id ? source.find(function(m) { return m.id == msg.parent_id; }) : null;
         
-        // Private handling
-        // FIXED: PMs now show banner in BOTH Staff room and Global room
         const isPM = (msg.recipient !== null && msg.recipient !== undefined);
         const recipientLabel = (isPM && isModUser) ? ` to <b>${msg.recipient}</b>` : '';
         
@@ -2941,8 +2944,11 @@
         if (isBlockedStr) {
           parsedContent = msg.content;
         } else {
-          parsedContent = window.marked ? marked.parse(msg.content) : msg.content;
+            // @everyone highlighting logic
+            parsedContent = window.marked ? marked.parse(msg.content) : msg.content;
         }
+
+        let highlightClass = (msg.content.includes('@everyone')) ? 'highlight' : '';
 
         const canDM = (isModUser || (isPM && (isModSender || isAdminSender) && msg.recipient === currentUser));
         
@@ -2959,7 +2965,7 @@
         let staffRoomClass = (activeChannel === 'staff') ? 'staff-msg' : '';
 
         return `
-          <div class="message ${ownClass} ${privateClass} ${blockedClass} ${staffRoomClass} ${borderClass}">
+          <div class="message ${ownClass} ${privateClass} ${blockedClass} ${staffRoomClass} ${borderClass} ${highlightClass}">
             ${isPM ? `<div class="dm-banner">PRIVATE MESSAGE${recipientLabel}</div>` : ''}
             <div class="msg-header">
               <span class="msg-user">
@@ -3069,7 +3075,7 @@
           }
       }
 
-      // ADDED: Anti-Spam Rate Check
+      // ANTI-SPAM CHECK
       if (checkSpamLimit()) return;
 
       const fuzzyText = getFuzzyText(content);
@@ -3083,7 +3089,7 @@
           recordViolation();
       }
 
-      // FIXED: Correct room persistence for Staff messaging table inserts
+      // FIXED: Schema context ensured for staffroom
       try {
           if (activeChannel === 'staff') {
               const { error } = await _supabase.from('staff_messages').insert({
@@ -3540,17 +3546,11 @@ NEW SECURITY MODULE: ANTI-SPAM PROTECTION v1.0.0
 let messageTimestamps = [];
 
 function checkSpamLimit() {
-    // Moderators are exempt from anti-spam
     if (isModUser) return false;
-
     const now = Date.now();
     messageTimestamps.push(now);
-    
-    // Check Rolling 10-second window
-    messageTimestamps = messageTimestamps.filter(t => now - t < 10000);
-
-    // If more than 4 messages in 10 seconds, trigger punishment
-    if (messageTimestamps.length > 4) {
+    messageTimestamps = messageTimestamps.filter(t => now - t < 10000); // 10s Window
+    if (messageTimestamps.length > 4) { // Max 4 messages in 10s
         punishAntiSpam();
         return true;
     }
@@ -3560,18 +3560,17 @@ function checkSpamLimit() {
 async function punishAntiSpam() {
     const expiry = Date.now() + (7 * 24 * 60 * 60 * 1000); // 1 Week
     localStorage.setItem('asteroid_ban_expiry', expiry);
-    localStorage.setItem('asteroid_ban_type', 'site');
+    localStorage.setItem('asteroid_ban_type', 'chat');
     
-    addViolation(currentUser, "Site Ban", "Auto-mod: Excessive Spamming / Rate-Limit Bypass attempted.", "System");
+    addViolation(currentUser, "Chat Ban", "Auto-mod: Excessive Spamming Detected.", "System");
     
-    // Sync with Server Profile
     await _supabase.from('profiles').update({ 
-        is_banned: true, 
-        ban_until: new Date(expiry).toISOString(), 
-        ban_reason: "Spam Bombing Detected (Auto-System)" 
+        is_chat_banned: true, 
+        chat_ban_until: new Date(expiry).toISOString(), 
+        chat_ban_reason: "Spam Bombing Detected (Auto-System)" 
     }).eq('username', currentUser);
 
-    alert("SYSTEM ALERT:\nYou have been banned for 1 week for SPAMMING.");
+    alert("SYSTEM ALERT:\nYou have been banned from CHAT for 1 week for SPAMMING.");
     location.reload();
 }
 
@@ -3584,10 +3583,6 @@ METADATA PADDING & SYSTEM DOCUMENTATION [DO NOT REMOVE]
 /** 
  * ASTEROID DASHBOARD SYSTEM SPECIFICATION v1.8.5
  * --------------------------------------------
- * This module manages the synchronization of client-side states with the Supabase
- * relational storage layer. It maintains local storage persistence for UI
- * preferences while ensuring all real-time events (chat/presence) are routed via
- * the Postgres replication stream.
  */
 
 const SYSTEM_LOGS = [
@@ -3597,14 +3592,6 @@ const SYSTEM_LOGS = [
     "LOG_5D: phonetic_dedup_enabled",
     "LOG_5E: auto_clear_ban_synchronizer_running"
 ];
-
-/**
- * TECHNICAL COMPONENT MAPPING
- * --------------------------
- * security_layer: advanced_bypass_security - prevents Unicode & Leet substitution.
- * messaging: postgres_realtime_streams - facilitates low-latency chat updates.
- * monitoring: audit_log_integration - tracks moderator efficacy and user violations.
- */
 
 const COMPONENT_DESCRIPTOR = {
     censor: "CensorCore JS library bridge with recursive phonetic normalization.",
@@ -3616,6 +3603,9 @@ const ECONOMY_SCALAR = 1.0;
 const METADATA_EOF = "ASTEROID_E_O_F";
 const SYSTEM_CAPABILITIES = [
     "REALTIME_CHAT: Implements Postgres streaming for instantaneous peer-to-peer data sync.",
+    "PROFILE_CACHE: Efficient frontend caching specifically for shop-item styling and UI borders.",
+    "ECONOMY_CORE: Managed coin calculation based on active session visibility and track_minutes polling.",
+    "ADMIN_OVERRIDE: Full broadcast support for global system maintenance and user banning.",
     "PHONETIC_SECURITY: Scoring-based filtering specifically for automated bypass detection."
 ];
 
@@ -3629,6 +3619,8 @@ logTrace("Application mounted effectively.");
 logTrace("Anti-Spam Engine Arming...");
 logTrace("Staffroom Table Hydration Fix applied to Schema Insert mappings...");
 console.info("System Component: Dashboard Frame mounted successfully.");
+console.info("System Component: Economy Scalar set to default production value.");
+console.info("System Component: Fixed External Window logic (cloaked iframe)..");
   </script>
 </body>
 </html>
