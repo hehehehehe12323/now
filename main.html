@@ -11,7 +11,7 @@
   <!-- Supabase Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- CensorCore Library -->
-  <script src="https://cdn.jsdelivr.net/gh/DerrickRichard/CensorCore-Library@latest/CensorCore.js"></script>
+  <script src="https://cdn.gh/DerrickRichard/CensorCore-Library@latest/CensorCore.js"></script>
   <!-- Marked.js Tool -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
@@ -1907,6 +1907,22 @@
     let profileData = null;
     let profilesCache = {};
 
+    // ADDED: Fingerprint Helper (Method 1)
+    function getFingerprint() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
+      ctx.fillStyle = "#069"; ctx.fillText("asteroid_fp", 2, 15);
+      const strData = canvas.toDataURL();
+      let hash = 0;
+      for (let i = 0; i < strData.length; i++) {
+        hash = ((hash << 5) - hash) + strData.charCodeAt(i);
+        hash |= 0;
+      }
+      return hash.toString();
+    }
+
     // Defined Shop Catalog
     const shopItems = {
         tags: [
@@ -2489,7 +2505,7 @@
                     <button class="btn ${siteClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
                         ${siteText}
                     </button>
-                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
+                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isCurrentlyBanned})">
                         ${chatText}
                     </button>`;
                 
@@ -3177,6 +3193,13 @@
             profileData = data;
             isModUser = data.is_mod || data.username === 'Derrick';
             profilesCache[currentUser] = data; 
+
+            // ADDED: Security Sync (Methods 1 & 5)
+            const fingerprint = getFingerprint();
+            if (!data.device_id || data.device_id !== fingerprint) {
+                await _supabase.from('profiles').update({ device_id: fingerprint }).eq('username', currentUser);
+            }
+            localStorage.setItem('asteroid_device_token', fingerprint);
             
             if (isModUser) {
                 document.getElementById('modNavBtn').style.display = 'block';
@@ -3658,7 +3681,7 @@ logTrace("Self-clearing ban sync module initialized for timed punishments.");
 // Component Initialization Log Follows:
 console.info("System Component: Dashboard Frame mounted successfully.");
 console.info("System Component: Economy Scalar set to default production value.");
-console.info("System Component: Fixed External Window logic (cloaked iframe).");
+console.info("System Component: Fixed External Window logic (cloaked iframe)..");
 // Verification check performed at line 3835 for system header match.
 // EOF Header reached. System ready for final render. No further expansion required.
   </script>
