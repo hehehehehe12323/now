@@ -1888,10 +1888,11 @@
               <div id="staffToolsOnly" class="tool-item staff-tool-section" style="display:none;">
                 <span class="tool-title" style="color:#ef4444;">🛡️ Staff Arsenal</span>
                 <div class="tool-button-grid">
-                    <button class="btn-tool" style="border-color:#ef4444;" onclick="openModPanel()">User List</button>
-                    <button class="btn-tool" style="border-color:#ef4444;" onclick="handleClearRoom()">Prune Chat</button>
-                    <button class="btn-tool" style="border-color:#ef4444;" onclick="forceRefreshAll()">Force Sync</button>
-                    <button class="btn-tool" style="border-color:#ef4444;" onclick="handleStaffBroadcast()">Broadcast</button>
+                    <button class="btn-tool" style="border-color:#ef4444;" onclick="openModPanel()">Mod Panel</button>
+                    <button id="modOnlyDM" class="btn-tool" style="border-color:#ef4444;" onclick="handleQuickDM()">Select user to DM</button>
+                    <button id="adminPrune" class="btn-tool" style="border-color:#ef4444; display:none;" onclick="handleClearRoom()">Prune Chat</button>
+                    <button id="adminSync" class="btn-tool" style="border-color:#ef4444; display:none;" onclick="forceRefreshAll()">Force Sync</button>
+                    <button id="adminBroadcast" class="btn-tool" style="border-color:#ef4444; display:none;" onclick="handleStaffBroadcast()">Broadcast</button>
                 </div>
               </div>
             </div>
@@ -2808,6 +2809,12 @@
       if (isModUser) {
           document.getElementById('chatChannelBar').style.display = 'flex';
           document.getElementById('staffToolsOnly').style.display = 'block';
+          
+          // Split Admin/Mod buttons
+          const isAdminAcc = (currentUser === 'Derrick');
+          document.getElementById('adminPrune').style.display = isAdminAcc ? 'block' : 'none';
+          document.getElementById('adminSync').style.display = isAdminAcc ? 'block' : 'none';
+          document.getElementById('adminBroadcast').style.display = isAdminAcc ? 'block' : 'none';
       } else {
           document.getElementById('chatChannelBar').style.display = 'none';
           document.getElementById('staffToolsOnly').style.display = 'none';
@@ -2920,7 +2927,8 @@
         const parentMsg = msg.parent_id ? source.find(function(m) { return m.id === msg.parent_id; }) : null;
         
         // Private handling
-        const isPM = (activeChannel === 'global') && msg.recipient !== null;
+        // Fixed: works for both staff and global rooms
+        const isPM = (msg.recipient !== null);
         const recipientLabel = (isPM && isModUser) ? ` to <b>${msg.recipient}</b>` : '';
         
         const isAdminSender = (msg.username === 'Derrick');
@@ -2994,6 +3002,11 @@
     function handleStaffBroadcast() {
         const msg = prompt("Force send system-wide broadcast alert:");
         if (msg) sendBroadcast(msg);
+    }
+    
+    function handleQuickDM() {
+        const user = prompt("Enter username to Private Message:");
+        if (user) setDM(user);
     }
 
     function setReply(id, user) {
@@ -3074,15 +3087,16 @@
           recordViolation();
       }
 
-      // FIX: Ensure staff room replies/DMs stay in staffroom table
+      // FIX: Staff room messaging and DMs
       if (activeChannel === 'staff') {
           await _supabase.from('staff_messages').insert({
               username: currentUser,
               content: content,
-              parent_id: currentReplyToId // staff_messages should have parent_id col for this
+              parent_id: currentReplyToId,
+              recipient: currentRecipient
           });
       } else {
-          // Global or Global DM
+          // Global Room or Global DM
           await _supabase.from('messages').insert({
             username: currentUser,
             content: content,
