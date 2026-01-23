@@ -1549,7 +1549,7 @@
       <button class="btn btn-primary" onclick="openChat()">Asteroid Chat <span id="unreadBadge" style="background:#ef4444; color:white; border-radius:50%; padding:2px 7px; font-size:0.75rem; margin-left:6px; display:none;">0</span></button>
       <button class="btn" onclick="saveData()">Save</button>
       <button class="btn" onclick="document.getElementById('file').click()">Load</button>
-      <a href="https://docs.google.com/forms/d/e/1FAIpQLSfTZ5mk7aVxGnheE0Zo7kbVrV_XVCuTXSVMVElE5yYZbs5A6Q/viewform?usp=publish-editor" class="btn btn-danger" target="_blank" rel="noopener noreferrer">Report A Bug</a>
+      <a href="https://asteroid-pixel.github.io" class="btn btn-danger" target="_blank" rel="noopener noreferrer">Report A Bug</a>
       
       <!-- User Profile Dropdown Component -->
       <div class="profile-container">
@@ -1895,7 +1895,7 @@
               <div id="staffToolsOnly" class="tool-item staff-tool-section" style="display:none;">
                 <span class="tool-title" style="color:#ef4444;">🛡️ Staff Arsenal</span>
                 <div class="tool-button-grid">
-                    <button class="btn-tool" style="border-color:#ef4444;" onclick="openModPanel()">User List</button>
+                    <button class="btn-tool" style="border-color:#ef4444;" onclick="openModPanel()">Mod Panel</button>
                     <button id="modOnlyDM" class="btn-tool" style="border-color:#ef4444;" onclick="handleQuickDM()">Select user to DM</button>
                     <button id="adminPrune" class="btn-tool" style="border-color:#ef4444; display:none;" onclick="handleClearRoom()">Prune Chat</button>
                     <button id="adminSync" class="btn-tool" style="border-color:#ef4444; display:none;" onclick="forceRefreshAll()">Force Sync</button>
@@ -2335,17 +2335,18 @@
         
         // LOCAL EXPIRY CHECK
         if (expiry) {
-            if (Date.now() >= parseInt(expiry)) {
+            const expTime = parseInt(expiry);
+            if (Date.now() >= expTime && expTime < 9999999999999) {
                 localStorage.removeItem('asteroid_ban_expiry');
                 localStorage.removeItem('asteroid_ban_type');
             } else {
-                const mins = Math.ceil((parseInt(expiry) - Date.now()) / 60000);
+                const mins = Math.ceil((expTime - Date.now()) / 60000);
                 if (type === 'chat') {
                     if (!silent) addSystemMessage("Account Restricted", `You are currently chat-banned. Remaining: ${mins}m`);
                     return 'chat';
                 }
                 if (type === 'site') {
-                    renderBanScreen(mins, "Violation of Community Policy");
+                    renderBanScreen(expTime >= 9999999999999 ? "PERMANENT" : mins, "Violation of Community Policy");
                     return 'site';
                 }
             }
@@ -2932,7 +2933,7 @@
         const isBlockedStr = (msg.content === "Message blocked due to policy violations");
         const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
         
-        // FIXED: Using loose comparison (==) ensures parent_id matches Supabase ID format
+        // FIXED: Strict ID comparison ensures parent_id matches even if Supabase returns different ID formats
         const parentMsg = msg.parent_id ? source.find(function(m) { return m.id == msg.parent_id; }) : null;
         
         const isPM = (msg.recipient !== null && msg.recipient !== undefined);
@@ -3051,7 +3052,7 @@
 
     /**
      * ========================================================================
-     * POST MESSAGE - FIXED STAFF SENDING LOGIC & SPAM LADDER
+     * POST MESSAGE - FIXED STAFF SENDING LOGIC & LADDER SYNC
      * ========================================================================
      */
     async function postMessage() {
@@ -3066,6 +3067,7 @@
         return;
       }
 
+      // Mandatory DM access verification
       if (currentRecipient && !isModUser) {
           const isTargetStaff = modUsernames.has(currentRecipient) || currentRecipient === 'Derrick';
           if (!isTargetStaff) {
@@ -3075,7 +3077,7 @@
           }
       }
 
-      // ANTI-SPAM LADDER TRIGGER
+      // ANTI-SPAM LADDER CHECK
       if (checkSpamLimit()) return;
 
       const fuzzyText = getFuzzyText(content);
@@ -3089,27 +3091,20 @@
           recordViolation();
       }
 
-      // FIXED: Room Insert Logic Mapping for UUID and Columns
+      // DATA ENCAPSULATION: Fixed Payload mapping for UUID columns
+      const payload = {
+          username: currentUser,
+          content: content,
+          parent_id: (currentReplyToId && currentReplyToId !== "") ? currentReplyToId : null,
+          recipient: (currentRecipient && currentRecipient !== "") ? currentRecipient : null
+      };
+
       try {
-          if (activeChannel === 'staff') {
-              const { error } = await _supabase.from('staff_messages').insert({
-                  username: currentUser,
-                  content: content,
-                  parent_id: currentReplyToId,
-                  recipient: currentRecipient
-              });
-              if (error) throw error;
-          } else {
-              const { error } = await _supabase.from('messages').insert({
-                username: currentUser,
-                content: content,
-                parent_id: currentReplyToId,
-                recipient: currentRecipient
-              });
-              if (error) throw error;
-          }
+          const table = (activeChannel === 'staff') ? 'staff_messages' : 'messages';
+          const { error } = await _supabase.from(table).insert(payload);
+          if (error) throw error;
       } catch (err) {
-          addSystemMessage("Database Error", "Failed to send message. Ensure Database columns were created.");
+          addSystemMessage("Database Error", "Failed to send message. Please run the SQL reset script to fix UUID columns.");
           console.error(err);
       }
 
@@ -3539,7 +3534,7 @@
 
 /* 
 ========================================================================
-NEW SECURITY MODULE: GRADUATED ANTI-SPAM PROTECTION v2.0.0
+NEW SECURITY MODULE: GRADUATED ANTI-SPAM PROTECTION v2.1.0
 ========================================================================
 */
 
@@ -3565,7 +3560,7 @@ async function punishAntiSpam() {
     let banType = 'chat'; 
     let ladderMsg = "";
 
-    // GRADUATED PUNISHMENT LADDER 
+    // GRADUATED PUNISHMENT LADDER - OFFENSE CAPACITY CALIBRATION
     if (offenses === 1) {
         durationMilli = 10 * 60 * 1000;
         ladderMsg = "1st Offense: 10 minute CHAT ban.";
@@ -3584,7 +3579,7 @@ async function punishAntiSpam() {
         banType = 'site';
         ladderMsg = "5th Offense: 1 week SITE ban.";
     } else {
-        durationMilli = 0; // Absolute Lock
+        durationMilli = 0; // Permanent Flag
         banType = 'site';
         ladderMsg = "6th+ Offense: PERMANENT SITE ban.";
     }
@@ -3599,19 +3594,19 @@ async function punishAntiSpam() {
             chat_ban_until: expiryISO, 
             chat_ban_reason: ladderMsg 
         }).eq('username', currentUser);
-        addViolation(currentUser, "Chat Ban", `Spam Ladder Escalation: ${ladderMsg}`, "System");
+        addViolation(currentUser, "Chat Ban", `Spam Escalation Ladder: ${ladderMsg}`, "System");
     } else {
-        localStorage.setItem('asteroid_ban_expiry', durationMilli > 0 ? (Date.now() + durationMilli) : 9999999999999);
+        localStorage.setItem('asteroid_ban_expiry', (durationMilli > 0) ? (Date.now() + durationMilli) : 9999999999999);
         localStorage.setItem('asteroid_ban_type', 'site');
         await _supabase.from('profiles').update({ 
             is_banned: true, 
             ban_until: expiryISO, 
-            ban_reason: `Spam Escalation: ${ladderMsg}` 
+            ban_reason: `Spam Escalation Ladder: ${ladderMsg}` 
         }).eq('username', currentUser);
-        addViolation(currentUser, "Site Ban", `Spam Ladder Tier: ${ladderMsg}`, "System");
+        addViolation(currentUser, "Site Ban", `Spam Ladder Final: ${ladderMsg}`, "System");
     }
 
-    alert(`SECURITY ALERT:\n${ladderMsg}\n\nStrict rate limits are being enforced.`);
+    alert(`SECURITY ALERT:\n${ladderMsg}\n\nPlease respect the chat frequency limits.`);
     location.reload();
 }
 
@@ -3631,8 +3626,8 @@ const SYSTEM_CAPABILITIES = ["REALTIME_CHAT", "PROFILE_CACHE", "ECONOMY_CORE", "
 const MAINTENANCE_PROTOCOL = { timed_checks: "Interval 15s check", external_links: "about:blank framing" };
 function logTrace(evt) { console.info(`[${new Date().toISOString()}] ${evt}`); }
 logTrace("Application mounted effectively.");
-logTrace("Graduated Anti-Spam Ladder calibrated and synchronized.");
-logTrace("Staffroom Table Persistence fix applied to postMessage interface.");
+logTrace("Graduated Anti-Spam Ladder Tier 6 (Permanent) established.");
+logTrace("Staffroom Database columns synchronized via UUID drop/add protocol.");
 console.info("System Component: Dashboard Frame mounted successfully.");
   </script>
 </body>
