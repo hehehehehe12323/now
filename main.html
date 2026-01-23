@@ -1907,22 +1907,47 @@
     let profileData = null;
     let profilesCache = {};
 
-    // FIXED: Method 1 & 5 High-Entropy Instance ID
+    // FIXED: Multi-Layer Persistent ID (LocalStorage + Cookie Backup)
     function getSecureDeviceId() {
-      const LOCAL_KEY = 'asteroid_instance_v2';
-      let id = localStorage.getItem(LOCAL_KEY);
+      const KEY = 'asteroid_instance_v2';
+      // Try local storage
+      let id = localStorage.getItem(KEY);
+      
+      // Try cookies if storage empty
+      const cookieMatch = document.cookie.match(new RegExp('(^| )' + KEY + '=([^;]+)'));
+      if (cookieMatch) id = cookieMatch[2];
+
       if (!id) {
         const randomValues = new Uint32Array(4);
         window.crypto.getRandomValues(randomValues);
+        // Salt with hardware specs and performance values to differentiate identical machines
         const salt = btoa([
           window.screen.width, window.screen.height, 
           navigator.hardwareConcurrency || 0,
           performance.now()
         ].join('.')).slice(0, 10);
         id = `AST-${randomValues[0].toString(16)}-${salt}-${randomValues[1].toString(16)}`;
-        localStorage.setItem(LOCAL_KEY, id);
+        
+        // Save to both
+        localStorage.setItem(KEY, id);
+        document.cookie = `${KEY}=${id}; Max-Age=315360000; path=/; SameSite=Strict`;
       }
       return id;
+    }
+
+    function getHardwareFingerprint() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
+      ctx.fillStyle = "#069"; ctx.fillText("asteroid_fp", 2, 15);
+      const strData = canvas.toDataURL();
+      let hash = 0;
+      for (let i = 0; i < strData.length; i++) {
+        hash = ((hash << 5) - hash) + strData.charCodeAt(i);
+        hash |= 0;
+      }
+      return hash.toString();
     }
 
     // Defined Shop Catalog
@@ -3196,10 +3221,15 @@
             isModUser = data.is_mod || data.username === 'Derrick';
             profilesCache[currentUser] = data; 
 
-            // FIXED: Secure Device Sync (Methods 5)
+            // FIXED: Sync both Device ID and Hardware Fingerprint to Database
             const persistentId = getSecureDeviceId();
-            if (!data.device_id || data.device_id !== persistentId) {
-                await _supabase.from('profiles').update({ device_id: persistentId }).eq('username', currentUser);
+            const fingerprint = getHardwareFingerprint();
+
+            if (!data.device_id || data.device_id !== persistentId || !data.fingerprint) {
+                await _supabase.from('profiles').update({ 
+                    device_id: persistentId, 
+                    fingerprint: fingerprint 
+                }).eq('username', currentUser);
             }
             
             if (isModUser) {
