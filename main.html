@@ -2810,7 +2810,7 @@
           document.getElementById('chatChannelBar').style.display = 'flex';
           document.getElementById('staffToolsOnly').style.display = 'block';
           
-          // Split Admin/Mod buttons
+          // STRICT SPLIT: Only Derrick (Admin) gets Prune, Sync, Broadcast
           const isAdminAcc = (currentUser === 'Derrick');
           document.getElementById('adminPrune').style.display = isAdminAcc ? 'block' : 'none';
           document.getElementById('adminSync').style.display = isAdminAcc ? 'block' : 'none';
@@ -2928,7 +2928,7 @@
         
         // Private handling
         // Fixed: works for both staff and global rooms
-        const isPM = (msg.recipient !== null);
+        const isPM = (msg.recipient !== null && msg.recipient !== undefined);
         const recipientLabel = (isPM && isModUser) ? ` to <b>${msg.recipient}</b>` : '';
         
         const isAdminSender = (msg.username === 'Derrick');
@@ -3087,7 +3087,7 @@
           recordViolation();
       }
 
-      // FIX: Staff room messaging and DMs
+      // FIXED: Room Context Persistence for Staff Room Sending
       if (activeChannel === 'staff') {
           await _supabase.from('staff_messages').insert({
               username: currentUser,
@@ -3096,7 +3096,7 @@
               recipient: currentRecipient
           });
       } else {
-          // Global Room or Global DM
+          // Global Room Context
           await _supabase.from('messages').insert({
             username: currentUser,
             content: content,
@@ -3120,7 +3120,6 @@
         .on('postgres_changes', { event: '*', table: 'messages', schema: 'public' }, function(payload) {
           if (payload.eventType === 'INSERT') {
             const msg = payload.new;
-            // STAFF see ALL messages. Normal users see only public or their own DMs.
             const isVisible = isModUser || (!msg.recipient || msg.recipient === currentUser || msg.username === currentUser);
             
             if (isVisible) {
@@ -3425,9 +3424,8 @@
 
             let statusText = isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : item.price + ' 🪙';
             
-            // NEW SHOP EXPANSION START
+            // NEW SHOP Visual Expansion
             let visualClass = (item.type === 'border' && item.value !== 'none') ? 'border-' + item.value : '';
-            let itemTypeInfo = item.type.toUpperCase();
             let previewStyling = (item.type === 'color') ? `style="color: ${item.value}"` : '';
             let previewClassAdd = (item.type === 'style') ? `name-${item.value}` : '';
             
@@ -3437,19 +3435,10 @@
             if (item.type === 'style') descriptiveLabel = "Font Animation";
             if (item.type === 'border') descriptiveLabel = "Inventory Frame";
 
-            const enhancedLayout = `
+            return `
                 <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''} ${visualClass}" onclick="handleItemAction('${item.id}', ${isOwned})">
                     <div class="item-preview ${previewClassAdd}" ${previewStyling}>${item.name}</div>
                     <div style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 800; text-transform: uppercase;">${descriptiveLabel}</div>
-                    <div class="item-price">${statusText}</div>
-                </div>`;
-            
-            if (enhancedLayout) return enhancedLayout;
-            // NEW SHOP EXPANSION END
-
-            return `
-                <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}" onclick="handleItemAction('${item.id}', ${isOwned})">
-                    <div class="item-preview">${item.name}</div>
                     <div class="item-price">${statusText}</div>
                 </div>`;
         }).join('');
@@ -3681,15 +3670,15 @@
     function closeZone() { document.getElementById('zoneViewer').style.display = "none"; }
     
     function fullscreenZone() {
-    const target = document.documentElement; // Target the whole page to keep alerts visible
-    if (target.requestFullscreen) {
-        target.requestFullscreen();
-    } else if (target.webkitRequestFullscreen) { 
-        target.webkitRequestFullscreen();
-    } else if (target.msRequestFullscreen) { 
-        target.msRequestFullscreen();
+        const target = document.documentElement; 
+        if (target.requestFullscreen) {
+            target.requestFullscreen();
+        } else if (target.webkitRequestFullscreen) { 
+            target.webkitRequestFullscreen();
+        } else if (target.msRequestFullscreen) { 
+            target.msRequestFullscreen();
+        }
     }
-}
 
     function saveData() {
       let storageObj = {};
