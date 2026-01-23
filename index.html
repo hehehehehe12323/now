@@ -505,6 +505,7 @@
           const userName = document.getElementById("username").value;
           const passWord = document.getElementById("password").value;
           const fullName = document.getElementById("fullname").value;
+          const persistentId = getSecureDeviceId();
 
           try {
             if (isSignUpMode) {
@@ -523,8 +524,6 @@
                 showMessage("You must accept the Terms and Conditions.", true);
                 return;
               }
-
-              const persistentId = getSecureDeviceId();
               
               // FIX: Catch alts by checking normalized name
               const normalizedName = fullName.toLowerCase().trim();
@@ -540,15 +539,15 @@
                 return;
               }
 
-              // Check for Username Collision
+              // Check for Username Collision (Case-Insensitive Fix Applied)
               const { data: existingUser } = await db
                 .from('profiles')
                 .select('username')
-                .eq('username', userName)
+                .ilike('username', userName)
                 .maybeSingle();
 
               if (existingUser) {
-                showMessage("Username already taken.", true);
+                showMessage("Username already taken (try a different variation).", true);
                 return;
               }
 
@@ -580,6 +579,12 @@
               if (error || !user) {
                 showMessage("Invalid username or password.", true);
                 return;
+              }
+
+              // SIGN-IN DEVICE ENFORCEMENT FIX APPLIED
+              if (user.device_id && user.device_id !== persistentId) {
+                 showMessage("Security Alert: This account is linked to another computer/device and cannot be accessed here.", true);
+                 return;
               }
 
               if (user.is_banned === true) {
