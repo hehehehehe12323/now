@@ -426,21 +426,31 @@
     const { createClient } = window.supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // FIX: Method 1 & 5 High-Entropy Instance ID
+    // FIXED: Multi-Layer Persistent ID (LocalStorage + Cookie Backup)
     function getSecureDeviceId() {
-      const LOCAL_KEY = 'asteroid_instance_v2';
-      let id = localStorage.getItem(LOCAL_KEY);
+      const KEY = 'asteroid_instance_v2';
+      // Try local storage
+      let id = localStorage.getItem(KEY);
+      
+      // Try cookies if storage empty (stops easy alt by clearing site data)
+      if (!id) {
+          const cookieMatch = document.cookie.match(new RegExp('(^| )' + KEY + '=([^;]+)'));
+          if (cookieMatch) id = cookieMatch[2];
+      }
+
       if (!id) {
         const randomValues = new Uint32Array(4);
         window.crypto.getRandomValues(randomValues);
-        // Salt with hardware specs and performance values to differentiate identical machines
         const salt = btoa([
           window.screen.width, window.screen.height, 
           navigator.hardwareConcurrency || 0,
           performance.now()
         ].join('.')).slice(0, 10);
         id = `AST-${randomValues[0].toString(16)}-${salt}-${randomValues[1].toString(16)}`;
-        localStorage.setItem(LOCAL_KEY, id);
+        
+        // Save to both
+        localStorage.setItem(KEY, id);
+        document.cookie = `${KEY}=${id}; Max-Age=315360000; path=/; SameSite=Strict`;
       }
       return id;
     }
@@ -513,7 +523,6 @@
 
           try {
             if (isSignUpMode) {
-              // SECURITY: Method 3 (Identity Patterns)
               if (!fullName.includes(" ")) {
                 showMessage("Please enter your full First and Last name.", true);
                 return;
@@ -530,23 +539,24 @@
                 return;
               }
 
-              // SECURITY: Method 1 & 5 (Device Identity)
               const persistentId = getSecureDeviceId();
               const fingerprint = getHardwareFingerprint();
+              
+              // FIX: Catch alts by checking normalized name and hardware fingerprint
+              const normalizedName = fullName.toLowerCase().trim();
 
-              // SECURITY: Multi-Factor Duplication Check
               const { data: altAccount } = await db
                 .from('profiles')
                 .select('username')
-                .or(`device_id.eq.${persistentId},full_name.eq.${fullName}`)
+                .or(`device_id.eq.${persistentId},full_name.ilike.${normalizedName}`)
                 .maybeSingle();
 
               if (altAccount) {
-                showMessage("Security Violation: An account is already linked to this person or this specific browser.", true);
+                showMessage("Security Violation: You already have an account linked to this device or name.", true);
                 return;
               }
 
-              // USERNAME TAKEN CHECK
+              // Check for Username Collision
               const { data: existingUser } = await db
                 .from('profiles')
                 .select('username')
@@ -565,7 +575,8 @@
                     password: passWord, 
                     is_banned: false, 
                     full_name: fullName,
-                    device_id: persistentId 
+                    device_id: persistentId,
+                    fingerprint: fingerprint
                 }])
                 .select()
                 .single();
@@ -588,18 +599,15 @@
                 return;
               }
 
-              // FIX: Sync ban status on login if timer has ended
               if (user.is_banned === true) {
                 if (user.ban_until) {
                   const expiry = new Date(user.ban_until).getTime();
                   if (Date.now() >= expiry) {
-                    // Update Database
                     await db.from('profiles').update({ 
                       is_banned: false, 
                       ban_until: null, 
                       ban_reason: null 
                     }).eq('username', userName);
-                    // Update local object to allow entry
                     user.is_banned = false;
                   } else {
                     showMessage(`Access denied. Reason: ${user.ban_reason || "Security Violation"}`, true);
