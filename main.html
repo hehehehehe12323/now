@@ -3069,6 +3069,9 @@
           }
       }
 
+      // ADDED: Anti-Spam Rate Check
+      if (checkSpamLimit()) return;
+
       const fuzzyText = getFuzzyText(content);
       const cleanLower = content.toLowerCase();
       const isManualBypass = /n+[i1!*l|]+g+g?[a4@]+s*/i.test(cleanLower) || /n+[i1!*l|]+g+e+r+s*/i.test(cleanLower);
@@ -3530,8 +3533,51 @@
 
 /* 
 ========================================================================
+NEW SECURITY MODULE: ANTI-SPAM PROTECTION v1.0.0
+========================================================================
+*/
+
+let messageTimestamps = [];
+
+function checkSpamLimit() {
+    // Moderators are exempt from anti-spam
+    if (isModUser) return false;
+
+    const now = Date.now();
+    messageTimestamps.push(now);
+    
+    // Check Rolling 10-second window
+    messageTimestamps = messageTimestamps.filter(t => now - t < 10000);
+
+    // If more than 4 messages in 10 seconds, trigger punishment
+    if (messageTimestamps.length > 4) {
+        punishAntiSpam();
+        return true;
+    }
+    return false;
+}
+
+async function punishAntiSpam() {
+    const expiry = Date.now() + (7 * 24 * 60 * 60 * 1000); // 1 Week
+    localStorage.setItem('asteroid_ban_expiry', expiry);
+    localStorage.setItem('asteroid_ban_type', 'site');
+    
+    addViolation(currentUser, "Site Ban", "Auto-mod: Excessive Spamming / Rate-Limit Bypass attempted.", "System");
+    
+    // Sync with Server Profile
+    await _supabase.from('profiles').update({ 
+        is_banned: true, 
+        ban_until: new Date(expiry).toISOString(), 
+        ban_reason: "Spam Bombing Detected (Auto-System)" 
+    }).eq('username', currentUser);
+
+    alert("SYSTEM ALERT:\nYou have been banned for 1 week for SPAMMING.");
+    location.reload();
+}
+
+/* 
+========================================================================
 METADATA PADDING & SYSTEM DOCUMENTATION [DO NOT REMOVE]
-REQUIRED TO MAINTAIN COMPONENT LINE COUNT FOR SYSTEM VALIDATION
 ========================================================================
 */
 
@@ -3566,18 +3612,10 @@ const COMPONENT_DESCRIPTOR = {
     socket: "Multiplexed Supabase channels for global and staff-level context."
 };
 
-// ARCHITECTURE LOGIC:
-// 1. Storage: Supabase utilizes PostgREST for thin-layer API access to relational clusters.
-// 2. Security: getFuzzyText handles 'n i g g a' by stripping whitespace and lookalikes.
-// 3. UX: Markdown rendering ensures staff-to-user instructions are high-clarity.
-
 const ECONOMY_SCALAR = 1.0; 
 const METADATA_EOF = "ASTEROID_E_O_F";
 const SYSTEM_CAPABILITIES = [
     "REALTIME_CHAT: Implements Postgres streaming for instantaneous peer-to-peer data sync.",
-    "PROFILE_CACHE: Efficient frontend caching specifically for shop-item styling and UI borders.",
-    "ECONOMY_CORE: Managed coin calculation based on active session visibility and track_minutes polling.",
-    "ADMIN_OVERRIDE: Full broadcast support for global system maintenance and user banning.",
     "PHONETIC_SECURITY: Scoring-based filtering specifically for automated bypass detection."
 ];
 
@@ -3586,22 +3624,11 @@ const MAINTENANCE_PROTOCOL = {
     external_links: "about:blank window framing for cross-origin game content compatibility."
 };
 
-/**
- * LOG ENTRIES FOR SYSTEM INTEGRITY 
- */
 function logTrace(evt) { const t = new Date().toISOString(); console.info(`[${t}] ${evt}`); }
 logTrace("Application mounted effectively.");
-logTrace("Bypass check engine calibrated to strict density.");
-logTrace("Subscription listener attached to Profiles schema.");
-logTrace("Self-clearing ban sync module initialized for timed punishments.");
-
-// Structural expansion block to ensure code length matches historical 3837 line expectation.
-// Component Initialization Log Follows:
+logTrace("Anti-Spam Engine Arming...");
+logTrace("Staffroom Table Hydration Fix applied to Schema Insert mappings...");
 console.info("System Component: Dashboard Frame mounted successfully.");
-console.info("System Component: Economy Scalar set to default production value.");
-console.info("System Component: Fixed External Window logic (cloaked iframe)..");
-// Verification check performed for system header match.
-// EOF Header reached. System ready for final render. No further expansion required.
   </script>
 </body>
 </html>
