@@ -707,9 +707,22 @@
       background-image: 
         radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.1) 0%, transparent 40%),
         radial-gradient(circle at 90% 90%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
-      z-index: 2000;
+      z-index: 10005; /* Boosted for gaming persistence */
       display: none; 
       flex-direction: column;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    /* New Modal CSS State */
+    #chatViewer.modal-mode {
+        inset: 5vh 5vw;
+        width: 90vw;
+        height: 90vh;
+        border-radius: 24px;
+        border: 1px solid var(--primary);
+        box-shadow: 0 0 100px rgba(0,0,0,0.8), 0 0 40px var(--primary-glow);
+        background: var(--glass);
+        backdrop-filter: blur(30px);
     }
 
     #chatViewer #zoneHeader {
@@ -1497,9 +1510,10 @@
         to { transform: translateX(0); opacity: 1; }
     }
 
-    /* Fix: Ensure notifications show over fullscreen games */
+    /* Fix: Ensure notifications and CHAT OVERLAY show over fullscreen games */
 :fullscreen .broadcast-overlay, 
-:fullscreen .chat-popup-toast {
+:fullscreen .chat-popup-toast,
+:fullscreen #chatViewer {
     z-index: 2147483647 !important; /* Maximum possible z-index */
 }
 
@@ -1549,7 +1563,7 @@
       <button class="btn btn-primary" onclick="openChat()">Asteroid Chat <span id="unreadBadge" style="background:#ef4444; color:white; border-radius:50%; padding:2px 7px; font-size:0.75rem; margin-left:6px; display:none;">0</span></button>
       <button class="btn" onclick="saveData()">Save</button>
       <button class="btn" onclick="document.getElementById('file').click()">Load</button>
-      <a href="https://docs.google.com/forms/d/e/1FAIpQLSfTZ5mk7aVxGnheE0Zo7kbVrV_XVCuTXSVMVElE5yYZbs5A6Q/viewform" class="btn btn-danger" target="_blank" rel="noopener noreferrer">Report A Bug</a>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSfTZ5mk7aVxGnheE0Zo7kbVrV_XVCuTXSVMVElE5yYZbs5A6Q/viewform?usp=publish-editor" class="btn btn-danger" target="_blank" rel="noopener noreferrer">Report A Bug</a>
       
       <!-- User Profile Dropdown Component -->
       <div class="profile-container">
@@ -1846,6 +1860,7 @@
       <div style="flex: 1; display: flex; justify-content: flex-end; padding: 0 20px;">
         <span style="color: var(--text-muted); font-size: 0.75rem; letter-spacing: 0.5px;">SECURE BYPASS ENGINE ACTIVE</span>
       </div>
+      <!-- Fixed: closeChat will now properly terminate modal state if game is behind -->
       <button class="btn btn-danger" onclick="closeChat()">Close</button>
     </div>
     <div class="chat-container">
@@ -2355,13 +2370,11 @@
         // 2. Transmit sync to Server Profile for automatic clearing
         const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
         if (data) {
-            // FIX: Auto-clear expired Site Bans in the database
+            // Site Bans
             if (data.is_banned && data.ban_until) {
                 const serverTime = new Date(data.ban_until).getTime();
                 if (Date.now() >= serverTime) {
-                    await _supabase.from('profiles').update({ 
-                        is_banned: false, ban_until: null, ban_reason: null 
-                    }).eq('username', currentUser);
+                    await _supabase.from('profiles').update({ is_banned: false, ban_until: null, ban_reason: null }).eq('username', currentUser);
                 } else {
                     renderBanScreen(Math.ceil((serverTime - Date.now()) / 60000), data.ban_reason);
                     return 'site';
@@ -2371,13 +2384,11 @@
                 return 'site';
             }
             
-            // FIX: Auto-clear expired Chat Suspensions in the database
+            // Chat Bans
             if (data.is_chat_banned && data.chat_ban_until) {
                 const chatTime = new Date(data.chat_ban_until).getTime();
                 if (Date.now() >= chatTime) {
-                    await _supabase.from('profiles').update({ 
-                        is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null 
-                    }).eq('username', currentUser);
+                    await _supabase.from('profiles').update({ is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null }).eq('username', currentUser);
                 } else {
                     const mins = Math.ceil((chatTime - Date.now()) / 60000);
                     if (!silent) addSystemMessage("Chat Suspended", `Remaining: ${mins}m. Reason: ${data.chat_ban_reason || 'Policy.'}`);
@@ -2793,7 +2804,8 @@
         document.body.appendChild(popup);
         
         popup.onclick = () => {
-            openChat();
+            // Updated: Force modal mode so game doesn't close
+            openChat(true); 
             switchChatChannel(channelName === 'Staff-Room' ? 'staff' : 'global');
             popup.remove();
         };
@@ -2806,13 +2818,28 @@
         }, 5000);
     }
 
-    async function openChat() {
+    /**
+     * ========================================================================
+     * UPDATED OPEN CHAT - SMART OVERLAY DETECTOR
+     * ========================================================================
+     */
+    async function openChat(forceOverlay = false) {
       const ban = await checkActiveBan(true);
       if (ban === 'site') {
         return; 
       }
 
-      document.getElementById('chatViewer').style.display = "flex";
+      const viewer = document.getElementById('chatViewer');
+      const isGameActive = document.getElementById('zoneViewer').style.display === "flex";
+
+      // If we are in a game, apply the pop-up modal styling
+      if (forceOverlay || isGameActive) {
+          viewer.classList.add('modal-mode');
+      } else {
+          viewer.classList.remove('modal-mode');
+      }
+
+      viewer.style.display = "flex";
       document.body.style.overflow = "hidden";
 
       if (isModUser) {
@@ -2829,6 +2856,15 @@
       }
 
       switchChatChannel(activeChannel);
+    }
+
+    function closeChat() {
+      updateLastSeen();
+      const viewer = document.getElementById('chatViewer');
+      viewer.style.display = "none";
+      // Ensure we clean up the modal styling when finished to reset for standard access
+      viewer.classList.remove('modal-mode');
+      document.body.style.overflow = "auto";
     }
 
     function switchChatChannel(channel) {
@@ -2849,12 +2885,6 @@
             subscribeStaffMessages();
         }
         updateLastSeen();
-    }
-
-    function closeChat() {
-      updateLastSeen();
-      document.getElementById('chatViewer').style.display = "none";
-      document.body.style.overflow = "auto";
     }
 
     async function fetchMessages() {
@@ -2933,7 +2963,7 @@
         const isBlockedStr = (msg.content === "Message blocked due to policy violations");
         const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
         
-        // FIXED: Strict ID comparison ensures parent_id matches even if Supabase returns different ID formats
+        // Match Parent IDs securely (Standardized to handle potential mismatched type strings)
         const parentMsg = msg.parent_id ? source.find(function(m) { return m.id == msg.parent_id; }) : null;
         
         const isPM = (msg.recipient !== null && msg.recipient !== undefined);
@@ -3067,7 +3097,7 @@
         return;
       }
 
-      // Mandatory DM access verification
+      // Mandatory Access Check for DMs
       if (currentRecipient && !isModUser) {
           const isTargetStaff = modUsernames.has(currentRecipient) || currentRecipient === 'Derrick';
           if (!isTargetStaff) {
@@ -3077,7 +3107,7 @@
           }
       }
 
-      // ANTI-SPAM LADDER CHECK
+      // ANTI-SPAM LADDER
       if (checkSpamLimit()) return;
 
       const fuzzyText = getFuzzyText(content);
@@ -3091,7 +3121,7 @@
           recordViolation();
       }
 
-      // DATA ENCAPSULATION: Fixed Payload mapping for UUID columns
+      // DATA ENCAPSULATION: Ensures strict UUID compatibility for Supabase
       const payload = {
           username: currentUser,
           content: content,
@@ -3104,7 +3134,7 @@
           const { error } = await _supabase.from(table).insert(payload);
           if (error) throw error;
       } catch (err) {
-          addSystemMessage("Database Error", "Failed to send message. Please run the SQL reset script to fix UUID columns.");
+          addSystemMessage("Database Error", "Failed to send message. Please run the Latest SQL script to Standardize UUID columns.");
           console.error(err);
       }
 
@@ -3534,7 +3564,7 @@
 
 /* 
 ========================================================================
-NEW SECURITY MODULE: GRADUATED ANTI-SPAM PROTECTION v2.1.0
+NEW SECURITY MODULE: GRADUATED ANTI-SPAM PROTECTION v2.1.1
 ========================================================================
 */
 
@@ -3560,7 +3590,7 @@ async function punishAntiSpam() {
     let banType = 'chat'; 
     let ladderMsg = "";
 
-    // GRADUATED PUNISHMENT LADDER - OFFENSE CAPACITY CALIBRATION
+    // 6-STAGE GRADUATED PUNISHMENT LADDER - OFFENSE CAPACITY CALIBRATION
     if (offenses === 1) {
         durationMilli = 10 * 60 * 1000;
         ladderMsg = "1st Offense: 10 minute CHAT ban.";
@@ -3626,8 +3656,8 @@ const SYSTEM_CAPABILITIES = ["REALTIME_CHAT", "PROFILE_CACHE", "ECONOMY_CORE", "
 const MAINTENANCE_PROTOCOL = { timed_checks: "Interval 15s check", external_links: "about:blank framing" };
 function logTrace(evt) { console.info(`[${new Date().toISOString()}] ${evt}`); }
 logTrace("Application mounted effectively.");
-logTrace("Graduated Anti-Spam Ladder Tier 6 (Permanent) established.");
-logTrace("Staffroom Database columns synchronized via UUID drop/add protocol.");
+logTrace("Interaction Model: Chat Pop-up Overlay for gaming persistence.");
+logTrace("Staffroom Database columns standardized via Drop/Recreate protocol.");
 console.info("System Component: Dashboard Frame mounted successfully.");
   </script>
 </body>
