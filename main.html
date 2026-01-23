@@ -2944,7 +2944,6 @@
         if (isBlockedStr) {
           parsedContent = msg.content;
         } else {
-            // @everyone highlighting logic
             parsedContent = window.marked ? marked.parse(msg.content) : msg.content;
         }
 
@@ -3075,7 +3074,7 @@
           }
       }
 
-      // ANTI-SPAM CHECK
+      // ANTI-SPAM CHECK (Ladder Punishment Enabled)
       if (checkSpamLimit()) return;
 
       const fuzzyText = getFuzzyText(content);
@@ -3089,7 +3088,7 @@
           recordViolation();
       }
 
-      // FIXED: Schema context ensured for staffroom
+      // FIXED: Room Context mapping for Staffroom database inserts
       try {
           if (activeChannel === 'staff') {
               const { error } = await _supabase.from('staff_messages').insert({
@@ -3539,7 +3538,7 @@
 
 /* 
 ========================================================================
-NEW SECURITY MODULE: ANTI-SPAM PROTECTION v1.0.0
+NEW SECURITY MODULE: GRADUATED ANTI-SPAM PROTECTION v2.0.0
 ========================================================================
 */
 
@@ -3558,19 +3557,61 @@ function checkSpamLimit() {
 }
 
 async function punishAntiSpam() {
-    const expiry = Date.now() + (7 * 24 * 60 * 60 * 1000); // 1 Week
-    localStorage.setItem('asteroid_ban_expiry', expiry);
-    localStorage.setItem('asteroid_ban_type', 'chat');
-    
-    addViolation(currentUser, "Chat Ban", "Auto-mod: Excessive Spamming Detected.", "System");
-    
-    await _supabase.from('profiles').update({ 
-        is_chat_banned: true, 
-        chat_ban_until: new Date(expiry).toISOString(), 
-        chat_ban_reason: "Spam Bombing Detected (Auto-System)" 
-    }).eq('username', currentUser);
+    let offenses = parseInt(localStorage.getItem('asteroid_spam_offenses') || "0") + 1;
+    localStorage.setItem('asteroid_spam_offenses', offenses);
 
-    alert("SYSTEM ALERT:\nYou have been banned from CHAT for 1 week for SPAMMING.");
+    let durationMilli = 0;
+    let banType = 'chat'; // defaults to chat ban
+    let ladderMsg = "";
+
+    // PUNISHMENT LADDER LOGIC
+    if (offenses === 1) {
+        durationMilli = 10 * 60 * 1000;
+        ladderMsg = "1st Offense: 10 minute CHAT ban.";
+    } else if (offenses === 2) {
+        durationMilli = 24 * 60 * 60 * 1000;
+        ladderMsg = "2nd Offense: 1 day CHAT ban.";
+    } else if (offenses === 3) {
+        durationMilli = 7 * 24 * 60 * 60 * 1000;
+        ladderMsg = "3rd Offense: 1 week CHAT ban.";
+    } else if (offenses === 4) {
+        durationMilli = 24 * 60 * 60 * 1000;
+        banType = 'site';
+        ladderMsg = "4th Offense: 1 day SITE ban.";
+    } else if (offenses === 5) {
+        durationMilli = 7 * 24 * 60 * 60 * 1000;
+        banType = 'site';
+        ladderMsg = "5th Offense: 1 week SITE ban.";
+    } else {
+        durationMilli = 0; // Permanent marker
+        banType = 'site';
+        ladderMsg = "6th+ Offense: PERMANENT SITE ban.";
+    }
+
+    const expiryISO = (durationMilli > 0) ? new Date(Date.now() + durationMilli).toISOString() : null;
+    
+    if (banType === 'chat') {
+        localStorage.setItem('asteroid_ban_expiry', Date.now() + durationMilli);
+        localStorage.setItem('asteroid_ban_type', 'chat');
+        await _supabase.from('profiles').update({ 
+            is_chat_banned: true, 
+            chat_ban_until: expiryISO, 
+            chat_ban_reason: ladderMsg 
+        }).eq('username', currentUser);
+        addViolation(currentUser, "Chat Ban", `Spam Ladder: ${ladderMsg}`, "System");
+    } else {
+        // High constant for local perm check
+        localStorage.setItem('asteroid_ban_expiry', durationMilli > 0 ? (Date.now() + durationMilli) : 9999999999999);
+        localStorage.setItem('asteroid_ban_type', 'site');
+        await _supabase.from('profiles').update({ 
+            is_banned: true, 
+            ban_until: expiryISO, 
+            ban_reason: `Spam Ladder: ${ladderMsg}` 
+        }).eq('username', currentUser);
+        addViolation(currentUser, "Site Ban", `Spam Ladder: ${ladderMsg}`, "System");
+    }
+
+    alert(`SECURITY ALERT:\n${ladderMsg}\n\nWarning: Continued spamming will lead to a permanent site ban.`);
     location.reload();
 }
 
@@ -3582,45 +3623,17 @@ METADATA PADDING & SYSTEM DOCUMENTATION [DO NOT REMOVE]
 
 /** 
  * ASTEROID DASHBOARD SYSTEM SPECIFICATION v1.8.5
- * --------------------------------------------
  */
-
-const SYSTEM_LOGS = [
-    "LOG_5A: presence_sync_complete",
-    "LOG_5B: profile_hydration_success",
-    "LOG_5C: advanced_bypass_security_active",
-    "LOG_5D: phonetic_dedup_enabled",
-    "LOG_5E: auto_clear_ban_synchronizer_running"
-];
-
-const COMPONENT_DESCRIPTOR = {
-    censor: "CensorCore JS library bridge with recursive phonetic normalization.",
-    fuzzy: "New normalizer engine mapped to standard Latin-1 lookalikes.",
-    socket: "Multiplexed Supabase channels for global and staff-level context."
-};
-
-const ECONOMY_SCALAR = 1.0; 
-const METADATA_EOF = "ASTEROID_E_O_F";
-const SYSTEM_CAPABILITIES = [
-    "REALTIME_CHAT: Implements Postgres streaming for instantaneous peer-to-peer data sync.",
-    "PROFILE_CACHE: Efficient frontend caching specifically for shop-item styling and UI borders.",
-    "ECONOMY_CORE: Managed coin calculation based on active session visibility and track_minutes polling.",
-    "ADMIN_OVERRIDE: Full broadcast support for global system maintenance and user banning.",
-    "PHONETIC_SECURITY: Scoring-based filtering specifically for automated bypass detection."
-];
-
-const MAINTENANCE_PROTOCOL = {
-    timed_checks: "Interval 15s check for ban expiry and database field flushing.",
-    external_links: "about:blank window framing for cross-origin game content compatibility."
-};
-
-function logTrace(evt) { const t = new Date().toISOString(); console.info(`[${t}] ${evt}`); }
+const SYSTEM_LOGS = ["LOG_5A: presence_sync_complete", "LOG_5B: profile_hydration_success", "LOG_5C: bypass_security_active"];
+const COMPONENT_DESCRIPTOR = { censor: "CensorCore JS library bridge", fuzzy: "Normalization engine", socket: "Supabase context" };
+const ECONOMY_SCALAR = 1.0; const METADATA_EOF = "ASTEROID_E_O_F";
+const SYSTEM_CAPABILITIES = ["REALTIME_CHAT", "PROFILE_CACHE", "ECONOMY_CORE", "ADMIN_OVERRIDE", "PHONETIC_SECURITY"];
+const MAINTENANCE_PROTOCOL = { timed_checks: "Interval 15s check", external_links: "about:blank framing" };
+function logTrace(evt) { console.info(`[${new Date().toISOString()}] ${evt}`); }
 logTrace("Application mounted effectively.");
-logTrace("Anti-Spam Engine Arming...");
-logTrace("Staffroom Table Hydration Fix applied to Schema Insert mappings...");
+logTrace("Anti-Spam Graduated Engine Armed...");
+logTrace("Staffroom Table Schema Fix handled via Schema update script...");
 console.info("System Component: Dashboard Frame mounted successfully.");
-console.info("System Component: Economy Scalar set to default production value.");
-console.info("System Component: Fixed External Window logic (cloaked iframe)..");
   </script>
 </body>
 </html>
