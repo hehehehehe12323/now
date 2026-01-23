@@ -426,16 +426,23 @@
     const { createClient } = window.supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // FIX: Method 1 & 5 Security Helpers
+    // FIX: Method 1 & 5 High-Entropy Instance ID
     function getSecureDeviceId() {
-      let deviceToken = localStorage.getItem('asteroid_device_token');
-      if (!deviceToken) {
-        const randomArray = new Uint8Array(16);
-        window.crypto.getRandomValues(randomArray);
-        deviceToken = Array.from(randomArray, dec => dec.toString(16).padStart(2, '0')).join('');
-        localStorage.setItem('asteroid_device_token', deviceToken);
+      const LOCAL_KEY = 'asteroid_instance_v2';
+      let id = localStorage.getItem(LOCAL_KEY);
+      if (!id) {
+        const randomValues = new Uint32Array(4);
+        window.crypto.getRandomValues(randomValues);
+        // Salt with hardware specs and performance values to differentiate identical machines
+        const salt = btoa([
+          window.screen.width, window.screen.height, 
+          navigator.hardwareConcurrency || 0,
+          performance.now()
+        ].join('.')).slice(0, 10);
+        id = `AST-${randomValues[0].toString(16)}-${salt}-${randomValues[1].toString(16)}`;
+        localStorage.setItem(LOCAL_KEY, id);
       }
-      return deviceToken;
+      return id;
     }
 
     function getHardwareFingerprint() {
