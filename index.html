@@ -426,6 +426,22 @@
     const { createClient } = window.supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Helper: Generate Browser Fingerprint (Method 1)
+    function getFingerprint() {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
+      ctx.fillStyle = "#069"; ctx.fillText("asteroid_fp", 2, 15);
+      const strData = canvas.toDataURL();
+      let hash = 0;
+      for (let i = 0; i < strData.length; i++) {
+        hash = ((hash << 5) - hash) + strData.charCodeAt(i);
+        hash |= 0;
+      }
+      return hash.toString();
+    }
+
     (async function authSystem() {
       const loginForm = document.getElementById("login-form");
       const formMessage = document.getElementById("form-message");
@@ -495,6 +511,22 @@
                 return;
               }
 
+              // SECURITY CHECK: Fingerprint & Persistent ID (Method 1 & 5)
+              const fingerprint = getFingerprint();
+              const persistentId = localStorage.getItem('asteroid_device_token') || fingerprint;
+
+              // SECURITY CHECK: Duplicate Identity (Method 3)
+              const { data: altAccount } = await db
+                .from('profiles')
+                .select('username')
+                .or(`device_id.eq.${persistentId},full_name.eq.${fullName}`)
+                .maybeSingle();
+
+              if (altAccount) {
+                showMessage("Security Violation: Only one account allowed per device/person.", true);
+                return;
+              }
+
               // USERNAME TAKEN CHECK
               const { data: existingUser } = await db
                 .from('profiles')
@@ -509,11 +541,20 @@
 
               const { data: newUser, error } = await db
                 .from('profiles')
-                .insert([{ username: userName, password: passWord, is_banned: false, full_name: fullName }])
+                .insert([{ 
+                    username: userName, 
+                    password: passWord, 
+                    is_banned: false, 
+                    full_name: fullName,
+                    device_id: persistentId 
+                }])
                 .select()
                 .single();
 
               if (error) throw error;
+              
+              // Set persistent token on successful signup
+              localStorage.setItem('asteroid_device_token', persistentId);
 
               localStorage.setItem(`agreed_terms_${userName}`, "true");
               showMessage("Account created! Please Sign In.", false);
@@ -536,13 +577,11 @@
                 if (user.ban_until) {
                   const expiry = new Date(user.ban_until).getTime();
                   if (Date.now() >= expiry) {
-                    // Update Database
                     await db.from('profiles').update({ 
                       is_banned: false, 
                       ban_until: null, 
                       ban_reason: null 
                     }).eq('username', userName);
-                    // Update local object to allow entry
                     user.is_banned = false;
                   } else {
                     showMessage(`Access denied. Reason: ${user.ban_reason || "Security Violation"}`, true);
