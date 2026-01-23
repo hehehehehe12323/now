@@ -1674,6 +1674,7 @@
                     <thead>
                         <tr>
                             <th>Username</th>
+                            <th>Full Name</th>
                             <th>Status</th>
                             <th>Site</th>
                             <th>Chat</th>
@@ -2265,6 +2266,7 @@
 
         if (violations === 1) {
             const expiry = Date.now() + (10 * 60 * 1000);
+            localStorage.setItem('asteroid_violations', violations);
             localStorage.setItem('asteroid_ban_expiry', expiry);
             localStorage.setItem('asteroid_ban_type', 'chat');
             addSystemMessage("System Warning", "This is your 1st violation of the community policy. You have been banned from chatting for 10 minutes.");
@@ -2519,7 +2521,7 @@
                     <button class="btn ${siteClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModBan('${u.username}', ${isSiteBanned})">
                         ${siteText}
                     </button>
-                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isCurrentlyBanned})">
+                    <button class="btn ${chatClass}" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleModChatBan('${u.username}', ${isChatBanned})">
                         ${chatText}
                     </button>`;
                 
@@ -2543,6 +2545,7 @@
             return `
                 <tr>
                     <td>${u.username}</td>
+                    <td>${u.full_name || "-"}</td>
                     <td>${u.minutes}m</td>
                     <td class="${siteStatusClass}">${isSiteBanned ? 'Banned' : 'Active'}</td>
                     <td class="${chatStatusClass}">${isChatBanned ? 'Suspended' : 'Active'}</td>
