@@ -426,8 +426,19 @@
     const { createClient } = window.supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Helper: Generate Browser Fingerprint (Method 1)
-    function getFingerprint() {
+    // FIX: Method 1 & 5 Security Helpers
+    function getSecureDeviceId() {
+      let deviceToken = localStorage.getItem('asteroid_device_token');
+      if (!deviceToken) {
+        const randomArray = new Uint8Array(16);
+        window.crypto.getRandomValues(randomArray);
+        deviceToken = Array.from(randomArray, dec => dec.toString(16).padStart(2, '0')).join('');
+        localStorage.setItem('asteroid_device_token', deviceToken);
+      }
+      return deviceToken;
+    }
+
+    function getHardwareFingerprint() {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.textBaseline = "alphabetic";
@@ -495,6 +506,7 @@
 
           try {
             if (isSignUpMode) {
+              // SECURITY: Method 3 (Identity Patterns)
               if (!fullName.includes(" ")) {
                 showMessage("Please enter your full First and Last name.", true);
                 return;
@@ -511,11 +523,11 @@
                 return;
               }
 
-              // SECURITY CHECK: Fingerprint & Persistent ID (Method 1 & 5)
-              const fingerprint = getFingerprint();
-              const persistentId = localStorage.getItem('asteroid_device_token') || fingerprint;
+              // SECURITY: Method 1 & 5 (Device Identity)
+              const persistentId = getSecureDeviceId();
+              const fingerprint = getHardwareFingerprint();
 
-              // SECURITY CHECK: Duplicate Identity (Method 3)
+              // SECURITY: Multi-Factor Duplication Check
               const { data: altAccount } = await db
                 .from('profiles')
                 .select('username')
@@ -523,7 +535,7 @@
                 .maybeSingle();
 
               if (altAccount) {
-                showMessage("Security Violation: Only one account allowed per device/person.", true);
+                showMessage("Security Violation: An account is already linked to this person or this specific browser.", true);
                 return;
               }
 
@@ -552,9 +564,6 @@
                 .single();
 
               if (error) throw error;
-              
-              // Set persistent token on successful signup
-              localStorage.setItem('asteroid_device_token', persistentId);
 
               localStorage.setItem(`agreed_terms_${userName}`, "true");
               showMessage("Account created! Please Sign In.", false);
@@ -577,11 +586,13 @@
                 if (user.ban_until) {
                   const expiry = new Date(user.ban_until).getTime();
                   if (Date.now() >= expiry) {
+                    // Update Database
                     await db.from('profiles').update({ 
                       is_banned: false, 
                       ban_until: null, 
                       ban_reason: null 
                     }).eq('username', userName);
+                    // Update local object to allow entry
                     user.is_banned = false;
                   } else {
                     showMessage(`Access denied. Reason: ${user.ban_reason || "Security Violation"}`, true);
