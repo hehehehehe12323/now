@@ -1907,20 +1907,16 @@
     let profileData = null;
     let profilesCache = {};
 
-    // ADDED: Fingerprint Helper (Method 1)
-    function getFingerprint() {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.textBaseline = "alphabetic";
-      ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
-      ctx.fillStyle = "#069"; ctx.fillText("asteroid_fp", 2, 15);
-      const strData = canvas.toDataURL();
-      let hash = 0;
-      for (let i = 0; i < strData.length; i++) {
-        hash = ((hash << 5) - hash) + strData.charCodeAt(i);
-        hash |= 0;
+    // FIXED: Method 5 - Secure Persistent Machine ID
+    function getSecureDeviceId() {
+      let deviceToken = localStorage.getItem('asteroid_device_token');
+      if (!deviceToken) {
+        const randomArray = new Uint8Array(16);
+        window.crypto.getRandomValues(randomArray);
+        deviceToken = Array.from(randomArray, dec => dec.toString(16).padStart(2, '0')).join('');
+        localStorage.setItem('asteroid_device_token', deviceToken);
       }
-      return hash.toString();
+      return deviceToken;
     }
 
     // Defined Shop Catalog
@@ -3194,12 +3190,11 @@
             isModUser = data.is_mod || data.username === 'Derrick';
             profilesCache[currentUser] = data; 
 
-            // ADDED: Security Sync (Methods 1 & 5)
-            const fingerprint = getFingerprint();
-            if (!data.device_id || data.device_id !== fingerprint) {
-                await _supabase.from('profiles').update({ device_id: fingerprint }).eq('username', currentUser);
+            // FIXED: Secure Device Sync (Methods 5)
+            const persistentId = getSecureDeviceId();
+            if (!data.device_id || data.device_id !== persistentId) {
+                await _supabase.from('profiles').update({ device_id: persistentId }).eq('username', currentUser);
             }
-            localStorage.setItem('asteroid_device_token', fingerprint);
             
             if (isModUser) {
                 document.getElementById('modNavBtn').style.display = 'block';
