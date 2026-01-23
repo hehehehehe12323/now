@@ -3298,6 +3298,29 @@
             const isEquipped = (profileData.selected_tag === item.name || profileData.name_color === item.value || profileData.name_style === item.value || profileData.leaderboard_border === item.value);
 
             let statusText = isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : item.price + ' 🪙';
+            
+            // NEW SHOP EXPANSION START
+            let visualClass = (item.type === 'border' && item.value !== 'none') ? 'border-' + item.value : '';
+            let itemTypeInfo = item.type.toUpperCase();
+            let previewStyling = (item.type === 'color') ? `style="color: ${item.value}"` : '';
+            let previewClassAdd = (item.type === 'style') ? `name-${item.value}` : '';
+            
+            let descriptiveLabel = "";
+            if (item.type === 'tag') descriptiveLabel = "Chat Prefix Tag";
+            if (item.type === 'color') descriptiveLabel = "Global Name Color";
+            if (item.type === 'style') descriptiveLabel = "Font Animation";
+            if (item.type === 'border') descriptiveLabel = "Inventory Frame";
+
+            const enhancedLayout = `
+                <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''} ${visualClass}" onclick="handleItemAction('${item.id}', ${isOwned})">
+                    <div class="item-preview ${previewClassAdd}" ${previewStyling}>${item.name}</div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 800; text-transform: uppercase;">${descriptiveLabel}</div>
+                    <div class="item-price">${statusText}</div>
+                </div>`;
+            
+            if (enhancedLayout) return enhancedLayout;
+            // NEW SHOP EXPANSION END
+
             return `
                 <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}" onclick="handleItemAction('${item.id}', ${isOwned})">
                     <div class="item-preview">${item.name}</div>
