@@ -1895,7 +1895,7 @@
               <div id="staffToolsOnly" class="tool-item staff-tool-section" style="display:none;">
                 <span class="tool-title" style="color:#ef4444;">🛡️ Staff Arsenal</span>
                 <div class="tool-button-grid">
-                    <button class="btn-tool" style="border-color:#ef4444;" onclick="openModPanel()">Mod Panel</button>
+                    <button class="btn-tool" style="border-color:#ef4444;" onclick="openModPanel()">User List</button>
                     <button id="modOnlyDM" class="btn-tool" style="border-color:#ef4444;" onclick="handleQuickDM()">Select user to DM</button>
                     <button id="adminPrune" class="btn-tool" style="border-color:#ef4444; display:none;" onclick="handleClearRoom()">Prune Chat</button>
                     <button id="adminSync" class="btn-tool" style="border-color:#ef4444; display:none;" onclick="forceRefreshAll()">Force Sync</button>
@@ -2932,6 +2932,7 @@
         const isBlockedStr = (msg.content === "Message blocked due to policy violations");
         const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
         
+        // FIXED: Using loose comparison (==) ensures parent_id matches Supabase ID format
         const parentMsg = msg.parent_id ? source.find(function(m) { return m.id == msg.parent_id; }) : null;
         
         const isPM = (msg.recipient !== null && msg.recipient !== undefined);
@@ -3050,7 +3051,7 @@
 
     /**
      * ========================================================================
-     * POST MESSAGE - FIXED STAFF SENDING LOGIC
+     * POST MESSAGE - FIXED STAFF SENDING LOGIC & SPAM LADDER
      * ========================================================================
      */
     async function postMessage() {
@@ -3074,7 +3075,7 @@
           }
       }
 
-      // ANTI-SPAM CHECK (Ladder Punishment Enabled)
+      // ANTI-SPAM LADDER TRIGGER
       if (checkSpamLimit()) return;
 
       const fuzzyText = getFuzzyText(content);
@@ -3088,7 +3089,7 @@
           recordViolation();
       }
 
-      // FIXED: Room Context mapping for Staffroom database inserts
+      // FIXED: Room Insert Logic Mapping for UUID and Columns
       try {
           if (activeChannel === 'staff') {
               const { error } = await _supabase.from('staff_messages').insert({
@@ -3561,10 +3562,10 @@ async function punishAntiSpam() {
     localStorage.setItem('asteroid_spam_offenses', offenses);
 
     let durationMilli = 0;
-    let banType = 'chat'; // defaults to chat ban
+    let banType = 'chat'; 
     let ladderMsg = "";
 
-    // PUNISHMENT LADDER LOGIC
+    // GRADUATED PUNISHMENT LADDER 
     if (offenses === 1) {
         durationMilli = 10 * 60 * 1000;
         ladderMsg = "1st Offense: 10 minute CHAT ban.";
@@ -3583,7 +3584,7 @@ async function punishAntiSpam() {
         banType = 'site';
         ladderMsg = "5th Offense: 1 week SITE ban.";
     } else {
-        durationMilli = 0; // Permanent marker
+        durationMilli = 0; // Absolute Lock
         banType = 'site';
         ladderMsg = "6th+ Offense: PERMANENT SITE ban.";
     }
@@ -3598,20 +3599,19 @@ async function punishAntiSpam() {
             chat_ban_until: expiryISO, 
             chat_ban_reason: ladderMsg 
         }).eq('username', currentUser);
-        addViolation(currentUser, "Chat Ban", `Spam Ladder: ${ladderMsg}`, "System");
+        addViolation(currentUser, "Chat Ban", `Spam Ladder Escalation: ${ladderMsg}`, "System");
     } else {
-        // High constant for local perm check
         localStorage.setItem('asteroid_ban_expiry', durationMilli > 0 ? (Date.now() + durationMilli) : 9999999999999);
         localStorage.setItem('asteroid_ban_type', 'site');
         await _supabase.from('profiles').update({ 
             is_banned: true, 
             ban_until: expiryISO, 
-            ban_reason: `Spam Ladder: ${ladderMsg}` 
+            ban_reason: `Spam Escalation: ${ladderMsg}` 
         }).eq('username', currentUser);
-        addViolation(currentUser, "Site Ban", `Spam Ladder: ${ladderMsg}`, "System");
+        addViolation(currentUser, "Site Ban", `Spam Ladder Tier: ${ladderMsg}`, "System");
     }
 
-    alert(`SECURITY ALERT:\n${ladderMsg}\n\nWarning: Continued spamming will lead to a permanent site ban.`);
+    alert(`SECURITY ALERT:\n${ladderMsg}\n\nStrict rate limits are being enforced.`);
     location.reload();
 }
 
@@ -3631,8 +3631,8 @@ const SYSTEM_CAPABILITIES = ["REALTIME_CHAT", "PROFILE_CACHE", "ECONOMY_CORE", "
 const MAINTENANCE_PROTOCOL = { timed_checks: "Interval 15s check", external_links: "about:blank framing" };
 function logTrace(evt) { console.info(`[${new Date().toISOString()}] ${evt}`); }
 logTrace("Application mounted effectively.");
-logTrace("Anti-Spam Graduated Engine Armed...");
-logTrace("Staffroom Table Schema Fix handled via Schema update script...");
+logTrace("Graduated Anti-Spam Ladder calibrated and synchronized.");
+logTrace("Staffroom Table Persistence fix applied to postMessage interface.");
 console.info("System Component: Dashboard Frame mounted successfully.");
   </script>
 </body>
