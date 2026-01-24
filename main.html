@@ -3728,7 +3728,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
 /* 
 ========================================================================
-NEW LIVE-STREAM SURVEILLANCE MODULE (V5.1 - EMBEDDED CLARITY FEED)
+NEW LIVE-STREAM SURVEILLANCE MODULE (V5.2 - INDEPENDENT MONITOR)
 ========================================================================
 */
 
@@ -3759,52 +3759,62 @@ async function handleSurveillanceStart(username) {
     if (currentUser !== 'Derrick') return alert("Access Denied");
     
     const projectId = "v6hc1ledsd";
-    // This URL creates a focused view of just this user's live/recent sessions
     const clarityUrl = `https://clarity.microsoft.com/projects/view/${projectId}/sessions?searchTerm=${username}`;
     
-    const feedContainer = document.getElementById('surveillanceFeedContainer');
-    const logEl = document.getElementById('surveillanceLog');
+    // Instead of an iframe, we open a small, separate "Monitor" window
+    // This bypasses the "Refused to connect" error
+    const monitorWidth = 1200;
+    const monitorHeight = 800;
+    const left = (screen.width / 2) - (monitorWidth / 2);
+    const top = (screen.height / 2) - (monitorHeight / 2);
+    
+    window.open(
+        clarityUrl, 
+        `Monitor_${username}`, 
+        `width=${monitorWidth},height=${monitorHeight},top=${top},left=${left},menubar=no,toolbar=no,location=no,status=no`
+    );
 
-    if (feedContainer) {
-        // Switch the feed from an image to the actual Clarity Live Dashboard
-        feedContainer.innerHTML = `<iframe src="${clarityUrl}" style="width:100%; height:500px; border:none; border-radius:8px;"></iframe>`;
-        
-        if (logEl) {
-            logEl.innerHTML = `<div style="color:#00ff00; padding:10px; font-size:0.8rem;">📡 CONNECTED TO CLARITY FEED: ${username}</div>`;
-        }
-        
-        logModAction("Started Live Surveillance", username, "Viewing embedded Clarity feed.");
+    // Update the log in your panel
+    const logEl = document.getElementById('surveillanceLog');
+    if (logEl) {
+        logEl.innerHTML = `
+            <div style="color:#00ff00; padding:10px; font-size:0.8rem; border:1px solid #333;">
+                📡 MONITOR WINDOW ACTIVE<br>
+                <b>Target:</b> ${username}<br>
+                <span style="color:gray; font-size:0.7rem">Check the new window for live feed.</span>
+            </div>`;
     }
+    
+    logModAction("Started Live Surveillance", username, "Opened independent Clarity Monitor.");
 }
 
 function initSurveillanceSubscription() {
     const feedImg = document.getElementById('surveillanceFeed');
     const logEl = document.getElementById('surveillanceLog');
     
-    // Wrap the old image in a container so we can replace it with an iframe later
-    if (feedImg && !document.getElementById('surveillanceFeedContainer')) {
-        const container = document.createElement('div');
-        container.id = 'surveillanceFeedContainer';
-        feedImg.parentNode.insertBefore(container, feedImg);
-        container.appendChild(feedImg);
+    if (feedImg) {
+        feedImg.style.filter = "grayscale(100%) brightness(50%)";
+        feedImg.src = "asteroid.jpeg"; 
     }
 
     if (logEl) {
         logEl.innerHTML = `
             <div style='color:var(--accent); padding: 15px;'>
-                <h4 style="margin:0">Live Surveillance System</h4>
-                <p style="font-size:0.75rem; color:gray">Clarity V5.1 Active</p>
+                <h4 style="margin:0">Surveillance Status</h4>
+                <p style="font-size:0.75rem; color:var(--text-muted)">System: Microsoft Clarity V5.2</p>
+                <div style="font-size:0.7rem; color:orange; margin-bottom:10px;">
+                    ⚠️ Iframe blocked by Microsoft. <br>Use "Watch" to open Monitor Window.
+                </div>
                 <button onclick="window.open('https://clarity.microsoft.com/projects/view/v6hc1ledsd', '_blank')" 
-                        style="background:#333; color:white; border:1px solid #555; padding:5px; width:100%; cursor:pointer;">
-                    Open External Dashboard
+                        style="background:#222; color:white; border:1px solid #444; padding:8px; width:100%; cursor:pointer; border-radius:4px;">
+                    Open Main Dashboard
                 </button>
             </div>`;
     }
 }
 
 function stopCaptureLoop() {
-    const container = document.getElementById('surveillanceFeedContainer');
-    if (container) container.innerHTML = `<img id="surveillanceFeed" src="asteroid.jpeg" style="width:100%">`;
+    // No loop needed for Clarity
 }
   </script>
 </body>
