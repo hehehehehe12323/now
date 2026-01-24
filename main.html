@@ -2188,6 +2188,11 @@
             });
     }
 
+    /**
+     * ========================================================================
+     * FIXED ONLINE STATS - RIGOROUS STAFF VERIFICATION
+     * ========================================================================
+     */
     function updateOnlineStats(type) {
         const state = (type === 'site') ? sitePresence : chatPresence;
         const target = document.getElementById(type === 'site' ? 'siteOnlineStats' : 'chatOnlineStats');
@@ -2200,10 +2205,16 @@
 
         for (const id in state) {
             state[id].forEach(p => {
-                if (modUsernames.has(p.user) || p.user === 'Derrick') {
-                  uniqueMods.add(p.user);
+                const username = p.user;
+                // ROBUST FIX: Double-check against modUsernames set, literal 'Derrick', and cache is_mod flag
+                const isStaffMember = modUsernames.has(username) || 
+                                     username === 'Derrick' || 
+                                     (profilesCache[username] && (profilesCache[username].is_mod === true));
+
+                if (isStaffMember) {
+                  uniqueMods.add(username);
                 } else {
-                  uniqueUsers.add(p.user);
+                  uniqueUsers.add(username);
                 }
             });
         }
@@ -2672,7 +2683,7 @@
                   expiry = new Date(Date.now() + parseInt(dur) * 60000).toISOString();
                 }
                 
-                const { error } = await _supabase.from('profiles').update({ is_banned: true, ban_until: expiry, ban_reason: reason }).eq('username', currentUser);
+                const { error } = await _supabase.from('profiles').update({ is_banned: true, ban_until: expiry, ban_reason: reason }).eq('username', user);
                 if (error) { 
                   alert(error.message); 
                 } else {
@@ -3238,6 +3249,8 @@
                 }
                 if (document.getElementById('chatViewer').style.display === "flex") renderMessages();
                 fetchLeaderboard();
+                // ROBUST SYNC: Refresh Online Stats display when any user role changes
+                updateOnlineStats(document.getElementById('chatViewer').style.display === "flex" ? 'chat' : 'site');
             })
             .subscribe();
     }
@@ -3283,7 +3296,7 @@
         const overlay = document.getElementById('broadcastOverlay');
         document.getElementById('broadcastText').innerText = message;
         overlay.style.display = 'flex';
-        // FIXED: Now also inject into chat history for consistent viewing
+        // (Previously Fixed) Now also inject into chat history for consistent viewing
         addSystemMessage("", message);
     }
 
