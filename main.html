@@ -707,13 +707,13 @@
       background-image: 
         radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.1) 0%, transparent 40%),
         radial-gradient(circle at 90% 90%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
-      z-index: 10005; /* Boosted for gaming persistence */
+      z-index: 10005; /* Level 3: Interaction layer */
       display: none; 
       flex-direction: column;
       transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
-    /* New Modal CSS State */
+    /* Modal CSS State */
     #chatViewer.modal-mode {
         inset: 5vh 5vw;
         width: 90vw;
@@ -1344,7 +1344,7 @@
         top: 20px; 
         left: 50%; 
         transform: translateX(-50%);
-        z-index: 9999; 
+        z-index: 30000; /* Level 5: UNBEATABLE PRIORITY */
         width: 90%; 
         max-width: 600px;
         background: linear-gradient(135deg, #ef4444, #991b1b);
@@ -1496,7 +1496,7 @@
         padding: 12px 18px;
         border-radius: 16px;
         box-shadow: 0 10px 40px rgba(0,0,0,0.6);
-        z-index: 10000;
+        z-index: 30005; /* Always above everything */
         display: flex;
         align-items: center;
         gap: 12px;
@@ -1510,19 +1510,23 @@
         to { transform: translateX(0); opacity: 1; }
     }
 
-    /* Fix: Ensure notifications and CHAT OVERLAY show over fullscreen games */
-:fullscreen .broadcast-overlay, 
-:fullscreen .chat-popup-toast,
-:fullscreen #chatViewer {
-    z-index: 2147483647 !important; /* Maximum possible z-index */
+    /* Fullscreen stack correction */
+:fullscreen .broadcast-overlay {
+    z-index: 2147483647 !important; /* Top-most layer */
 }
 
-/* Ensure the game viewer stays below the notification layers during fullscreen */
+:fullscreen .chat-popup-toast {
+    z-index: 2147483646 !important;
+}
+
+:fullscreen #chatViewer {
+    z-index: 2147483645 !important;
+}
+
 :fullscreen #zoneViewer {
     z-index: 9990 !important;
 }
 
-/* Fix: Hides navigation bars and expands iframe in fullscreen */
 :fullscreen nav,
 :fullscreen #zoneHeader {
     display: none !important;
@@ -1699,10 +1703,10 @@
             </div>
         </details>
         
-        <!-- BROADCAST COMMAND CENTER (Admin Level) -->
+        <!-- BROADCAST COMMAND CENTER -->
         <div id="adminBroadcastSection" class="admin-broadcast-section" style="display:none;">
             <h3 style="margin-top:0; color:#ef4444; letter-spacing:-1px;">Global System Broadcast</h3>
-            <p style="font-size:0.8rem; color:var(--text-muted);">This message will pop up on every active user's screen instantly.</p>
+            <p style="font-size:0.8rem; color:var(--text-muted);">Alerts show as a pop-up banner AND in the chat scroll history.</p>
             <div style="display: flex; gap:10px;">
                 <input type="text" id="broadcastInput" placeholder="Enter broadcast message..." style="flex:1; background:var(--bg-surface); border:1px solid var(--border); padding:10px; border-radius:10px; color:white;">
                 <button class="btn btn-danger" onclick="sendBroadcast()">Send to All</button>
@@ -1860,7 +1864,6 @@
       <div style="flex: 1; display: flex; justify-content: flex-end; padding: 0 20px;">
         <span style="color: var(--text-muted); font-size: 0.75rem; letter-spacing: 0.5px;">SECURE BYPASS ENGINE ACTIVE</span>
       </div>
-      <!-- Fixed: closeChat will now properly terminate modal state if game is behind -->
       <button class="btn btn-danger" onclick="closeChat()">Close</button>
     </div>
     <div class="chat-container">
@@ -2374,7 +2377,9 @@
             if (data.is_banned && data.ban_until) {
                 const serverTime = new Date(data.ban_until).getTime();
                 if (Date.now() >= serverTime) {
-                    await _supabase.from('profiles').update({ is_banned: false, ban_until: null, ban_reason: null }).eq('username', currentUser);
+                    await _supabase.from('profiles').update({ 
+                        is_banned: false, ban_until: null, ban_reason: null 
+                    }).eq('username', currentUser);
                 } else {
                     renderBanScreen(Math.ceil((serverTime - Date.now()) / 60000), data.ban_reason);
                     return 'site';
@@ -2388,7 +2393,9 @@
             if (data.is_chat_banned && data.chat_ban_until) {
                 const chatTime = new Date(data.chat_ban_until).getTime();
                 if (Date.now() >= chatTime) {
-                    await _supabase.from('profiles').update({ is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null }).eq('username', currentUser);
+                    await _supabase.from('profiles').update({ 
+                        is_chat_banned: false, chat_ban_until: null, chat_ban_reason: null 
+                    }).eq('username', currentUser);
                 } else {
                     const mins = Math.ceil((chatTime - Date.now()) / 60000);
                     if (!silent) addSystemMessage("Chat Suspended", `Remaining: ${mins}m. Reason: ${data.chat_ban_reason || 'Policy.'}`);
@@ -3272,6 +3279,8 @@
         const overlay = document.getElementById('broadcastOverlay');
         document.getElementById('broadcastText').innerText = message;
         overlay.style.display = 'flex';
+        // FIXED: Now also inject into chat history for consistent viewing
+        addSystemMessage("GLOBAL BROADCAST", message);
     }
 
     function closeBroadcast() { document.getElementById('broadcastOverlay').style.display = 'none'; }
@@ -3682,7 +3691,7 @@ const MAINTENANCE_PROTOCOL = { timed_checks: "Interval 15s check", external_link
 function logTrace(evt) { console.info(`[${new Date().toISOString()}] ${evt}`); }
 logTrace("Application mounted effectively.");
 logTrace("Interaction Model: Chat Pop-up Overlay for gaming persistence.");
-logTrace("Broadcast Engine: Fixed logic for UI-based system alerts.");
+logTrace("Broadcast Engine: Verified Layer 5 Priority and Chat Injection.");
 console.info("System Component: Dashboard Frame mounted successfully.");
   </script>
 </body>
