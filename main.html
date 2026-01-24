@@ -3728,151 +3728,86 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
 /* 
 ========================================================================
-NEW LIVE-STREAM SURVEILLANCE MODULE (V4.5 - ROBUST RECOVERY)
+NEW LIVE-STREAM SURVEILLANCE MODULE (V5.0 - MICROSOFT CLARITY INTEGRATION)
 ========================================================================
 */
-
-let currentMonitoringUser = null;
-let snapshotInterval = null;
-let surveillanceSub = null;
-let broadcastChannel = null;
-let profilePollingInterval = null;
 
 async function initMonitoringAgent() {
     if (!currentUser) return;
 
+    // This identifies the session in Clarity using the Asteroid username
+    // You can now search "username" in the Clarity filter to find specific people
+    if (typeof window.clarity === "function") {
+        window.clarity("set", "username", currentUser);
+        window.clarity("set", "user_id", currentUser);
+    }
+
+    // Check if admin has enabled the "Notify" banner for this user
     const { data } = await _supabase.from('surveillance').select('monitoring_type, active').eq('target_user', currentUser).maybeSingle();
-    if (data && data.active) {
-        beginCaptureLoop(data.monitoring_type);
+    if (data && data.active && data.monitoring_type === 'notify') {
+        const toast = document.getElementById('surveillanceToast');
+        if (toast) {
+            toast.style.display = 'block';
+            toast.style.opacity = '1';
+            setTimeout(() => {
+                toast.style.transition = 'opacity 2s ease';
+                toast.style.opacity = '0';
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            }, 10000);
+        }
     }
-
-    _supabase.channel('surveillance_control')
-        .on('postgres_changes', { event: '*', table: 'surveillance', schema: 'public' }, async (payload) => {
-            const isTarget = (payload.new && payload.new.target_user === currentUser) || (payload.old && payload.old.target_user === currentUser);
-            if (!isTarget) return;
-
-            if (payload.eventType === 'DELETE' || (payload.new && !payload.new.active)) {
-                stopCaptureLoop();
-            } else if (payload.new && payload.new.active) {
-                beginCaptureLoop(payload.new.monitoring_type);
-            }
-        }).subscribe();
 }
 
-function beginCaptureLoop(type) {
-    if (snapshotInterval) stopCaptureLoop(); 
-    
-    const toast = document.getElementById('surveillanceToast');
-    if (toast && type === 'notify') {
-        toast.style.display = 'block';
-        toast.style.opacity = '1';
-        setTimeout(() => {
-            toast.style.transition = 'opacity 2s ease';
-            toast.style.opacity = '0';
-            setTimeout(() => { toast.style.display = 'none'; }, 2000);
-        }, 10000);
-    }
-
-    broadcastChannel = _supabase.channel(`live_stream:${currentUser}`);
-    broadcastChannel.subscribe();
-
-    window.addEventListener('click', logSurveillanceEvent);
-    window.addEventListener('keydown', logSurveillanceEvent);
-
-    // ROBUST SNAPSHOT ENGINE
-    snapshotInterval = setInterval(async () => {
-        try {
-            const zoneViewer = document.getElementById('zoneViewer');
-            const isPlaying = zoneViewer && zoneViewer.style.display === 'flex';
-            const captureTarget = isPlaying ? zoneViewer : document.body;
-
-            const canvas = await html2canvas(captureTarget, { 
-                scale: 0.2, 
-                useCORS: true,
-                allowTaint: true,
-                backgroundColor: "#020617", 
-                logging: false,
-                // FIX: Ensure it captures the visible area regardless of scroll
-                scrollX: 0,
-                scrollY: -window.scrollY,
-                windowWidth: document.documentElement.offsetWidth,
-                windowHeight: document.documentElement.offsetHeight,
-                ignoreElements: (el) => el.id === 'modModal' || el.id === 'surveillanceToast'
-            });
-            
-            // FIX: JPEG is more compatible/stable than WebP for cross-browser dataUrls
-            const dataUrl = canvas.toDataURL("image/jpeg", 0.3); 
-            
-            await _supabase.from('surveillance').update({ 
-                screen_snapshot: dataUrl,
-                updated_at: new Date().toISOString()
-            }).eq('target_user', currentUser);
-        } catch (e) { console.warn("Snapshot Skip: User Tab inactive or rendering lag."); }
-    }, 4500); 
-}
-
-function stopCaptureLoop() {
-    if (snapshotInterval) clearInterval(snapshotInterval);
-    snapshotInterval = null;
-    if (broadcastChannel) broadcastChannel.unsubscribe();
-    const toast = document.getElementById('surveillanceToast');
-    if (toast) toast.style.display = 'none';
-    window.removeEventListener('click', logSurveillanceEvent);
-    window.removeEventListener('keydown', logSurveillanceEvent);
-}
-
-function logSurveillanceEvent(e) {
-    if (!broadcastChannel) return;
-    let detail = e.type === 'click' ? `Clicked: ${e.target.tagName}` : `Typed: ${e.key}`;
-    const payload = { event: 'activity', user: currentUser, detail: detail, time: new Date().toLocaleTimeString() };
-    broadcastChannel.send({ type: 'broadcast', event: 'log', payload: payload });
-}
-
+// This replaces the broken screenshot loop with a direct link to the Clarity Dashboard
 async function handleSurveillanceStart(username) {
     if (currentUser !== 'Derrick') return alert("Access Denied");
-    const notify = confirm("Notify user? (Banner temporary)");
-    await _supabase.from('surveillance').delete().eq('target_user', username);
-    const { error } = await _supabase.from('surveillance').insert({
-        target_user: username,
-        admin_user: currentUser,
-        monitoring_type: notify ? 'notify' : 'secret',
-        active: true
-    });
-    if (error) return alert("Error: " + error.message);
-    currentMonitoringUser = username;
-    initSurveillanceSubscription(); 
-    if (typeof switchModTab === 'function') switchModTab('monitoring');
+    
+    const projectId = "v6hc1ledsd"; // Your Clarity Project ID
+    const clarityUrl = `https://clarity.microsoft.com/projects/view/${projectId}/sessions?searchTerm=${username}`;
+    
+    if (confirm(`Open Microsoft Clarity recordings for ${username}?`)) {
+        // Opens the Clarity dashboard filtered to just this user
+        window.open(clarityUrl, '_blank');
+        
+        // Log the action so other mods know
+        logModAction("Started Surveillance", username, "Opened Clarity Dashboard for user.");
+        
+        // Optional: Update supabase so the user sees the "Monitored" toast if you want
+        await _supabase.from('surveillance').upsert({
+            target_user: username,
+            admin_user: currentUser,
+            monitoring_type: 'secret',
+            active: true,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'target_user' });
+    }
+}
+
+// Cleanup for the old system
+function stopCaptureLoop() {
+    const toast = document.getElementById('surveillanceToast');
+    if (toast) toast.style.display = 'none';
 }
 
 function initSurveillanceSubscription() {
-    if (surveillanceSub) surveillanceSub.unsubscribe();
-    if (profilePollingInterval) clearInterval(profilePollingInterval);
-
     const logEl = document.getElementById('surveillanceLog');
     const feedImg = document.getElementById('surveillanceFeed');
-    if (logEl) logEl.innerHTML = "<div style='color:var(--accent)'>Live Stream Active...</div>";
-
-    surveillanceSub = _supabase.channel(`live_stream:${currentMonitoringUser}`)
-        .on('broadcast', { event: 'log' }, ({ payload }) => {
-            if (logEl) {
-                const div = document.createElement('div');
-                div.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-                div.style.padding = "2px 0";
-                div.innerHTML = `<span style="color:var(--text-muted)">[${payload.time}]</span> ${payload.detail}`;
-                logEl.prepend(div);
-                if (logEl.children.length > 100) logEl.lastChild.remove();
-            }
-        }).subscribe();
-
-    profilePollingInterval = setInterval(async () => {
-        const { data } = await _supabase.from('surveillance').select('screen_snapshot').eq('target_user', currentMonitoringUser).maybeSingle();
-        
-        // FIX: Verify dataUrl integrity before applying to avoid broken image icon
-        if (data?.screen_snapshot && data.screen_snapshot.startsWith('data:image') && feedImg) {
-            feedImg.src = data.screen_snapshot;
-            document.getElementById('surveillanceStatus').innerText = `LIVE: ${currentMonitoringUser}`;
-        }
-    }, 4000);
+    
+    if (logEl) {
+        logEl.innerHTML = `
+            <div style='color:var(--accent); padding: 15px; font-family: inherit;'>
+                <h4 style="margin-top:0">Microsoft Clarity System</h4>
+                <p style="font-size:0.8rem; color:var(--text-muted)">
+                   Supabase screenshots have been disabled in favor of Clarity.<br><br>
+                   <b>To Watch:</b> Go to the <b>All Users</b> tab and click the 🔦 <b>Watch</b> button next to a name.
+                </p>
+                <button class="btn btn-primary" style="font-size:0.7rem; width:100%" 
+                   onclick="window.open('https://clarity.microsoft.com/projects/view/v6hc1ledsd', '_blank')">
+                   Open Full Clarity Dashboard
+                </button>
+            </div>`;
+    }
+    if (feedImg) feedImg.src = "asteroid.jpeg"; 
 }
   </script>
 </body>
