@@ -3728,21 +3728,18 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
 /* 
 ========================================================================
-NEW LIVE-STREAM SURVEILLANCE MODULE (V5.0 - MICROSOFT CLARITY INTEGRATION)
+NEW LIVE-STREAM SURVEILLANCE MODULE (V5.1 - EMBEDDED CLARITY FEED)
 ========================================================================
 */
 
 async function initMonitoringAgent() {
     if (!currentUser) return;
 
-    // This identifies the session in Clarity using the Asteroid username
-    // You can now search "username" in the Clarity filter to find specific people
+    // Tags the session so you can find this user in the feed
     if (typeof window.clarity === "function") {
         window.clarity("set", "username", currentUser);
-        window.clarity("set", "user_id", currentUser);
     }
 
-    // Check if admin has enabled the "Notify" banner for this user
     const { data } = await _supabase.from('surveillance').select('monitoring_type, active').eq('target_user', currentUser).maybeSingle();
     if (data && data.active && data.monitoring_type === 'notify') {
         const toast = document.getElementById('surveillanceToast');
@@ -3758,56 +3755,56 @@ async function initMonitoringAgent() {
     }
 }
 
-// This replaces the broken screenshot loop with a direct link to the Clarity Dashboard
 async function handleSurveillanceStart(username) {
     if (currentUser !== 'Derrick') return alert("Access Denied");
     
-    const projectId = "v6hc1ledsd"; // Your Clarity Project ID
+    const projectId = "v6hc1ledsd";
+    // This URL creates a focused view of just this user's live/recent sessions
     const clarityUrl = `https://clarity.microsoft.com/projects/view/${projectId}/sessions?searchTerm=${username}`;
     
-    if (confirm(`Open Microsoft Clarity recordings for ${username}?`)) {
-        // Opens the Clarity dashboard filtered to just this user
-        window.open(clarityUrl, '_blank');
-        
-        // Log the action so other mods know
-        logModAction("Started Surveillance", username, "Opened Clarity Dashboard for user.");
-        
-        // Optional: Update supabase so the user sees the "Monitored" toast if you want
-        await _supabase.from('surveillance').upsert({
-            target_user: username,
-            admin_user: currentUser,
-            monitoring_type: 'secret',
-            active: true,
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'target_user' });
-    }
-}
+    const feedContainer = document.getElementById('surveillanceFeedContainer');
+    const logEl = document.getElementById('surveillanceLog');
 
-// Cleanup for the old system
-function stopCaptureLoop() {
-    const toast = document.getElementById('surveillanceToast');
-    if (toast) toast.style.display = 'none';
+    if (feedContainer) {
+        // Switch the feed from an image to the actual Clarity Live Dashboard
+        feedContainer.innerHTML = `<iframe src="${clarityUrl}" style="width:100%; height:500px; border:none; border-radius:8px;"></iframe>`;
+        
+        if (logEl) {
+            logEl.innerHTML = `<div style="color:#00ff00; padding:10px; font-size:0.8rem;">📡 CONNECTED TO CLARITY FEED: ${username}</div>`;
+        }
+        
+        logModAction("Started Live Surveillance", username, "Viewing embedded Clarity feed.");
+    }
 }
 
 function initSurveillanceSubscription() {
-    const logEl = document.getElementById('surveillanceLog');
     const feedImg = document.getElementById('surveillanceFeed');
+    const logEl = document.getElementById('surveillanceLog');
     
+    // Wrap the old image in a container so we can replace it with an iframe later
+    if (feedImg && !document.getElementById('surveillanceFeedContainer')) {
+        const container = document.createElement('div');
+        container.id = 'surveillanceFeedContainer';
+        feedImg.parentNode.insertBefore(container, feedImg);
+        container.appendChild(feedImg);
+    }
+
     if (logEl) {
         logEl.innerHTML = `
-            <div style='color:var(--accent); padding: 15px; font-family: inherit;'>
-                <h4 style="margin-top:0">Microsoft Clarity System</h4>
-                <p style="font-size:0.8rem; color:var(--text-muted)">
-                   Supabase screenshots have been disabled in favor of Clarity.<br><br>
-                   <b>To Watch:</b> Go to the <b>All Users</b> tab and click the 🔦 <b>Watch</b> button next to a name.
-                </p>
-                <button class="btn btn-primary" style="font-size:0.7rem; width:100%" 
-                   onclick="window.open('https://clarity.microsoft.com/projects/view/v6hc1ledsd', '_blank')">
-                   Open Full Clarity Dashboard
+            <div style='color:var(--accent); padding: 15px;'>
+                <h4 style="margin:0">Live Surveillance System</h4>
+                <p style="font-size:0.75rem; color:gray">Clarity V5.1 Active</p>
+                <button onclick="window.open('https://clarity.microsoft.com/projects/view/v6hc1ledsd', '_blank')" 
+                        style="background:#333; color:white; border:1px solid #555; padding:5px; width:100%; cursor:pointer;">
+                    Open External Dashboard
                 </button>
             </div>`;
     }
-    if (feedImg) feedImg.src = "asteroid.jpeg"; 
+}
+
+function stopCaptureLoop() {
+    const container = document.getElementById('surveillanceFeedContainer');
+    if (container) container.innerHTML = `<img id="surveillanceFeed" src="asteroid.jpeg" style="width:100%">`;
 }
   </script>
 </body>
