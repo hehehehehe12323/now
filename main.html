@@ -3280,7 +3280,7 @@
         document.getElementById('broadcastText').innerText = message;
         overlay.style.display = 'flex';
         // FIXED: Now also inject into chat history for consistent viewing
-        addSystemMessage("GLOBAL BROADCAST", message);
+        addSystemMessage("", message);
     }
 
     function closeBroadcast() { document.getElementById('broadcastOverlay').style.display = 'none'; }
