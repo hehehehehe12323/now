@@ -2804,7 +2804,7 @@
         document.body.appendChild(popup);
         
         popup.onclick = () => {
-            // Updated: Force modal mode so game doesn't close
+            // Force modal mode so game doesn't close
             openChat(true); 
             switchChatChannel(channelName === 'Staff-Room' ? 'staff' : 'global');
             popup.remove();
@@ -2963,7 +2963,7 @@
         const isBlockedStr = (msg.content === "Message blocked due to policy violations");
         const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
         
-        // Match Parent IDs securely (Standardized to handle potential mismatched type strings)
+        // Match Parent IDs securely
         const parentMsg = msg.parent_id ? source.find(function(m) { return m.id == msg.parent_id; }) : null;
         
         const isPM = (msg.recipient !== null && msg.recipient !== undefined);
@@ -3231,9 +3231,34 @@
             .subscribe();
     }
 
+    /**
+     * ========================================================================
+     * FIXED BROADCAST COMMANDS - REPAIRED SENDING LOGIC
+     * ========================================================================
+     */
     async function sendBroadcast(msg) {
         if (!isModUser && currentUser !== 'Derrick') return;
-        await _supabase.from('broadcasts').insert({ message: msg, sender: currentUser });
+        
+        let finalMsg = msg;
+        const input = document.getElementById('broadcastInput');
+
+        // Check if we need to get the text from the UI box
+        if (typeof msg !== 'string') {
+            if (input) finalMsg = input.value.trim();
+        }
+
+        if (!finalMsg || finalMsg === "") return;
+
+        const { error } = await _supabase.from('broadcasts').insert({ 
+            message: finalMsg, 
+            sender: currentUser 
+        });
+
+        if (error) {
+            alert("Database Error: Could not send broadcast. Check table permissions.");
+        } else {
+            if (input) input.value = "";
+        }
     }
 
     async function forceRefreshAll() {
@@ -3647,7 +3672,7 @@ METADATA PADDING & SYSTEM DOCUMENTATION [DO NOT REMOVE]
 */
 
 /** 
- * ASTEROID DASHBOARD SYSTEM SPECIFICATION v1.8.5
+ * ASTEROID DASHBOARD SYSTEM SPECIFICATION v1.8.6
  */
 const SYSTEM_LOGS = ["LOG_5A: presence_sync_complete", "LOG_5B: profile_hydration_success", "LOG_5C: bypass_security_active"];
 const COMPONENT_DESCRIPTOR = { censor: "CensorCore JS library bridge", fuzzy: "Normalization engine", socket: "Supabase context" };
@@ -3657,7 +3682,7 @@ const MAINTENANCE_PROTOCOL = { timed_checks: "Interval 15s check", external_link
 function logTrace(evt) { console.info(`[${new Date().toISOString()}] ${evt}`); }
 logTrace("Application mounted effectively.");
 logTrace("Interaction Model: Chat Pop-up Overlay for gaming persistence.");
-logTrace("Staffroom Database columns standardized via Drop/Recreate protocol.");
+logTrace("Broadcast Engine: Fixed logic for UI-based system alerts.");
 console.info("System Component: Dashboard Frame mounted successfully.");
   </script>
 </body>
