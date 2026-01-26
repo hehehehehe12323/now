@@ -5468,7 +5468,8 @@
     "url": "{HTML_URL}/rumblerush.html",
     "author": "",
     "authorLink": "",
-    "featured": true
+    "featured": true,
+    "special": ["new", "new game"]
   },
    {
     "id": 619,
@@ -5477,6 +5478,7 @@
     "url": "{HTML_URL}/vehikill.io.html",
     "author": "",
     "authorLink": "",
-    "featured": true
+    "featured": true,
+     "special": ["new", "new game"]
   }
 ]
