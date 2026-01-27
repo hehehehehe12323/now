@@ -3707,10 +3707,26 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
       return zones[Math.abs(hash) % zones.length];
     }
 
-    function filterZones() { 
-      const query = document.getElementById('searchBar').value;
-      displayZones(zones.filter(z => getFuzzyScore(z.name, query) > 5).sort((a,b) => getFuzzyScore(b.name, query) - getFuzzyScore(a.name, query))); 
-    }
+   function filterZones() {
+  const query = document.getElementById('searchBar').value;
+  const category = document.getElementById('categoryFilter').value;
+
+  // Filter by category first
+  let filtered = zones.filter(z => category === 'all' || z.category === category);
+
+  // If there is no search query, just show the filtered category list
+  if (!query.trim()) {
+    displayZones(filtered);
+    return;
+  }
+
+  // Apply fuzzy search and sorting to the category-filtered results
+  displayZones(
+    filtered
+      .filter(z => getFuzzyScore(z.name, query) > 5)
+      .sort((a, b) => getFuzzyScore(b.name, query) - getFuzzyScore(a.name, query))
+  );
+}
 
     async function openZone(file) {
       if (await checkActiveBan() === 'site') return;
