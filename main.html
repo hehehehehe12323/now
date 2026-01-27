@@ -1902,21 +1902,38 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     </div>
   </section>
 
-  <!-- Catalog Filtering Toolbar -->
-  <div class="toolbar">
-    <div class="search-wrapper">
-      <input type="text" id="searchBar" placeholder="Search..." onkeyup="filterZones()" />
-    </div>
-    <select id="sortOptions" onchange="sortZones()">
-      <option value="popular">Most Popular</option>
-      <option value="name">Alphabetical</option>
-      <option value="id">Numeric ID</option>
-    </select>
-    <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGjJMErXtdt4AJZ4juio21Mp-M6zBfZRsd9flU3lEbTEl1EA/viewform" target="_blank" class="btn btn-success">Submit Game</a>
+ <!-- Catalog Filtering Toolbar -->
+<div class="toolbar">
+  <div class="search-wrapper">
+    <input type="text" id="searchBar" placeholder="Search..." onkeyup="filterZones()" />
   </div>
 
-  <div id="zoneCount" style="text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem;"></div>
+  <!-- Added Category Filter -->
+  <select id="categoryFilter" onchange="filterZones()">
+    <option value="all">All Categories</option>
+    <option value="action">Action</option>
+    <option value="arcade">Arcade</option>
+    <option value="driving">Driving</option>
+    <option value="horror">Horror</option>
+    <option value="multiplayer">Multiplayer</option>
+    <option value="platformer">Platformer</option>
+    <option value="puzzle">Puzzle</option>
+    <option value="rhythm">Rhythm</option>
+    <option value="simulation">Simulation</option>
+    <option value="sports">Sports</option>
+  </select>
 
+  <select id="sortOptions" onchange="sortZones()">
+    <option value="popular">Most Popular</option>
+    <option value="name">Alphabetical</option>
+    <option value="id">Numeric ID</option>
+  </select>
+
+  <a href="https://docs.google.com/forms/d/e/1FAIpQLSdGjJMErXtdt4AJZ4juio21Mp-M6zBfZRsd9flU3lEbTEl1EA/viewform" target="_blank" class="btn btn-success">Submit Game</a>
+</div>
+
+<div id="zoneCount" style="text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem;"></div>
+  
   <main id="container">
     <!-- Active grid catalog -->
   </main>
