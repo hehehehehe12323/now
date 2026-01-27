@@ -11,7 +11,7 @@
   <!-- Supabase Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- CensorCore Library -->
-  <script src="https://cdn.gh/DerrickRichard/CensorCore-Library@latest/CensorCore.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/DerrickRichard/CensorCore-Library@latest/CensorCore.js"></script>
   <!-- Marked.js Tool -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <!-- html2canvas for Admin Screen Monitoring -->
@@ -2555,7 +2555,6 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     */
     async function aboutBlank() {
       const zoneTitle = document.getElementById('zoneName').textContent;
-      document.getElementById('zoneId').textContent = `ID: ${file.id}`;
       const file = zones.find(z => z.name === zoneTitle);
       if (!file) return alert("Zone detection failed.");
 
@@ -3729,17 +3728,20 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
   );
 }
 
-    async function openZone(file) {
-      if (await checkActiveBan() === 'site') return;
-      if (file.url.startsWith("http")) { window.location.href = file.url; return; }
-      fetch(file.url.replace("{HTML_URL}", htmlURL)).then(res => res.text()).then(html => {
-        document.getElementById('zoneViewer').style.display = "flex";
-        document.getElementById('zoneFrame').contentDocument.open();
-        document.getElementById('zoneFrame').contentDocument.write(html);
-        document.getElementById('zoneFrame').contentDocument.close();
-        document.getElementById('zoneName').textContent = file.name;
-      });
-    }
+   async function openZone(file) {
+  if (await checkActiveBan() === 'site') return;
+  if (file.url.startsWith("http")) { window.location.href = file.url; return; }
+  fetch(file.url.replace("{HTML_URL}", htmlURL)).then(res => res.text()).then(html => {
+    document.getElementById('zoneViewer').style.display = "flex";
+    document.getElementById('zoneFrame').contentDocument.open();
+    document.getElementById('zoneFrame').contentDocument.write(html);
+    document.getElementById('zoneFrame').contentDocument.close();
+    
+    // Updates both name and ID
+    document.getElementById('zoneName').textContent = file.name;
+    document.getElementById('zoneId').textContent = `ID: ${file.id}`; 
+  });
+}
 
     function closeZone() { document.getElementById('zoneViewer').style.display = "none"; }
     function fullscreenZone() { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
