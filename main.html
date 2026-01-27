@@ -2555,6 +2555,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     */
     async function aboutBlank() {
       const zoneTitle = document.getElementById('zoneName').textContent;
+      document.getElementById('zoneId').textContent = `ID: ${file.id}`;
       const file = zones.find(z => z.name === zoneTitle);
       if (!file) return alert("Zone detection failed.");
 
