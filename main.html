@@ -3835,31 +3835,35 @@ if (profError) {
 
     const zoneViewer = document.getElementById('zoneViewer');
     const zoneFrame = document.getElementById('zoneFrame');
-    const zoneLoading = document.getElementById('zoneLoadingIndicator'); // Add a loading div to your HTML if you have one
 
-    // 2. Clear the old game content first to free up memory
+    // 2. Clear the old game content
     zoneFrame.src = "about:blank";
 
-    // 3. Construct the clean URL
+    // 3. Construct the target URL
     const targetUrl = file.url.replace("{HTML_URL}", htmlURL);
 
-    // 4. Show the viewer UI immediately so the user sees something happening
+    // 4. UI Updates
     zoneViewer.style.display = "flex";
-    if (zoneLoading) zoneLoading.style.display = "flex"; 
-
-    // 5. DIRECT SRC LOADING (Solves the "Unplayable" and "Slow" issues)
-    // This allows the iframe to resolve its own base paths
-    zoneFrame.src = targetUrl;
-
-    // 6. UI Updates
     document.getElementById('zoneName').textContent = file.name;
     document.getElementById('zoneId').textContent = `Game ID #${file.id}`;
 
-    // Hide loading indicator when the frame finishes
-    zoneFrame.onload = () => {
-        if (zoneLoading) zoneLoading.style.display = "none";
-    };
-}
+    // 5. THE FIX: Fetch and Write the content
+    try {
+        const response = await fetch(targetUrl);
+        const html = await response.text();
+        
+        // We get the iframe's document and write the HTML directly into it
+        // This bypasses the MIME type issue and tells the browser "this is a webpage"
+        const doc = zoneFrame.contentDocument || zoneFrame.contentWindow.document;
+        doc.open();
+        doc.write(html);
+        doc.close();
+    } catch (err) {
+        console.error("Failed to load game via fetch:", err);
+        // Fallback: If fetch fails, try loading directly
+        zoneFrame.src = targetUrl;
+    }
+  }
 
     function closeZone() { document.getElementById('zoneViewer').style.display = "none"; }
     function fullscreenZone() { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
