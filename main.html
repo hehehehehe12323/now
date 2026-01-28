@@ -3227,25 +3227,66 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
       }, 2000);
     }
 
-        /**
+          /**
      * ========================================================================
-     * POST MESSAGE - FIXED STAFF SENDING LOGIC & ANTI-SPAM LADDER
+     * POST MESSAGE - ANTI-SPAM LADDER & ESCALATING PUNISHMENTS
      * ========================================================================
      */
     let messageHistory = [];
     let lastSentContent = "";
+    let sessionViolations = 0; 
+
+    // THE PUNISHMENT LADDER
+    async function recordViolation() {
+      sessionViolations++;
+      console.warn(`Violation recorded. Total: ${sessionViolations}`);
+
+      if (sessionViolations === 1) {
+          addSystemMessage("Warning", "Policy Violation detected. Further spam or bypasses will result in an automatic ban.");
+      } 
+      else if (sessionViolations === 2) {
+          addSystemMessage("Final Warning", "This is your last warning. One more violation will trigger a chat mute.");
+      }
+      else if (sessionViolations === 3) {
+          // MUTE: 1 Hour Chat Ban
+          const expiry = new Date(Date.now() + 60 * 60000).toISOString();
+          await _supabase.from('profiles').update({ chat_ban_until: expiry }).eq('username', currentUser);
+          addSystemMessage("Punishment", "You have been muted from chat for 1 hour.");
+      }
+           else if (sessionViolations === 4) {
+          // 24 HOUR SITE BAN
+          const expiry = new Date(Date.now() + 24 * 60 * 60000).toISOString();
+          await _supabase.from('profiles').update({ site_ban_until: expiry }).eq('username', currentUser);
+          alert("Your account has been suspended for 24 hours for repeated violations.");
+          window.location.reload();
+      }
+      else if (sessionViolations >= 5) {
+          // PERMANENT CHAT BAN
+          await _supabase.from('profiles').update({ chat_ban_until: '9999-12-31T23:59:59Z' }).eq('username', currentUser);
+          alert("You have been permanently banned from using the chat system.");
+          window.location.reload();
+      }
+       else if (sessionViolations >= 6) {
+          // PERMANENT SITE BAN (TOTAL ACCOUNT LOCKOUT)
+          await _supabase.from('profiles').update({ site_ban_until: '9999-12-31T23:59:59Z' }).eq('username', currentUser);
+          alert("Your account has been permanently deactivated due to extreme repeated violations.");
+          window.location.reload();
+      }
+    }
 
     function checkSpamLimit(content) {
       const now = Date.now();
       messageHistory = messageHistory.filter(time => now - time < 10000); // 10s window
 
       if (content.toLowerCase() === lastSentContent.toLowerCase()) {
-        addSystemMessage("Anti-Spam", "Please do not send duplicate messages.");
+        addSystemMessage("Anti-Spam", "Duplicate messages are not allowed.");
+        recordViolation(); // PUNISH FOR DUPLICATES
         return true;
       }
 
       if (messageHistory.length >= 5) {
-        addSystemMessage("Anti-Spam", "You are sending messages too fast. Slow down!");
+        addSystemMessage("Anti-Spam", "You are sending messages too fast! Violation recorded.");
+        recordViolation(); // PUNISH FOR SPEED
         return true;
       }
 
@@ -3256,27 +3297,23 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
     async function postMessage() {
       const ban = await checkActiveBan();
-      if (ban === 'chat' || ban === 'site') {
-        return; 
-      }
+      if (ban === 'chat' || ban === 'site') return; 
 
       const input = document.getElementById('chatInput');
       let content = input.value.trim();
-      if (content === "") {
-        return;
-      }
+      if (content === "") return;
 
-      // Mandatory Access Check for DMs
+      // DM Restriction Logic
       if (currentRecipient && !isModUser) {
           const isTargetStaff = modUsernames.has(currentRecipient) || currentRecipient === 'Derrick';
           if (!isTargetStaff) {
-              addSystemMessage("Error", "You can only send private messages as a reply to staff members.");
+              addSystemMessage("Error", "Private messages can only be sent to staff.");
               cancelReply();
               return;
           }
       }
 
-      // ANTI-SPAM LADDER
+      // ANTI-SPAM LADDER (ACTIVE & UNCOMMENTED)
       if (checkSpamLimit(content)) return;
 
       const fuzzyText = getFuzzyText(content);
@@ -3287,7 +3324,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
       if (isBlocked) {
           content = "Message blocked due to policy violations";
-          recordViolation();
+          recordViolation(); // PUNISH FOR PROFANITY
       }
 
       const payload = {
@@ -3301,15 +3338,15 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
           const table = (activeChannel === 'staff') ? 'staff_messages' : 'messages';
           const { error } = await _supabase.from(table).insert(payload);
           if (error) throw error;
+          
+          input.value = "";
+          cancelReply();
+          const body = document.getElementById('chatBody');
+          if (body) body.scrollTop = body.scrollHeight;
       } catch (err) {
           addSystemMessage("Database Error", "Failed to send message.");
           console.error(err);
       }
-
-      input.value = "";
-      cancelReply();
-      const body = document.getElementById('chatBody');
-      if (body) body.scrollTop = body.scrollHeight;
     }
 
     function subscribeMessages() {
@@ -3328,8 +3365,9 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
                 if (msg.username !== currentUser) {
                     if (document.getElementById('chatViewer').style.display !== "flex" || activeChannel !== 'global') {
                       unreadGlobal++;
-                      document.getElementById('chanGlobalBadge').innerText = unreadGlobal;
-                      document.getElementById('chanGlobalBadge').style.display = 'inline-block';
+                      const badge = document.getElementById('chanGlobalBadge');
+                      badge.innerText = unreadGlobal;
+                      badge.style.display = 'inline-block';
                       updateTotalUnread();
                       showChatPopup(msg, 'Global-Chat');
                     } else {
@@ -3348,10 +3386,12 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
           const typers = [];
           for (const id in chatPresence) {
             const userStateList = chatPresence[id];
-            if (userStateList && userStateList[0].isTyping && userStateList[0].user !== currentUser) typers.push(userStateList[0].user);
+            if (userStateList && userStateList[0].isTyping && userStateList[0].user !== currentUser) {
+                typers.push(userStateList[0].user);
+            }
           }
           const indicator = document.getElementById('typingIndicator');
-          indicator.innerText = (typers.length > 0) ? `${typers.join(', ')} typing...` : '';
+          if (indicator) indicator.innerText = (typers.length > 0) ? `${typers.join(', ')} typing...` : '';
         })
         .subscribe(async (status) => {
             if (status === 'SUBSCRIBED') await chatChannel.track({ user: currentUser }); 
