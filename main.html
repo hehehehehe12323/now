@@ -3568,7 +3568,19 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             }
             updatePersonalRow();
         }
-        const { data: allProfs } = await _supabase.from('profiles').select('*');
+      // ONLY fetch the current user's data
+const { data: profData, error: profError } = await _supabase
+    .from('profiles')
+    .select('username, coins, total_minutes, is_banned, role') // Only get what you need
+    .eq('username', currentUser)
+    .single();
+
+if (profError) {
+    console.error("Profile sync failed:", profError);
+} else {
+    // Update your UI with ONLY this user's data
+    updateUserUI(profData); 
+}
         if (allProfs) {
             allProfs.forEach(p => {
                 profilesCache[p.username] = p;
@@ -3817,19 +3829,36 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
   );
 }
 
-   async function openZone(file) {
-  if (await checkActiveBan() === 'site') return;
-  if (file.url.startsWith("http")) { window.location.href = file.url; return; }
-  fetch(file.url.replace("{HTML_URL}", htmlURL)).then(res => res.text()).then(html => {
-    document.getElementById('zoneViewer').style.display = "flex";
-    document.getElementById('zoneFrame').contentDocument.open();
-    document.getElementById('zoneFrame').contentDocument.write(html);
-    document.getElementById('zoneFrame').contentDocument.close();
-    
-    // Updates both name and ID
+  async function openZone(file) {
+    // 1. Check if user is banned before opening
+    if (await checkActiveBan() === 'site') return;
+
+    const zoneViewer = document.getElementById('zoneViewer');
+    const zoneFrame = document.getElementById('zoneFrame');
+    const zoneLoading = document.getElementById('zoneLoadingIndicator'); // Add a loading div to your HTML if you have one
+
+    // 2. Clear the old game content first to free up memory
+    zoneFrame.src = "about:blank";
+
+    // 3. Construct the clean URL
+    const targetUrl = file.url.replace("{HTML_URL}", htmlURL);
+
+    // 4. Show the viewer UI immediately so the user sees something happening
+    zoneViewer.style.display = "flex";
+    if (zoneLoading) zoneLoading.style.display = "flex"; 
+
+    // 5. DIRECT SRC LOADING (Solves the "Unplayable" and "Slow" issues)
+    // This allows the iframe to resolve its own base paths
+    zoneFrame.src = targetUrl;
+
+    // 6. UI Updates
     document.getElementById('zoneName').textContent = file.name;
-    document.getElementById('zoneId').textContent = `Game ID #${file.id}`; 
-  });
+    document.getElementById('zoneId').textContent = `Game ID #${file.id}`;
+
+    // Hide loading indicator when the frame finishes
+    zoneFrame.onload = () => {
+        if (zoneLoading) zoneLoading.style.display = "none";
+    };
 }
 
     function closeZone() { document.getElementById('zoneViewer').style.display = "none"; }
