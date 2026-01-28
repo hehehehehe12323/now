@@ -3526,18 +3526,30 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             .subscribe();
     }
 
-    async function loadProfile() {
+        async function loadProfile() {
         const ban = await checkActiveBan(true);
         if (ban === 'site') return;
-        const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
+
+        // 1. Fetch current user data
+        const { data, error } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
+        
+        if (error) {
+            console.error("Profile sync failed:", error);
+            return;
+        }
+
         if (data) {
             profileData = data;
             isModUser = data.is_mod || data.username === 'Derrick';
             profilesCache[currentUser] = data; 
+
+            // Update Device ID for monitoring
             const persistentId = getSecureDeviceId();
             if (!data.device_id || data.device_id !== persistentId) {
                 await _supabase.from('profiles').update({ device_id: persistentId }).eq('username', currentUser);
             }
+
+            // Setup Mod privileges
             if (isModUser) {
                 document.getElementById('modNavBtn').style.display = 'block';
                 if (data.username === 'Derrick') {
@@ -3546,21 +3558,33 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
                 }
                 subscribeStaffMessages();
             }
+
+            // Update Navbar UI
             const savedName = localStorage.getItem('asteroid_full_name') || data.full_name;
             const savedPfp = localStorage.getItem('asteroid_pfp');
             const pTrigger = document.getElementById('profileTrigger');
+            
             pTrigger.className = 'profile-trigger'; 
-            if (data.leaderboard_border && data.leaderboard_border !== 'none') pTrigger.classList.add('border-' + data.leaderboard_border);
+            if (data.leaderboard_border && data.leaderboard_border !== 'none') {
+                pTrigger.classList.add('border-' + data.leaderboard_border);
+            }
+            
             document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
 
+            // Update Profile Menu UI
             const pMenuName = document.getElementById('pMenuName');
             pMenuName.style.color = data.name_color || 'inherit';
             pMenuName.className = 'menu-name'; 
             if (data.name_style) pMenuName.classList.add('name-' + data.name_style);
+            
             const displayName = savedName || currentUser;
-            pMenuName.innerHTML = data.selected_tag ? `<span style="opacity: 0.6; font-size: 0.75rem; font-weight: 400; margin-right: 5px;">${data.selected_tag}</span>${displayName}` : displayName;
+            pMenuName.innerHTML = data.selected_tag ? 
+                `<span style="opacity: 0.6; font-size: 0.75rem; font-weight: 400; margin-right: 5px;">${data.selected_tag}</span>${displayName}` : 
+                displayName;
+
             document.getElementById('pMenuMins').textContent = (data.total_minutes || 0) + 'm';
             document.getElementById('pMenuCoins').textContent = data.coins || 0;
+
             if (savedPfp) {
                 document.getElementById('navPfp').src = savedPfp;
                 document.getElementById('navPfp').style.display = 'block';
@@ -3568,27 +3592,20 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             }
             updatePersonalRow();
         }
-      // ONLY fetch the current user's data
-const { data: profData, error: profError } = await _supabase
-    .from('profiles')
-    .select('username, coins, total_minutes, is_banned, role') // Only get what you need
-    .eq('username', currentUser)
-    .single();
 
-if (profError) {
-    console.error("Profile sync failed:", profError);
-} else {
-    // Update your UI with ONLY this user's data
-    updateUserUI(profData); 
-}
+        // 2. Fetch all profiles to populate the cache (needed for Mod list and Chat)
+        const { data: allProfs } = await _supabase.from('profiles').select('*');
         if (allProfs) {
             allProfs.forEach(p => {
                 profilesCache[p.username] = p;
                 if(p.is_mod || p.username === 'Derrick') modUsernames.add(p.username);
             });
         }
-        fetchLeaderboard(); initSitePresence(); checkMissedMessages();
-        initMonitoringAgent(); // START MONITORING AGENT AS USER OR ADMIN
+
+        fetchLeaderboard(); 
+        initSitePresence(); 
+        checkMissedMessages();
+        initMonitoringAgent(); 
     }
 
     function toggleProfileMenu() { document.getElementById('profileMenu').classList.toggle('active'); }
@@ -3855,7 +3872,9 @@ if (profError) {
         // We get the iframe's document and write the HTML directly into it
         // This bypasses the MIME type issue and tells the browser "this is a webpage"
         const doc = zoneFrame.contentDocument || zoneFrame.contentWindow.document;
-        doc.open();
+                doc.open();
+        // This tells the browser to look for files on GitHub instead of your server
+        doc.write(`<base href="${targetUrl}">`); 
         doc.write(html);
         doc.close();
     } catch (err) {
