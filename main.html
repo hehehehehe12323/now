@@ -3227,11 +3227,33 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
       }, 2000);
     }
 
-    /**
+        /**
      * ========================================================================
-     * POST MESSAGE - FIXED STAFF SENDING LOGIC & LADDER SYNC
+     * POST MESSAGE - FIXED STAFF SENDING LOGIC & ANTI-SPAM LADDER
      * ========================================================================
      */
+    let messageHistory = [];
+    let lastSentContent = "";
+
+    function checkSpamLimit(content) {
+      const now = Date.now();
+      messageHistory = messageHistory.filter(time => now - time < 10000); // 10s window
+
+      if (content.toLowerCase() === lastSentContent.toLowerCase()) {
+        addSystemMessage("Anti-Spam", "Please do not send duplicate messages.");
+        return true;
+      }
+
+      if (messageHistory.length >= 5) {
+        addSystemMessage("Anti-Spam", "You are sending messages too fast. Slow down!");
+        return true;
+      }
+
+      messageHistory.push(now);
+      lastSentContent = content;
+      return false;
+    }
+
     async function postMessage() {
       const ban = await checkActiveBan();
       if (ban === 'chat' || ban === 'site') {
@@ -3255,7 +3277,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
       }
 
       // ANTI-SPAM LADDER
-      // if (checkSpamLimit()) return;
+      if (checkSpamLimit(content)) return;
 
       const fuzzyText = getFuzzyText(content);
       const cleanLower = content.toLowerCase();
@@ -3268,7 +3290,6 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
           recordViolation();
       }
 
-      // DATA ENCAPSULATION: Ensures strict UUID compatibility for Supabase
       const payload = {
           username: currentUser,
           content: content,
@@ -3281,7 +3302,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
           const { error } = await _supabase.from(table).insert(payload);
           if (error) throw error;
       } catch (err) {
-          addSystemMessage("Database Error", "Failed to send message. Please run the Latest SQL script to Standardize UUID columns.");
+          addSystemMessage("Database Error", "Failed to send message.");
           console.error(err);
       }
 
