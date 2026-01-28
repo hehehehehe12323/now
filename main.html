@@ -2445,27 +2445,6 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         body.scrollTop = body.scrollHeight;
     }
 
-    function recordViolation() {
-        let violations = parseInt(localStorage.getItem('asteroid_violations') || "0") + 1;
-        localStorage.setItem('asteroid_violations', violations);
-
-        if (violations === 1) {
-            const expiry = Date.now() + (10 * 60 * 1000);
-            localStorage.setItem('asteroid_violations', violations);
-            localStorage.setItem('asteroid_ban_expiry', expiry);
-            localStorage.setItem('asteroid_ban_type', 'chat');
-            addSystemMessage("System Warning", "This is your 1st violation of the community policy. You have been banned from chatting for 10 minutes.");
-            addViolation(currentUser, "Warning", "Auto-mod: Profanity used in chat.", "System");
-        } else if (violations >= 2) {
-            const expiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
-            localStorage.setItem('asteroid_ban_expiry', expiry);
-            localStorage.setItem('asteroid_ban_type', 'site');
-            addViolation(currentUser, "Site Ban", "Auto-mod: Second violation of community policy.", "System");
-            alert("SYSTEM ALERT:\nThis is your second violation. You are now banned from the whole site for 1 week.");
-            location.reload(); 
-        }
-    }
-
     /**
      * ========================================================================
      * BAN SYSTEM CLARIFICATION ENGINE (AUTO-SYNC SOLUTION FOR ISSUE #2)
@@ -3236,44 +3215,93 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     let lastSentContent = "";
     let sessionViolations = 0; 
 
-    // THE PUNISHMENT LADDER
+        /**
+     * ========================================================================
+     * FIXED PUNISHMENT LADDER (PERSISTENT & ESCALATING)
+     * ========================================================================
+     */
+       /**
+     * ========================================================================
+     * FINALIZED PERSISTENT PUNISHMENT LADDER
+     * ========================================================================
+     */
     async function recordViolation() {
-      sessionViolations++;
-      console.warn(`Violation recorded. Total: ${sessionViolations}`);
+      // 1. PERSISTENT STRIKE TRACKING
+      let strikes = parseInt(localStorage.getItem('asteroid_strikes') || "0") + 1;
+      localStorage.setItem('asteroid_strikes', strikes);
 
-      if (sessionViolations === 1) {
+      console.warn(`Violation recorded. Total strikes: ${strikes}`);
+
+      if (strikes === 1) {
           addSystemMessage("Warning", "Policy Violation detected. Further spam or bypasses will result in an automatic ban.");
       } 
-      else if (sessionViolations === 2) {
+      else if (strikes === 2) {
           addSystemMessage("Final Warning", "This is your last warning. One more violation will trigger a chat mute.");
       }
-      else if (sessionViolations === 3) {
+      else if (strikes === 3) {
           // MUTE: 1 Hour Chat Ban
-          const expiry = new Date(Date.now() + 60 * 60000).toISOString();
-          await _supabase.from('profiles').update({ chat_ban_until: expiry }).eq('username', currentUser);
+          const expiryDate = new Date(Date.now() + 60 * 60000);
+          const expiryISO = expiryDate.toISOString();
+          
+          localStorage.setItem('asteroid_ban_expiry', expiryDate.getTime());
+          localStorage.setItem('asteroid_ban_type', 'chat');
+
+          await _supabase.from('profiles').update({ 
+              is_chat_banned: true, 
+              chat_ban_until: expiryISO,
+              chat_ban_reason: "Automated: 3 Strikes (Spam/Profanity)"
+          }).eq('username', currentUser);
+
           addSystemMessage("Punishment", "You have been muted from chat for 1 hour.");
       }
-           else if (sessionViolations === 4) {
+      else if (strikes === 4) {
           // 24 HOUR SITE BAN
-          const expiry = new Date(Date.now() + 24 * 60 * 60000).toISOString();
-          await _supabase.from('profiles').update({ site_ban_until: expiry }).eq('username', currentUser);
+          const expiryDate = new Date(Date.now() + 24 * 60 * 60000);
+          const expiryISO = expiryDate.toISOString();
+
+          localStorage.setItem('asteroid_ban_expiry', expiryDate.getTime());
+          localStorage.setItem('asteroid_ban_type', 'site');
+
+          await _supabase.from('profiles').update({ 
+              is_banned: true, 
+              ban_until: expiryISO,
+              ban_reason: "Automated: 4 Strikes (Repeated Violations)"
+          }).eq('username', currentUser);
+
           alert("Your account has been suspended for 24 hours for repeated violations.");
           window.location.reload();
       }
-      else if (sessionViolations >= 5) {
+      else if (strikes === 5) {
           // PERMANENT CHAT BAN
-          await _supabase.from('profiles').update({ chat_ban_until: '9999-12-31T23:59:59Z' }).eq('username', currentUser);
+          const permISO = '9999-12-31T23:59:59Z';
+          localStorage.setItem('asteroid_ban_expiry', 9999999999999);
+          localStorage.setItem('asteroid_ban_type', 'chat');
+
+          await _supabase.from('profiles').update({ 
+              is_chat_banned: true, 
+              chat_ban_until: permISO,
+              chat_ban_reason: "PERMANENT CHAT BAN: Extreme behavior"
+          }).eq('username', currentUser);
+
           alert("You have been permanently banned from using the chat system.");
           window.location.reload();
       }
-       else if (sessionViolations >= 6) {
+      else if (strikes >= 6) {
           // PERMANENT SITE BAN (TOTAL ACCOUNT LOCKOUT)
-          await _supabase.from('profiles').update({ site_ban_until: '9999-12-31T23:59:59Z' }).eq('username', currentUser);
+          const permISO = '9999-12-31T23:59:59Z';
+          localStorage.setItem('asteroid_ban_expiry', 9999999999999);
+          localStorage.setItem('asteroid_ban_type', 'site');
+
+          await _supabase.from('profiles').update({ 
+              is_banned: true, 
+              ban_until: permISO,
+              ban_reason: "SYSTEM TERMINATION: Level 6 Violation Cluster"
+          }).eq('username', currentUser);
+
           alert("Your account has been permanently deactivated due to extreme repeated violations.");
           window.location.reload();
       }
     }
-
     function checkSpamLimit(content) {
       const now = Date.now();
       messageHistory = messageHistory.filter(time => now - time < 10000); // 10s window
