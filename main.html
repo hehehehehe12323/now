@@ -3939,17 +3939,23 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
   );
 }
 
-  async function openZone(file) {
+   async function openZone(file) {
     // 1. Check if user is banned before opening
     if (await checkActiveBan() === 'site') return;
 
     const zoneViewer = document.getElementById('zoneViewer');
     const zoneFrame = document.getElementById('zoneFrame');
-    const zoneLoading = document.getElementById('zoneLoading'); // Added loader reference
+    const zoneLoading = document.getElementById('zoneLoading');
 
-    // 2. Clear the old game content
+    // 2. Prepare the Frame (Reset and Add Permissions)
     zoneFrame.src = "about:blank";
-    if (zoneLoading) zoneLoading.style.display = "flex"; // Show loader
+    // This allows the game to use your keyboard, mouse lock, and full screen
+    zoneFrame.setAttribute('allow', 'autoplay; fullscreen; pointer-lock; keyboard; cross-origin-isolated');
+    
+    if (zoneLoading) {
+        zoneLoading.style.display = "flex";
+        zoneLoading.style.pointerEvents = "all"; // Block clicks during loading
+    }
 
     // 3. Construct the target URL
     const targetUrl = file.url.replace("{HTML_URL}", htmlURL);
@@ -3959,29 +3965,31 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     document.getElementById('zoneName').textContent = file.name;
     document.getElementById('zoneId').textContent = `Game ID #${file.id}`;
 
-    // 5. THE FIX: Fetch and Write the content
+    // 5. THE FIX: Fetch, Inject Base, and Focus
     try {
         const response = await fetch(targetUrl);
         const html = await response.text();
         
-        // We get the iframe's document and write the HTML directly into it
-        // This bypasses the MIME type issue and tells the browser "this is a webpage"
         const doc = zoneFrame.contentDocument || zoneFrame.contentWindow.document;
         doc.open();
-        // This tells the browser to look for files on GitHub instead of your server
-        doc.write(`<base href="${targetUrl}">`); 
-        doc.write(html);
+        
+        // We inject the base tag and the HTML content
+        // Adding the base tag inside the head ensures relative paths work immediately
+        doc.write(`<base href="${targetUrl}">` + html);
         doc.close();
 
-        // Hide loader after a tiny delay once content is ready
+        // 6. Finalize: Hide loader and Force Focus
         if (zoneLoading) {
-            setTimeout(() => { zoneLoading.style.display = "none"; }, 600);
+            setTimeout(() => { 
+                zoneLoading.style.display = "none";
+                zoneLoading.style.pointerEvents = "none"; // Ensure clicks pass through
+                zoneFrame.focus(); // Force browser focus so keys work immediately
+            }, 800);
         }
     } catch (err) {
         console.error("Failed to load game via fetch:", err);
-        // Fallback: If fetch fails, try loading directly
         zoneFrame.src = targetUrl;
-        if (zoneLoading) zoneLoading.style.display = "none"; // Hide loader on error
+        if (zoneLoading) zoneLoading.style.display = "none";
     }
   }
 
