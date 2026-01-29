@@ -3825,24 +3825,62 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
   );
 }
 
-   async function openZone(file) {
+  async function openZone(file) {
   if (await checkActiveBan() === 'site') return;
-  if (file.url.startsWith("http")) { window.location.href = file.url; return; }
-  fetch(file.url.replace("{HTML_URL}", htmlURL)).then(res => res.text()).then(html => {
+
+  // 1. Handle External Redirects
+  if (file.url.startsWith("http") && !file.url.includes("{HTML_URL}")) { 
+    window.location.href = file.url; 
+    return; 
+  }
+
+  const targetUrl = file.url.replace("{HTML_URL}", htmlURL);
+
+  try {
+    const res = await fetch(targetUrl);
+    const html = await res.text();
+
+    // 2. Setup UI
     document.getElementById('zoneViewer').style.display = "flex";
-    document.getElementById('zoneFrame').contentDocument.open();
-    document.getElementById('zoneFrame').contentDocument.write(html);
-    document.getElementById('zoneFrame').contentDocument.close();
     
-    // Updates both name and ID
+    // 3. Inject Content with Base Tag (CRITICAL FIX)
+    const frame = document.getElementById('zoneFrame');
+    const doc = frame.contentDocument || frame.contentWindow.document;
+    doc.open();
+    // This line ensures the game can find its images/scripts on the external server
+    doc.write(`<base href="${targetUrl}">` + html); 
+    doc.close();
+
+    // 4. Update Header Info
     document.getElementById('zoneName').textContent = file.name;
     document.getElementById('zoneId').textContent = `Game ID #${file.id}`; 
-  });
+
+    // 5. Hide Footer
+    const footer = document.querySelector('footer') || document.getElementById('footer');
+    if (footer) footer.style.display = "none";
+    
+  } catch (err) {
+    console.error("Fetch failed, falling back to direct src:", err);
+    document.getElementById('zoneFrame').src = targetUrl;
+  }
 }
 
-    function closeZone() { document.getElementById('zoneViewer').style.display = "none"; }
-    function fullscreenZone() { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
+function closeZone() { 
+  document.getElementById('zoneViewer').style.display = "none"; 
+  document.getElementById('zoneFrame').src = "about:blank"; // Clears game memory/audio
 
+  const footer = document.querySelector('footer') || document.getElementById('footer');
+  if (footer) footer.style.display = "block";
+}
+
+function fullscreenZone() { 
+  const iframe = document.getElementById('zoneFrame');
+  if (iframe.requestFullscreen) {
+      iframe.requestFullscreen();
+  } else if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+  }
+}
     function saveData() {
       let storageObj = {}; for (let i = 0; i < localStorage.length; i++) storageObj[localStorage.key(i)] = localStorage.getItem(localStorage.key(i));
       let blob = new Blob([JSON.stringify(storageObj)], { type: "text/plain" });
