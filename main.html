@@ -2445,6 +2445,27 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         body.scrollTop = body.scrollHeight;
     }
 
+    function recordViolation() {
+        let violations = parseInt(localStorage.getItem('asteroid_violations') || "0") + 1;
+        localStorage.setItem('asteroid_violations', violations);
+
+        if (violations === 1) {
+            const expiry = Date.now() + (10 * 60 * 1000);
+            localStorage.setItem('asteroid_violations', violations);
+            localStorage.setItem('asteroid_ban_expiry', expiry);
+            localStorage.setItem('asteroid_ban_type', 'chat');
+            addSystemMessage("System Warning", "This is your 1st violation of the community policy. You have been banned from chatting for 10 minutes.");
+            addViolation(currentUser, "Warning", "Auto-mod: Profanity used in chat.", "System");
+        } else if (violations >= 2) {
+            const expiry = Date.now() + (7 * 24 * 60 * 60 * 1000);
+            localStorage.setItem('asteroid_ban_expiry', expiry);
+            localStorage.setItem('asteroid_ban_type', 'site');
+            addViolation(currentUser, "Site Ban", "Auto-mod: Second violation of community policy.", "System");
+            alert("SYSTEM ALERT:\nThis is your second violation. You are now banned from the whole site for 1 week.");
+            location.reload(); 
+        }
+    }
+
     /**
      * ========================================================================
      * BAN SYSTEM CLARIFICATION ENGINE (AUTO-SYNC SOLUTION FOR ISSUE #2)
@@ -3215,93 +3236,44 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     let lastSentContent = "";
     let sessionViolations = 0; 
 
-        /**
-     * ========================================================================
-     * FIXED PUNISHMENT LADDER (PERSISTENT & ESCALATING)
-     * ========================================================================
-     */
-       /**
-     * ========================================================================
-     * FINALIZED PERSISTENT PUNISHMENT LADDER
-     * ========================================================================
-     */
+    // THE PUNISHMENT LADDER
     async function recordViolation() {
-      // 1. PERSISTENT STRIKE TRACKING
-      let strikes = parseInt(localStorage.getItem('asteroid_strikes') || "0") + 1;
-      localStorage.setItem('asteroid_strikes', strikes);
+      sessionViolations++;
+      console.warn(`Violation recorded. Total: ${sessionViolations}`);
 
-      console.warn(`Violation recorded. Total strikes: ${strikes}`);
-
-      if (strikes === 1) {
+      if (sessionViolations === 1) {
           addSystemMessage("Warning", "Policy Violation detected. Further spam or bypasses will result in an automatic ban.");
       } 
-      else if (strikes === 2) {
+      else if (sessionViolations === 2) {
           addSystemMessage("Final Warning", "This is your last warning. One more violation will trigger a chat mute.");
       }
-      else if (strikes === 3) {
+      else if (sessionViolations === 3) {
           // MUTE: 1 Hour Chat Ban
-          const expiryDate = new Date(Date.now() + 60 * 60000);
-          const expiryISO = expiryDate.toISOString();
-          
-          localStorage.setItem('asteroid_ban_expiry', expiryDate.getTime());
-          localStorage.setItem('asteroid_ban_type', 'chat');
-
-          await _supabase.from('profiles').update({ 
-              is_chat_banned: true, 
-              chat_ban_until: expiryISO,
-              chat_ban_reason: "Automated: 3 Strikes (Spam/Profanity)"
-          }).eq('username', currentUser);
-
+          const expiry = new Date(Date.now() + 60 * 60000).toISOString();
+          await _supabase.from('profiles').update({ chat_ban_until: expiry }).eq('username', currentUser);
           addSystemMessage("Punishment", "You have been muted from chat for 1 hour.");
       }
-      else if (strikes === 4) {
+           else if (sessionViolations === 4) {
           // 24 HOUR SITE BAN
-          const expiryDate = new Date(Date.now() + 24 * 60 * 60000);
-          const expiryISO = expiryDate.toISOString();
-
-          localStorage.setItem('asteroid_ban_expiry', expiryDate.getTime());
-          localStorage.setItem('asteroid_ban_type', 'site');
-
-          await _supabase.from('profiles').update({ 
-              is_banned: true, 
-              ban_until: expiryISO,
-              ban_reason: "Automated: 4 Strikes (Repeated Violations)"
-          }).eq('username', currentUser);
-
+          const expiry = new Date(Date.now() + 24 * 60 * 60000).toISOString();
+          await _supabase.from('profiles').update({ site_ban_until: expiry }).eq('username', currentUser);
           alert("Your account has been suspended for 24 hours for repeated violations.");
           window.location.reload();
       }
-      else if (strikes === 5) {
+      else if (sessionViolations >= 5) {
           // PERMANENT CHAT BAN
-          const permISO = '9999-12-31T23:59:59Z';
-          localStorage.setItem('asteroid_ban_expiry', 9999999999999);
-          localStorage.setItem('asteroid_ban_type', 'chat');
-
-          await _supabase.from('profiles').update({ 
-              is_chat_banned: true, 
-              chat_ban_until: permISO,
-              chat_ban_reason: "PERMANENT CHAT BAN: Extreme behavior"
-          }).eq('username', currentUser);
-
+          await _supabase.from('profiles').update({ chat_ban_until: '9999-12-31T23:59:59Z' }).eq('username', currentUser);
           alert("You have been permanently banned from using the chat system.");
           window.location.reload();
       }
-      else if (strikes >= 6) {
+       else if (sessionViolations >= 6) {
           // PERMANENT SITE BAN (TOTAL ACCOUNT LOCKOUT)
-          const permISO = '9999-12-31T23:59:59Z';
-          localStorage.setItem('asteroid_ban_expiry', 9999999999999);
-          localStorage.setItem('asteroid_ban_type', 'site');
-
-          await _supabase.from('profiles').update({ 
-              is_banned: true, 
-              ban_until: permISO,
-              ban_reason: "SYSTEM TERMINATION: Level 6 Violation Cluster"
-          }).eq('username', currentUser);
-
+          await _supabase.from('profiles').update({ site_ban_until: '9999-12-31T23:59:59Z' }).eq('username', currentUser);
           alert("Your account has been permanently deactivated due to extreme repeated violations.");
           window.location.reload();
       }
     }
+
     function checkSpamLimit(content) {
       const now = Date.now();
       messageHistory = messageHistory.filter(time => now - time < 10000); // 10s window
@@ -3568,19 +3540,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             }
             updatePersonalRow();
         }
-      // ONLY fetch the current user's data
-const { data: profData, error: profError } = await _supabase
-    .from('profiles')
-    .select('username, coins, total_minutes, is_banned, role') // Only get what you need
-    .eq('username', currentUser)
-    .single();
-
-if (profError) {
-    console.error("Profile sync failed:", profError);
-} else {
-    // Update your UI with ONLY this user's data
-    updateUserUI(profData); 
-}
+        const { data: allProfs } = await _supabase.from('profiles').select('*');
         if (allProfs) {
             allProfs.forEach(p => {
                 profilesCache[p.username] = p;
@@ -3829,36 +3789,19 @@ if (profError) {
   );
 }
 
-  async function openZone(file) {
-    // 1. Check if user is banned before opening
-    if (await checkActiveBan() === 'site') return;
-
-    const zoneViewer = document.getElementById('zoneViewer');
-    const zoneFrame = document.getElementById('zoneFrame');
-    const zoneLoading = document.getElementById('zoneLoadingIndicator'); // Add a loading div to your HTML if you have one
-
-    // 2. Clear the old game content first to free up memory
-    zoneFrame.src = "about:blank";
-
-    // 3. Construct the clean URL
-    const targetUrl = file.url.replace("{HTML_URL}", htmlURL);
-
-    // 4. Show the viewer UI immediately so the user sees something happening
-    zoneViewer.style.display = "flex";
-    if (zoneLoading) zoneLoading.style.display = "flex"; 
-
-    // 5. DIRECT SRC LOADING (Solves the "Unplayable" and "Slow" issues)
-    // This allows the iframe to resolve its own base paths
-    zoneFrame.src = targetUrl;
-
-    // 6. UI Updates
+   async function openZone(file) {
+  if (await checkActiveBan() === 'site') return;
+  if (file.url.startsWith("http")) { window.location.href = file.url; return; }
+  fetch(file.url.replace("{HTML_URL}", htmlURL)).then(res => res.text()).then(html => {
+    document.getElementById('zoneViewer').style.display = "flex";
+    document.getElementById('zoneFrame').contentDocument.open();
+    document.getElementById('zoneFrame').contentDocument.write(html);
+    document.getElementById('zoneFrame').contentDocument.close();
+    
+    // Updates both name and ID
     document.getElementById('zoneName').textContent = file.name;
-    document.getElementById('zoneId').textContent = `Game ID #${file.id}`;
-
-    // Hide loading indicator when the frame finishes
-    zoneFrame.onload = () => {
-        if (zoneLoading) zoneLoading.style.display = "none";
-    };
+    document.getElementById('zoneId').textContent = `Game ID #${file.id}`; 
+  });
 }
 
     function closeZone() { document.getElementById('zoneViewer').style.display = "none"; }
