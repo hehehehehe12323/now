@@ -1619,40 +1619,6 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
-        /* Game Loading Overlay 
-    #zoneLoading {
-      position: absolute;
-      inset: 72px 0 0 0;
-      background: var(--bg-deep);
-      display: none; 
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-      gap: 1.5rem;
-    }
-
-    .loading-asteroid {
-      width: 80px;
-      height: 80px;
-      border-radius: 20px;
-      animation: asteroidPulse 2s ease-in-out infinite;
-      box-shadow: 0 0 30px var(--primary-glow);
-    }
-
-    .loading-status {
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      color: var(--text-muted);
-      font-size: 0.75rem;
-    }
-
-    @keyframes asteroidPulse {
-      0%, 100% { transform: scale(1); opacity: 0.7; }
-      50% { transform: scale(1.1); opacity: 1; }
-    }
-    */
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -1998,12 +1964,6 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         <button class="btn btn-danger" onclick="closeZone()">Close</button>
       </div>
     </div>
-<!-- Loading indicators 
-    <div id="zoneLoading">
-      <img src="asteroid.jpeg" class="loading-asteroid">
-      <span class="loading-status">Establishing Connection...</span>
-    </div>
--->
     <iframe id="zoneFrame"></iframe>
   </div>
 
@@ -3892,11 +3852,9 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
     const zoneViewer = document.getElementById('zoneViewer');
     const zoneFrame = document.getElementById('zoneFrame');
-    // const zoneLoading = document.getElementById('zoneLoading'); // Added loader reference
 
     // 2. Clear the old game content
     zoneFrame.src = "about:blank";
-  //  if (zoneLoading) zoneLoading.style.display = "flex"; // Show loader
 
     // 3. Construct the target URL
     const targetUrl = file.url.replace("{HTML_URL}", htmlURL);
@@ -3914,24 +3872,18 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         // We get the iframe's document and write the HTML directly into it
         // This bypasses the MIME type issue and tells the browser "this is a webpage"
         const doc = zoneFrame.contentDocument || zoneFrame.contentWindow.document;
-        doc.open();
+                doc.open();
         // This tells the browser to look for files on GitHub instead of your server
         doc.write(`<base href="${targetUrl}">`); 
         doc.write(html);
         doc.close();
-/*
-        // Hide loader after a tiny delay once content is ready
-        if (zoneLoading) {
-            setTimeout(() => { zoneLoading.style.display = "none"; }, 600);
-        }
     } catch (err) {
         console.error("Failed to load game via fetch:", err);
         // Fallback: If fetch fails, try loading directly
         zoneFrame.src = targetUrl;
-        if (zoneLoading) zoneLoading.style.display = "none"; // Hide loader on error
     }
   }
-*/
+
     function closeZone() { document.getElementById('zoneViewer').style.display = "none"; }
     function fullscreenZone() { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
 
