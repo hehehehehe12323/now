@@ -1619,6 +1619,32 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
+        /* Split Screen Layouts */
+    #dualViewer {
+        display: none; /* Hidden by default */
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        gap: 5px;
+    }
+    #dualViewer.split-horiz { flex-direction: column; }
+    #dualViewer.split-vert { flex-direction: row; }
+    
+    .split-frame {
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        border: 2px solid var(--primary);
+        border-radius: 8px;
+        background: #000;
+    }
+
+    #splitBtn { 
+        background: linear-gradient(135deg, #a855f7, #6366f1); 
+        font-weight: 800; 
+        border: none;
+    }
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -1951,22 +1977,30 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     <input type="file" id="file" style="display:none" onchange="loadData(event)" />
   </section>
 
-  <!-- External Content Overlay System -->
-  <div id="zoneViewer">
+    <div id="zoneViewer">
     <div id="zoneHeader">
       <div>
         <span id="zoneName" style="font-weight: 800; font-size: 1.2rem;"></span>
         <span id="zoneId" style="color: var(--text-muted); margin-left: 10px; font-size: 0.9rem;"></span>
       </div>
       <div style="display: flex; gap: 10px;">
+        <!-- Added Split Screen Button -->
+        <button id="splitBtn" class="btn" onclick="activateSplitRequest()">Split Screen 🖥️</button>
         <button class="btn btn-primary" onclick="fullscreenZone()">Fullscreen</button>
         <button class="btn" onclick="aboutBlank()">External Window</button>
         <button class="btn btn-danger" onclick="closeZone()">Close</button>
       </div>
     </div>
+    
+    <!-- Original Single Frame -->
     <iframe id="zoneFrame"></iframe>
-  </div>
 
+    <!-- Added New Dual Viewer Container -->
+    <div id="dualViewer">
+        <iframe id="frameLeft" class="split-frame"></iframe>
+        <iframe id="frameRight" class="split-frame"></iframe>
+    </div>
+  </div>
   <!-- ASTEROID GLOBAL CHAT SYSTEM -->
   <div id="chatViewer">
     <div id="zoneHeader">
@@ -3933,6 +3967,95 @@ function initSurveillanceSubscription() {
  */
 function stopCaptureLoop() {
     console.log("Surveillance loop transitioned to Microsoft Clarity Cloud.");
+}
+
+    /* 
+========================================================================
+SPLIT-SCREEN ENGINE & ASSET REPAIR
+========================================================================
+*/
+let isSplitMode = false;
+let savedFirstGame = null;
+
+// The Engine Loader: This fixes the "Image Not Found" issues by injecting a <base> tag
+const engineLoad = async (frame, file) => {
+    const targetUrl = file.url.replace("{HTML_URL}", htmlURL);
+    try {
+        const res = await fetch(targetUrl);
+        let html = await res.text();
+        
+        // Correctly calculate the base directory for assets
+        const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
+        const baseTag = `<base href="${baseUrl}">`;
+        
+        // Inject base tag into head
+        if (html.includes('<head>')) html = html.replace('<head>', `<head>${baseTag}`);
+        else html = baseTag + html;
+
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open();
+        doc.write(html);
+        doc.close();
+    } catch(e) { frame.src = targetUrl; }
+};
+
+// Override the existing openZone to add Split-Screen & Footer logic
+const baseOpen = openZone; 
+openZone = async function(file) {
+    if (await checkActiveBan() === 'site') return;
+
+    // Manage Footer Visibility
+    const footer = document.querySelector('footer');
+    if (footer) footer.style.display = "none";
+
+    if (!isSplitMode) {
+        document.getElementById('zoneViewer').style.display = "flex";
+        document.getElementById('zoneFrame').style.display = "block";
+        document.getElementById('dualViewer').style.display = "none";
+        document.getElementById('zoneName').textContent = file.name;
+        document.getElementById('zoneId').textContent = `Game ID #${file.id}`;
+        return engineLoad(document.getElementById('zoneFrame'), file);
+    }
+
+    // Split Mode Logic
+    const isVert = confirm("Select Layout:\n\nOK = Side-by-Side (Vertical)\nCANCEL = Top-Bottom (Horizontal)");
+    document.getElementById('zoneViewer').style.display = "flex";
+    document.getElementById('zoneFrame').style.display = "none";
+    document.getElementById('splitBtn').style.display = "none";
+    
+    const div = document.getElementById('dualViewer');
+    div.style.display = "flex";
+    div.className = isVert ? "split-vert" : "split-horiz";
+    document.getElementById('zoneName').textContent = `${savedFirstGame.name} + ${file.name}`;
+    
+    await Promise.all([
+        engineLoad(document.getElementById('frameLeft'), savedFirstGame),
+        engineLoad(document.getElementById('frameRight'), file)
+    ]);
+
+    isSplitMode = false;
+    document.getElementById('searchBar').placeholder = "Search...";
+    document.getElementById('searchBar').style.boxShadow = "";
+};
+
+// Function to trigger the split screen process
+async function activateSplitRequest() {
+    const currentName = document.getElementById('zoneName').textContent;
+    if (!currentName) return alert("Open a game first!");
+
+    const confirmation = prompt("⚠️ SYSTEM: Split-screen doubles CPU usage. Type 'CONFIRM' to acknowledge:");
+    if (confirmation === "CONFIRM") {
+        savedFirstGame = zones.find(z => z.name === currentName);
+        isSplitMode = true; 
+        
+        // Use the original close to hide viewer without resetting flags
+        document.getElementById('zoneViewer').style.display = "none";
+        
+        const sb = document.getElementById('searchBar');
+        sb.placeholder = "SELECT YOUR SECOND GAME...";
+        sb.style.boxShadow = "0 0 15px var(--primary)";
+        sb.focus();
+    }
 }
   </script>
 </body>
