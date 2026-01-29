@@ -1619,6 +1619,39 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
+        /* Split Screen Layouts */
+    #zoneViewer.split-mode-active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    #splitWrapper {
+        display: flex;
+        flex: 1;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        gap: 4px; /* Visible border between games */
+    }
+
+    /* Directional Classes */
+    #splitWrapper.split-vertical { flex-direction: row; }
+    #splitWrapper.split-horizontal { flex-direction: column; }
+
+    #splitWrapper iframe {
+        flex: 1;
+        border: none;
+        width: 100%;
+        height: 100%;
+        background: #000;
+    }
+
+    #splitBtn {
+        background: linear-gradient(135deg, #a855f7, #6366f1);
+        border: none;
+        font-weight: 800;
+    }
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -1959,13 +1992,16 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         <span id="zoneId" style="color: var(--text-muted); margin-left: 10px; font-size: 0.9rem;"></span>
       </div>
       <div style="display: flex; gap: 10px;">
+        <button id="splitBtn" class="btn" onclick="triggerSplitScreen()">Split Screen</button>
         <button class="btn btn-primary" onclick="fullscreenZone()">Fullscreen</button>
         <button class="btn" onclick="aboutBlank()">External Window</button>
         <button class="btn btn-danger" onclick="closeZone()">Close</button>
       </div>
     </div>
+    <div id="splitWrapper">
     <iframe id="zoneFrame"></iframe>
-  </div>
+    <iframe id="zoneFrame2" style="display:none;"></iframe>
+</div>
 
   <!-- ASTEROID GLOBAL CHAT SYSTEM -->
   <div id="chatViewer">
@@ -3934,6 +3970,90 @@ function initSurveillanceSubscription() {
 function stopCaptureLoop() {
     console.log("Surveillance loop transitioned to Microsoft Clarity Cloud.");
 }
+
+      let isSplitPending = false;
+  let firstGameData = null;
+
+  async function triggerSplitScreen() {
+    const warning = "⚠️ WARNING: Running two games simultaneously requires significant RAM and CPU power. This may crash your browser or cause severe lag.\n\nType 'CONFIRM' to proceed:";
+    const check = prompt(warning);
+
+    if (check === "CONFIRM") {
+        const zoneTitle = document.getElementById('zoneName').textContent;
+        firstGameData = zones.find(z => z.name === zoneTitle);
+        
+        isSplitPending = true;
+        closeZone(); // Close to let them pick the second game
+        
+        // Visual cue to selection
+        const searchMsg = document.getElementById('searchBar');
+        searchMsg.placeholder = "NOW SELECT YOUR SECOND GAME...";
+        searchMsg.style.borderColor = "var(--primary)";
+        searchMsg.focus();
+    }
+  }
+
+  // Update your existing openZone logic slightly to handle the split
+  const originalOpenZone = openZone;
+  openZone = async function(file) {
+      if (!isSplitPending) {
+          originalOpenZone(file);
+          document.getElementById('splitBtn').style.display = 'block';
+          return;
+      }
+
+      // If we are here, we are picking the second game
+      const mode = confirm("Press OK for Side-by-Side (Vertical Split)\nPress Cancel for Over-Under (Horizontal Split)");
+      const direction = mode ? 'vert' : 'horiz';
+      
+      isSplitPending = false;
+      document.getElementById('searchBar').placeholder = "Search...";
+      document.getElementById('searchBar').style.borderColor = "";
+
+      // Activate Split UI
+      const viewer = document.getElementById('zoneViewer');
+      const wrapper = document.getElementById('splitWrapper');
+      const f1 = document.getElementById('zoneFrame');
+      const f2 = document.getElementById('zoneFrame2');
+
+      viewer.style.display = "flex";
+      f2.style.display = "block";
+      document.getElementById('splitBtn').style.display = 'none'; // Hide split btn when already split
+      
+      wrapper.className = direction === 'vert' ? 'split-vertical' : 'split-horizontal';
+      document.getElementById('zoneName').textContent = `${firstGameData.name} | ${file.name}`;
+      document.getElementById('zoneId').textContent = "Multi-Window Mode Active";
+
+      // Load Game 1
+      loadIntoFrame(f1, firstGameData);
+      // Load Game 2
+      loadIntoFrame(f2, file);
+  };
+
+  async function loadIntoFrame(frame, file) {
+      const url = file.url.replace("{HTML_URL}", htmlURL);
+      try {
+          const res = await fetch(url);
+          const html = await res.text();
+          const doc = frame.contentDocument || frame.contentWindow.document;
+          doc.open();
+          doc.write(`<base href="${url}">` + html);
+          doc.close();
+          frame.contentWindow.focus();
+      } catch(e) { frame.src = url; }
+  }
+
+  // Reset UI on close
+  const originalCloseZone = closeZone;
+  closeZone = function() {
+      const f2 = document.getElementById('zoneFrame2');
+      if (f2) {
+          f2.style.display = "none";
+          f2.src = "about:blank";
+      }
+      document.getElementById('splitWrapper').className = "";
+      originalCloseZone();
+  };
   </script>
 </body>
 </html>
