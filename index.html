@@ -300,6 +300,21 @@
       line-height: 1.5;
     }
     .alert-banner b { color: var(--primary); }
+
+    .input-subtitle {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5); /* Faded white for a modern look */
+    margin-bottom: 8px;
+    margin-top: -4px; /* Pulls it closer to the label above */
+    display: block;
+    font-weight: 400;
+}
+
+/* Optional: If you want it to glow slightly with your theme's primary color */
+#fullname-group .input-subtitle {
+    color: var(--primary);
+    opacity: 0.7;
+}
   </style>
 </head>
 <body>
@@ -321,6 +336,7 @@
       <div id="registration-only-fields">
         <div class="input-group" id="fullname-group" style="display: none;">
           <label>Full Name</label>
+          <div class="input-subtitle">Please use your actual name. Users without a real name will have their account terminated.</div>
           <input id="fullname" type="text" placeholder="First and Last Name" />
         </div>
       </div>
