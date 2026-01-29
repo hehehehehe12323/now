@@ -3939,7 +3939,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
   );
 }
 
-   async function openZone(file) {
+    async function openZone(file) {
     // 1. Check if user is banned before opening
     if (await checkActiveBan() === 'site') return;
 
@@ -3947,15 +3947,9 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     const zoneFrame = document.getElementById('zoneFrame');
     const zoneLoading = document.getElementById('zoneLoading');
 
-    // 2. Clear the old game content and set permissions
+    // 2. Clear old content and show loader
     zoneFrame.src = "about:blank";
-    // FIX: This allows the game to use the keyboard, mouse lock, and full screen
-    zoneFrame.setAttribute('allow', 'autoplay; fullscreen; pointer-lock; keyboard; gamepad');
-    
-    if (zoneLoading) {
-        zoneLoading.style.display = "flex";
-        zoneLoading.style.pointerEvents = "all"; // Block accidental clicks during loading
-    }
+    if (zoneLoading) zoneLoading.style.display = "flex";
 
     // 3. Construct the target URL
     const targetUrl = file.url.replace("{HTML_URL}", htmlURL);
@@ -3965,27 +3959,30 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     document.getElementById('zoneName').textContent = file.name;
     document.getElementById('zoneId').textContent = `Game ID #${file.id}`;
 
-    // 5. THE FIX: Fetch and Write the content
+    // 5. THE FIX: Implementation matching aboutBlank()
     try {
         const response = await fetch(targetUrl);
         const html = await response.text();
-        
+
+        // Get the iframe's document
         const doc = zoneFrame.contentDocument || zoneFrame.contentWindow.document;
+
+        // Use the EXACT same write logic as aboutBlank
         doc.open();
-        // Combined the base tag and HTML for a more reliable injection
-        doc.write(`<base href="${targetUrl}">` + html); 
+        
+        // IMPORTANT: We add the <base> tag because the iframe is at "about:blank". 
+        // Without this, the game won't be able to find its images or scripts on GitHub.
+        doc.write(`<base href="${targetUrl}">` + html);
+        
         doc.close();
 
-        // 6. Finalize: Hide loader and Force Focus
+        // 6. Finishing up
         if (zoneLoading) {
             setTimeout(() => { 
                 zoneLoading.style.display = "none"; 
-                zoneLoading.style.pointerEvents = "none"; // Ensure clicks hit the game now
-                
-                // FIX: Force the browser to send keyboard inputs to the game immediately
+                // Force focus on the game window so keyboard controls work immediately
                 zoneFrame.contentWindow.focus();
-                zoneFrame.focus();
-            }, 800);
+            }, 600);
         }
     } catch (err) {
         console.error("Failed to load game via fetch:", err);
