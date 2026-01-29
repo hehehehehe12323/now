@@ -1652,6 +1652,58 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
       0%, 100% { transform: scale(1); opacity: 0.7; }
       50% { transform: scale(1.1); opacity: 1; }
     }
+
+        /* Multi-Window System */
+    .game-window {
+        position: absolute;
+        background: var(--bg-surface);
+        border: 2px solid var(--primary);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        z-index: 100;
+        min-width: 300px;
+        min-height: 200px;
+    }
+
+    .window-header {
+        padding: 8px 15px;
+        background: var(--bg-card);
+        cursor: move;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border);
+        user-select: none;
+    }
+
+    .window-content { flex: 1; position: relative; }
+    .window-content iframe { width: 100%; height: 100%; border: none; }
+    
+    .window-resize {
+        position: absolute;
+        bottom: 0; right: 0;
+        width: 15px; height: 15px;
+        cursor: nwse-resize;
+        background: linear-gradient(135deg, transparent 50%, var(--primary) 50%);
+    }
+
+    /* Transform ZoneViewer into a Workspace */
+    #zoneViewer.workspace-mode {
+        background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+    }
+
+    #zoneViewer.workspace-mode #zoneFrame,
+    #zoneViewer.workspace-mode #zoneLoading {
+        display: none !important; /* Hide the main single frame */
+    }
+
+    #splitBtn {
+        background: linear-gradient(135deg, #6366f1, #a855f7);
+        display: none; /* Hidden until a game is open */
+    }
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -1992,6 +2044,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         <span id="zoneId" style="color: var(--text-muted); margin-left: 10px; font-size: 0.9rem;"></span>
       </div>
       <div style="display: flex; gap: 10px;">
+        <button id="splitBtn" class="btn" onclick="requestSplitScreen()">Split Screen</button>
         <button class="btn btn-primary" onclick="fullscreenZone()">Fullscreen</button>
         <button class="btn" onclick="aboutBlank()">External Window</button>
         <button class="btn btn-danger" onclick="closeZone()">Close</button>
@@ -4062,6 +4115,145 @@ function initSurveillanceSubscription() {
 function stopCaptureLoop() {
     console.log("Surveillance loop transitioned to Microsoft Clarity Cloud.");
 }
+
+    // Splitscreen stuff
+      let activeWindows = 0;
+
+  async function requestSplitScreen() {
+    const warning = "ATTENTION: Opening 2 games at the same time uses significant memory and CPU power. This can crash your browser or slow down your computer.\n\nType 'CONFIRM' to proceed:";
+    const userInput = prompt(warning);
+    
+    if (userInput === "CONFIRM") {
+        if (activeWindows >= 2) return alert("System limited to 2 active windows for stability.");
+        
+        // Convert UI to Workspace mode
+        const viewer = document.getElementById('zoneViewer');
+        viewer.classList.add('workspace-mode');
+        
+        // Show the catalog again so they can pick a second game
+        viewer.style.background = "rgba(2, 6, 23, 0.8)";
+        viewer.style.backdropFilter = "blur(10px)";
+        
+        // Get info of the game currently in the iframe to "windowize" it
+        const currentName = document.getElementById('zoneName').textContent;
+        const gameData = zones.find(z => z.name === currentName);
+        
+        if (gameData) createGameWindow(gameData);
+        alert("Split screen active. Click another game from the library to open your second window.");
+    }
+  }
+
+  async function createGameWindow(file) {
+    if (activeWindows >= 2) return alert("Close a window before opening another.");
+    
+    const targetUrl = file.url.replace("{HTML_URL}", htmlURL);
+    const winId = `win_${Date.now()}`;
+    activeWindows++;
+
+    const win = document.createElement('div');
+    win.className = 'game-window animate-in';
+    win.id = winId;
+    win.style.width = "45vw";
+    win.style.height = "60vh";
+    win.style.left = activeWindows === 1 ? "2.5vw" : "51vw";
+    win.style.top = "15vh";
+
+    win.innerHTML = `
+        <div class="window-header" onmousedown="startDrag(event, '${winId}')">
+            <span style="font-weight:800; font-size:0.8rem;">${file.name}</span>
+            <button class="btn" style="padding:2px 8px; font-size:10px; background:#ef4444;" onclick="closeWindow('${winId}')">EXIT</button>
+        </div>
+        <div class="window-content">
+            <iframe id="frame_${winId}"></iframe>
+            <div class="window-resize" onmousedown="startResize(event, '${winId}')"></div>
+        </div>
+    `;
+
+    document.getElementById('zoneViewer').appendChild(win);
+
+    // Fetch and Load logic (matching your openZone fix)
+    try {
+        const response = await fetch(targetUrl);
+        const html = await response.text();
+        const frame = document.getElementById(`frame_${winId}`);
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        doc.open();
+        doc.write(`<base href="${targetUrl}">`);
+        doc.write(html);
+        doc.close();
+    } catch (e) { console.error("Window load failed", e); }
+  }
+
+  function closeWindow(id) {
+    document.getElementById(id).remove();
+    activeWindows--;
+    if (activeWindows === 0) {
+        document.getElementById('zoneViewer').classList.remove('workspace-mode');
+        closeZone();
+    }
+  }
+
+  // Drag & Resize Engine
+  let dragWin = null, resizeWin = null;
+  let startX, startY, startW, startH, startL, startT;
+
+  function startDrag(e, id) {
+    if (e.target.tagName === 'BUTTON') return;
+    dragWin = document.getElementById(id);
+    startX = e.clientX; startY = e.clientY;
+    startL = dragWin.offsetLeft; startT = dragWin.offsetTop;
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', stopActions);
+  }
+
+  function startResize(e, id) {
+    e.preventDefault();
+    resizeWin = document.getElementById(id);
+    startX = e.clientX; startY = e.clientY;
+    startW = resizeWin.offsetWidth; startH = resizeWin.offsetHeight;
+    document.addEventListener('mousemove', doResize);
+    document.addEventListener('mouseup', stopActions);
+  }
+
+  function doDrag(e) {
+    if (!dragWin) return;
+    dragWin.style.left = (startL + e.clientX - startX) + "px";
+    dragWin.style.top = (startT + e.clientY - startY) + "px";
+  }
+
+  function doResize(e) {
+    if (!resizeWin) return;
+    resizeWin.style.width = (startW + e.clientX - startX) + "px";
+    resizeWin.style.height = (startH + e.clientY - startY) + "px";
+  }
+
+  function stopActions() {
+    dragWin = null; resizeWin = null;
+    document.removeEventListener('mousemove', doDrag);
+    document.removeEventListener('mousemove', doResize);
+  }
+
+  // Update existing openZone to manage the button
+  const originalOpenZone = openZone;
+  openZone = async function(file) {
+    const viewer = document.getElementById('zoneViewer');
+    if (viewer.classList.contains('workspace-mode')) {
+        createGameWindow(file);
+    } else {
+        await originalOpenZone(file);
+        document.getElementById('splitBtn').style.display = 'block';
+    }
+  };
+
+  // Update existing closeZone to reset
+  const originalCloseZone = closeZone;
+  closeZone = function() {
+    document.querySelectorAll('.game-window').forEach(w => w.remove());
+    document.getElementById('zoneViewer').classList.remove('workspace-mode');
+    document.getElementById('splitBtn').style.display = 'none';
+    activeWindows = 0;
+    originalCloseZone();
+  };
   </script>
 </body>
 </html>
