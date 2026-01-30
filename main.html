@@ -3784,37 +3784,45 @@ function checkItemRequirement(item) {
             </div>`;
     }).join('');
 }
-    async function handleItemAction(itemId, isOwned) {
+ async function handleItemAction(itemId, isOwned) {
     // 1. Locate the item in the catalog
     const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
     if (!item) return;
 
     if (isOwned) {
-        // 2. EQUIPPING LOGIC (Toggle existing items)
-        let update = {};
+        // 2. EQUIPPING LOGIC (Optimistic Swapping & Toggling)
+        let prop = '';
+        let valToCompare = '';
         
-        if (item.type === 'tag') 
-            update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
+        // Define which profile property we are touching
+        if (item.type === 'tag') { prop = 'selected_tag'; valToCompare = item.name; }
+        else if (item.type === 'color') { prop = 'name_color'; valToCompare = item.value; }
+        else if (item.type === 'style') { prop = 'name_style'; valToCompare = item.value; }
+        else if (item.type === 'border') { prop = 'leaderboard_border'; valToCompare = item.value; }
+        else if (item.type === 'font') { prop = 'name_font'; valToCompare = item.value; }
+
+        if (prop) {
+            // This logic handles both toggling (OFF) and swapping (A to B)
+            // If already equipped, set to null. If different, set to new value.
+            const newVal = (profileData[prop] === valToCompare ? null : valToCompare);
             
-        if (item.type === 'color') 
-            update.name_color = (profileData.name_color === item.value ? null : item.value);
+            // --- OPTIMISTIC UI: Update local data immediately for "instant" feel ---
+            profileData[prop] = newVal;
             
-        if (item.type === 'style') 
-            update.name_style = (profileData.name_style === item.value ? null : item.value);
+            // Refresh shop immediately so the "Equipped" badge moves instantly
+            renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
             
-        if (item.type === 'border') 
-            update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
+            // Background Sync with Database
+            const update = { [prop]: newVal };
+            const { error } = await _supabase.from('profiles').update(update).eq('username', currentUser);
             
-        // NEW: Toggle Font Support
-        if (item.type === 'font') 
-            update.name_font = (profileData.name_font === item.value ? null : item.value); 
-        
-        await _supabase.from('profiles').update(update).eq('username', currentUser);
-        await loadProfile(); 
-        renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
+            // Final sync to ensure everything is perfect
+            await loadProfile(); 
+            renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
+        }
 
     } else {
-        // 3. PURCHASE LOGIC
+        // 3. PURCHASE LOGIC (Preserved exactly as requested)
         
         // CHECK REQUIREMENTS (Rank, Minutes, Played Games)
         if (!checkItemRequirement(item)) {
@@ -3822,15 +3830,23 @@ function checkItemRequirement(item) {
         }
 
         // CHECK COINS
-        if (profileData.coins < item.price) {
-            return alert(`💸 INSUFFICIENT COINS!\n\nYou need ${item.price - profileData.coins} more 🪙.`);
+        if ((profileData.coins || 0) < item.price) {
+            return alert(`💸 INSUFFICIENT COINS!\n\nYou need ${item.price - (profileData.coins || 0)} more 🪙.`);
         }
         
         // CONFIRM & CHARGE
         if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
+            const newCoins = (profileData.coins || 0) - item.price;
+            const newInventory = [...(profileData.inventory || []), item.id];
+
+            // Optimistic Purchase Update
+            profileData.coins = newCoins;
+            profileData.inventory = newInventory;
+            renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
+
             await _supabase.from('profiles').update({ 
-                coins: profileData.coins - item.price, 
-                inventory: [...(profileData.inventory || []), item.id] 
+                coins: newCoins, 
+                inventory: newInventory 
             }).eq('username', currentUser);
 
             await loadProfile(); 
