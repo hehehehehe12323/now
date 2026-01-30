@@ -1619,61 +1619,6 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
-        /* Import New Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;800&family=JetBrains+Mono:wght@400;800&family=Bangers&family=Dancing+Script:wght@700&display=swap');
-
-    /* Font Classes for Chat/Names */
-    .font-orbitron { font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
-    .font-mono { font-family: 'JetBrains Mono', monospace; }
-    .font-bangers { font-family: 'Bangers', system-ui; letter-spacing: 1px; }
-    .font-cursive { font-family: 'Dancing Script', cursive; }
-
-    /* Shop Requirement UI */
-    .shop-item.locked {
-        opacity: 0.6;
-        cursor: not-allowed;
-        border-style: dashed;
-        background: rgba(255, 255, 255, 0.02);
-    }
-    .item-req {
-        font-size: 0.65rem;
-        color: #ef4444; /* Red for not met */
-        font-weight: 800;
-        margin-top: 4px;
-        text-transform: uppercase;
-        display: block;
-    }
-    .item-req.met { color: var(--accent); } /* Green for met */
-
-        /* Requirement Text Styling */
-    .shop-req-text {
-        font-size: 0.65rem;
-        display: block;
-        margin-top: 5px;
-        font-weight: 800;
-        text-transform: uppercase;
-        padding: 2px 5px;
-        border-radius: 4px;
-        background: rgba(0,0,0,0.3);
-    }
-    .req-met { color: #22c55e; }    /* Green */
-    .req-not-met { color: #ef4444; } /* Red */
-
-    /* Locked Item Visuals */
-    .shop-item.locked {
-        border: 1px dashed #ef4444;
-        opacity: 0.8;
-    }
-    .shop-item.locked .item-price {
-        color: #ef4444;
-    }
-
-    /* Font Preview Helpers */
-    .font-orbitron { font-family: 'Orbitron', sans-serif; }
-    .font-mono { font-family: 'JetBrains Mono', monospace; }
-    .font-bangers { font-family: 'Bangers', cursive; }
-    .font-cursive { font-family: 'Dancing Script', cursive; }
-    .font-pixel { font-family: 'Press Start 2P', cursive; font-size: 0.6rem; }
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -2168,9 +2113,13 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     }
 
     // Defined Shop Catalog
-        const shopItems = {
+    const shopItems = {
         tags: [
-            /* EXISTING TAGS (DO NOT DELETE) */
+            /*
+            ====================================================================
+            1. CHAT TAGS - LEGACY & SOCIAL
+            ====================================================================
+            */
             { id: 'tag_pro', name: '[PRO]', price: 100, type: 'tag' },
             { id: 'tag_gamer', name: '[GAMER]', price: 50, type: 'tag' },
             { id: 'tag_star', name: '[✨]', price: 125, type: 'tag' },
@@ -2228,32 +2177,14 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             { id: 'tag_error', name: '[ERROR]', price: 404, type: 'tag' },
             { id: 'tag_system', name: '[ROOT]', price: 9999, type: 'tag' },
             { id: 'tag_player', name: '[PLAYER]', price: 10, type: 'tag' },
-            { id: 'tag_user', name: '[USER]', price: 1, type: 'tag' },
-
-            /* NEW: ACHIEVEMENT & GAME-SPECIFIC TAGS (50+ Items Start) */
-            // Rank Achievements
-            { id: 'tag_champ', name: '[CHAMPION]', price: 2000, type: 'tag', req: 'top:1', reqText: 'Must be #1 on Leaderboard' },
-            { id: 'tag_royal', name: '[ROYALTY]', price: 1500, type: 'tag', req: 'top:3', reqText: 'Must be Top 3 Rank' },
-            { id: 'tag_global', name: '[GLOBAL]', price: 1000, type: 'tag', req: 'top:10', reqText: 'Must be Top 10 Rank' },
-            
-            // Game Mastery (Requires specific game play)
-            { id: 'tag_ovo_master', name: '[OvO GOD]', price: 800, type: 'tag', req: 'played:1', reqText: 'Must have played OvO' },
-            { id: 'tag_bitlife', name: '[LIVING LARGE]', price: 600, type: 'tag', req: 'played:13', reqText: 'Must have played BitLife' },
-            { id: 'tag_drivemad', name: '[UNSTOPPABLE]', price: 700, type: 'tag', req: 'played:5', reqText: 'Must have played Drive Mad' },
-            { id: 'tag_retro', name: '[QUARTERBACK]', price: 500, type: 'tag', req: 'played:8', reqText: 'Must have played Retro Bowl' },
-            { id: 'tag_slope', name: '[DOWNHILL]', price: 450, type: 'tag', req: 'played:19', reqText: 'Must have played Slope' },
-            { id: 'tag_subway', name: '[SURFER]', price: 400, type: 'tag', req: 'played:40', reqText: 'Must have played Subway Surfers' },
-            { id: 'tag_1v1', name: '[CRACKED]', price: 900, type: 'tag', req: 'played:60', reqText: 'Must have played 1v1.LOL' },
-            { id: 'tag_hook', name: '[SPIDERMAN]', price: 350, type: 'tag', req: 'played:72', reqText: 'Must have played Stickman Hook' },
-            
-            // Time & Wealth Stats
-            { id: 'tag_addict', name: '[NO LIFER]', price: 5000, type: 'tag', req: 'mins:10000', reqText: 'Play for 10,000+ Minutes' },
-            { id: 'tag_grinder', name: '[THE GRINDER]', price: 1000, type: 'tag', req: 'mins:1000', reqText: 'Play for 1,000+ Minutes' },
-            { id: 'tag_millionaire', name: '[MILLIONAIRE]', price: 10000, type: 'tag', req: 'coins:10000', reqText: 'Hold 10,000 Coins' },
-            { id: 'tag_spent', name: '[BIG SPENDER]', price: 0, type: 'tag', req: 'mins:500', reqText: 'Play for 500+ Minutes' }
+            { id: 'tag_user', name: '[USER]', price: 1, type: 'tag' }
         ],
         styles: [
-            /* EXISTING COLORS (DO NOT DELETE) */
+            /*
+            ====================================================================
+            2. FONT COLORS - VIVID SPECTRUM
+            ====================================================================
+            */
             { id: 'color_blue', name: 'Cool Blue', price: 150, type: 'color', value: '#3b82f6' },
             { id: 'color_rose', name: 'Rose Red', price: 200, type: 'color', value: '#f43f5e' },
             { id: 'color_neon', name: 'Neon Green', price: 210, type: 'color', value: '#22c55e' },
@@ -2274,14 +2205,11 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             { id: 'color_diamond', name: 'Diamond White', price: 1500, type: 'color', value: '#ffffff' },
             { id: 'color_black', name: 'Void Black', price: 2500, type: 'color', value: '#000000' },
 
-            /* NEW: EXOTIC COLORS */
-            { id: 'color_vapor', name: 'Vapor Wave', price: 1200, type: 'color', value: '#ff71ce' },
-            { id: 'color_matrix', name: 'Matrix Green', price: 1100, type: 'color', value: '#00ff41' },
-            { id: 'color_blood', name: 'Blood Moon', price: 1300, type: 'color', value: '#8a0303' },
-            { id: 'color_ocean', name: 'Deep Sea', price: 900, type: 'color', value: '#0077be' },
-            { id: 'color_toxic', name: 'Toxic Waste', price: 950, type: 'color', value: '#ccff00' },
-
-            /* EXISTING ANIMATIONS (DO NOT DELETE) */
+            /*
+            ====================================================================
+            3. NAME ANIMATIONS - PRESTIGE EFFECTS
+            ====================================================================
+            */
             { id: 'style_sparkle', name: 'Sparkly Name', price: 500, type: 'style', value: 'sparkle' },
             { id: 'style_glow', name: 'Glow Name', price: 550, type: 'style', value: 'glow' },
             { id: 'style_italic', name: 'Italic Name', price: 223, type: 'style', value: 'italic' },
@@ -2291,21 +2219,11 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             { id: 'style_wavy', name: 'Wavy Name', price: 1200, type: 'style', value: 'wavy' },
             { id: 'style_jitter', name: 'Jittery Name', price: 1500, type: 'style', value: 'jitter' },
 
-            /* NEW: ELITE EFFECTS */
-            { id: 'style_rainbow_text', name: 'Rainbow Text', price: 10000, type: 'style', value: 'rainbow', req: 'top:1', reqText: 'Only for Rank #1' },
-            { id: 'style_ghost', name: 'Fade/Ghost', price: 2500, type: 'style', value: 'ghost' },
-            { id: 'style_pulse', name: 'Pulse Glow', price: 3000, type: 'style', value: 'pulse' },
-
-            /* NEW: FONT FAMILIES */
-            { id: 'font_orbitron', name: 'Cyber Font', price: 800, type: 'font', value: 'orbitron' },
-            { id: 'font_mono', name: 'Hacker Mono', price: 600, type: 'font', value: 'mono' },
-            { id: 'font_bangers', name: 'Hero Font', price: 750, type: 'font', value: 'bangers' },
-            { id: 'font_cursive', name: 'Fancy Script', price: 950, type: 'font', value: 'cursive' },
-            { id: 'font_pixel', name: 'Retro Pixel', price: 1200, type: 'font', value: 'pixel' },
-            { id: 'font_pressstart', name: '8-Bit Font', price: 1500, type: 'font', value: '8bit' },
-            { id: 'font_lobster', name: 'Lobster Font', price: 850, type: 'font', value: 'lobster' },
-
-            /* EXISTING BORDERS (DO NOT DELETE) */
+            /*
+            ====================================================================
+            4. PROFILE BORDERS - PRESTIGE FRAMES
+            ====================================================================
+            */
             { id: 'border_gold', name: 'Gold Border', price: 800, type: 'border', value: 'gold' },
             { id: 'border_silver', name: 'Silver Border', price: 600, type: 'border', value: 'silver' },
             { id: 'border_bronze', name: 'Bronze Border', price: 400, type: 'border', value: 'bronze' },
@@ -2316,14 +2234,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             { id: 'border_emerald', name: 'Emerald Border', price: 1200, type: 'border', value: 'emerald' },
             { id: 'border_sapphire', name: 'Sapphire Border', price: 1400, type: 'border', value: 'sapphire' },
             { id: 'border_rainbow', name: 'Rainbow Border', price: 5000, type: 'border', value: 'rainbow' },
-            { id: 'border_none', name: 'Standard Border', price: 0, type: 'border', value: 'none' },
-
-            /* NEW: ELITE BORDERS */
-            { id: 'border_shadow', name: 'Shadow Aura', price: 5500, type: 'border', value: 'shadow' },
-            { id: 'border_obsidian', name: 'Obsidian Frame', price: 7000, type: 'border', value: 'obsidian', req: 'coins:20000', reqText: 'Hold 20k Coins' },
-            { id: 'border_glitch', name: 'Static Border', price: 4500, type: 'border', value: 'glitch' },
-            { id: 'border_fire', name: 'Flame Border', price: 8000, type: 'border', value: 'fire' },
-            { id: 'border_frozen', name: 'Ice Frame', price: 8000, type: 'border', value: 'ice' }
+            { id: 'border_none', name: 'Standard Border', price: 0, type: 'border', value: 'none' }
         ]
     };
 
@@ -3676,111 +3587,45 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     }
 
     function renderShopItems(type) {
-    const grid = document.getElementById('shopGrid');
-    let items = (type === 'tags') ? shopItems.tags : shopItems.styles;
-    const inventory = profileData.inventory || [];
+        const grid = document.getElementById('shopGrid');
+        let items = (type === 'tags') ? shopItems.tags : shopItems.styles;
+        const inventory = profileData.inventory || [];
 
-    grid.innerHTML = items.map(function(item) {
-        const isOwned = inventory.includes(item.id);
-        const reqMet = checkItemRequirement(item); // Uses your requirement logic
-        
-        // Determine if equipped
-        const isEquipped = (
-            profileData.selected_tag === item.name || 
-            profileData.name_color === item.value || 
-            profileData.name_style === item.value || 
-            profileData.leaderboard_border === item.value ||
-            profileData.name_font === item.value
-        );
-
-        // Prep the visual preview
-        let previewStyle = "";
-        let previewClass = "";
-        
-        if (item.type === 'color') previewStyle = `style="color: ${item.value}"`;
-        if (item.type === 'style') previewClass = `name-${item.value}`;
-        if (item.type === 'font') previewClass = `font-${item.value}`;
-        if (item.type === 'tag') previewClass = "tag-preview";
-
-        // Status Button Text
-        let statusDisplay = isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : `${item.price} 🪙`;
-
-        return `
-            <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''} ${!isOwned && !reqMet ? 'locked' : ''}" 
-                 onclick="handleItemAction('${item.id}', ${isOwned})">
-                
-                <!-- The Visual Preview -->
-                <div class="item-preview ${previewClass}" ${previewStyle}>
-                    ${item.name}
-                </div>
-
-                <!-- Price or Owned Status -->
-                <div class="item-price">${statusDisplay}</div>
-
-                <!-- Requirement Text (Only shows if NOT owned) -->
-                ${(!isOwned && item.req) ? `
-                    <span class="shop-req-text ${reqMet ? 'req-met' : 'req-not-met'}">
-                        ${reqMet ? '✅ Ready' : '❌ ' + item.reqText}
-                    </span>
-                ` : ''}
-            </div>`;
-    }).join('');
-}
+        grid.innerHTML = items.map(function(item) {
+            const isOwned = inventory.includes(item.id);
+            const isEquipped = (profileData.selected_tag === item.name || profileData.name_color === item.value || profileData.name_style === item.value || profileData.leaderboard_border === item.value);
+            let statusText = isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : item.price + ' 🪙';
+            let visualClass = (item.type === 'border' && item.value !== 'none') ? 'border-' + item.value : '';
+            let previewStyling = (item.type === 'color') ? `style="color: ${item.value}"` : '';
+            let previewClassAdd = (item.type === 'style') ? `name-${item.value}` : '';
+            
+            return `
+                <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''} ${visualClass}" onclick="handleItemAction('${item.id}', ${isOwned})">
+                    <div class="item-preview ${previewClassAdd}" ${previewStyling}>${item.name}</div>
+                    <div class="item-price">${statusText}</div>
+                </div>`;
+        }).join('');
+    }
 
     async function handleItemAction(itemId, isOwned) {
-    // 1. Locate the item in the catalog
-    const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
-    if (!item) return;
-
-    if (isOwned) {
-        // 2. EQUIPPING LOGIC (Toggle existing items)
-        let update = {};
-        
-        if (item.type === 'tag') 
-            update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
-            
-        if (item.type === 'color') 
-            update.name_color = (profileData.name_color === item.value ? null : item.value);
-            
-        if (item.type === 'style') 
-            update.name_style = (profileData.name_style === item.value ? null : item.value);
-            
-        if (item.type === 'border') 
-            update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
-            
-        // NEW: Toggle Font Support
-        if (item.type === 'font') 
-            update.name_font = (profileData.name_font === item.value ? null : item.value); 
-        
-        await _supabase.from('profiles').update(update).eq('username', currentUser);
-        await loadProfile(); 
-        renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
-
-    } else {
-        // 3. PURCHASE LOGIC
-        
-        // CHECK REQUIREMENTS (Rank, Minutes, Played Games)
-        if (!checkItemRequirement(item)) {
-            return alert(`🚫 LOCKED!\n\nTo buy this, you must: ${item.reqText}`);
-        }
-
-        // CHECK COINS
-        if (profileData.coins < item.price) {
-            return alert(`💸 INSUFFICIENT COINS!\n\nYou need ${item.price - profileData.coins} more 🪙.`);
-        }
-        
-        // CONFIRM & CHARGE
-        if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
-            await _supabase.from('profiles').update({ 
-                coins: profileData.coins - item.price, 
-                inventory: [...(profileData.inventory || []), item.id] 
-            }).eq('username', currentUser);
-
-            await loadProfile(); 
-            renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
+        const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
+        if (!item) return;
+        if (isOwned) {
+            let update = {};
+            if (item.type === 'tag') update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
+            if (item.type === 'color') update.name_color = (profileData.name_color === item.value ? null : item.value);
+            if (item.type === 'style') update.name_style = (profileData.name_style === item.value ? null : item.value);
+            if (item.type === 'border') update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
+            await _supabase.from('profiles').update(update).eq('username', currentUser);
+            await loadProfile(); renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
+        } else {
+            if (profileData.coins < item.price) return alert("Not enough coins!");
+            if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
+                await _supabase.from('profiles').update({ coins: profileData.coins - item.price, inventory: [...(profileData.inventory || []), item.id] }).eq('username', currentUser);
+                await loadProfile(); renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
+            }
         }
     }
-}
 
     async function toggleFavorite(gameId) {
         event.stopPropagation();
