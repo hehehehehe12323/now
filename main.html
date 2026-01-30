@@ -3633,7 +3633,11 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     async function loadProfile() {
         const ban = await checkActiveBan(true);
         if (ban === 'site') return;
+
+        // FETCH BOTH PROFILE AND ALL-TIME STATS
         const { data } = await _supabase.from('profiles').select('*').eq('username', currentUser).maybeSingle();
+        const { data: stats } = await _supabase.from('all_time_stats').select('minutes').eq('username', currentUser).maybeSingle();
+
         if (data) {
             profileData = data;
             isModUser = data.is_mod || data.username === 'Derrick';
@@ -3664,7 +3668,11 @@ if (data.name_style) pMenuName.classList.add('name-' + data.name_style);
 if (data.name_font) pMenuName.classList.add('font-' + data.name_font);
             const displayName = savedName || currentUser;
             pMenuName.innerHTML = data.selected_tag ? `<span style="opacity: 0.6; font-size: 0.75rem; font-weight: 400; margin-right: 5px;">${data.selected_tag}</span>${displayName}` : displayName;
-            document.getElementById('pMenuMins').textContent = (data.total_minutes || 0) + 'm';
+            
+            // --- FIXED: Use All-Time Stats for Minutes ---
+            const atmins = stats ? (stats.minutes || 0) : 0;
+            document.getElementById('pMenuMins').textContent = atmins + 'm';
+            
             document.getElementById('pMenuCoins').textContent = data.coins || 0;
             if (savedPfp) {
                 document.getElementById('navPfp').src = savedPfp;
@@ -3704,7 +3712,6 @@ if (data.name_font) pMenuName.classList.add('font-' + data.name_font);
         loadProfile(); closeSettings();
         _supabase.from('profiles').upsert({ username: currentUser, full_name: name }, { onConflict: 'username' });
     }
-
     function openShop() {
         document.getElementById('shopModal').classList.add('active');
         document.getElementById('shopBalance').textContent = profileData.coins || 0;
@@ -3903,19 +3910,48 @@ async function handleItemAction(itemId, isOwned) {
 
     loadProfile(); subscribeBroadcasts(); subscribeMessages(); subscribeProfiles();
 
-    async function trackMinutes() {
-      if (!currentUser) return;
-      if (await checkActiveBan(true) === 'site') return;
-      const { data } = await _supabase.from('leaderboard').select('minutes').eq('username', currentUser).maybeSingle();
-      const nextMins = (data ? data.minutes : 0) + 1;
-      const { data: profData } = await _supabase.from('profiles').select('total_minutes, coins').eq('username', currentUser).maybeSingle();
-      const nextTotal = (profData ? (profData.total_minutes || 0) : 0) + 1;
-      let newCoins = (profData ? (profData.coins || 0) : 0) + 1;
-      document.getElementById('pMenuMins').textContent = nextTotal + 'm';
-      document.getElementById('pMenuCoins').textContent = newCoins;
-      await _supabase.from('leaderboard').upsert({ username: currentUser, minutes: nextMins, updated_at: new Date().toISOString() }, { onConflict: 'username' });
-      await _supabase.from('profiles').update({ total_minutes: nextTotal, coins: newCoins }).eq('username', currentUser);
-    }
+   async function trackMinutes() {
+    if (!currentUser) return;
+    if (await checkActiveBan(true) === 'site') return;
+
+    // 1. Fetch current counts from all sources
+    const [lbRes, atRes, prRes] = await Promise.all([
+        _supabase.from('leaderboard').select('minutes').eq('username', currentUser).maybeSingle(),
+        _supabase.from('all_time_stats').select('minutes').eq('username', currentUser).maybeSingle(),
+        _supabase.from('profiles').select('coins').eq('username', currentUser).maybeSingle()
+    ]);
+
+    const nextLBMins = (lbRes.data ? lbRes.data.minutes : 0) + 1;
+    const nextATMins = (atRes.data ? atRes.data.minutes : 0) + 1;
+    const nextCoins = (prRes.data ? (prRes.data.coins || 0) : 0) + 1;
+
+    // 2. Update UI instantly (Optimistic)
+    const minsEl = document.getElementById('pMenuMins');
+    const coinsEl = document.getElementById('pMenuCoins');
+    if (minsEl) minsEl.textContent = nextATMins + 'm';
+    if (coinsEl) coinsEl.textContent = nextCoins;
+
+    // 3. Sync everything back to Supabase
+    await Promise.all([
+        // Weekly Leaderboard (You reset this weekly)
+        _supabase.from('leaderboard').upsert({ 
+            username: currentUser, 
+            minutes: nextLBMins, 
+            updated_at: new Date().toISOString() 
+        }, { onConflict: 'username' }),
+
+        // All-Time Stats (Never Reset)
+        _supabase.from('all_time_stats').upsert({ 
+            username: currentUser, 
+            minutes: nextATMins 
+        }, { onConflict: 'username' }),
+
+        // Profile (Economy)
+        _supabase.from('profiles').update({ 
+            coins: nextCoins 
+        }).eq('username', currentUser)
+    ]);
+}
 
   async function fetchLeaderboard() {
   const { data } = await _supabase.from('leaderboard').select('username, minutes').order('minutes', { ascending: false }).limit(50);
