@@ -1619,6 +1619,61 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
+        /* Import New Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;800&family=JetBrains+Mono:wght@400;800&family=Bangers&family=Dancing+Script:wght@700&display=swap');
+
+    /* Font Classes for Chat/Names */
+    .font-orbitron { font-family: 'Orbitron', sans-serif; letter-spacing: 1px; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .font-bangers { font-family: 'Bangers', system-ui; letter-spacing: 1px; }
+    .font-cursive { font-family: 'Dancing Script', cursive; }
+
+    /* Shop Requirement UI */
+    .shop-item.locked {
+        opacity: 0.6;
+        cursor: not-allowed;
+        border-style: dashed;
+        background: rgba(255, 255, 255, 0.02);
+    }
+    .item-req {
+        font-size: 0.65rem;
+        color: #ef4444; /* Red for not met */
+        font-weight: 800;
+        margin-top: 4px;
+        text-transform: uppercase;
+        display: block;
+    }
+    .item-req.met { color: var(--accent); } /* Green for met */
+
+        /* Requirement Text Styling */
+    .shop-req-text {
+        font-size: 0.65rem;
+        display: block;
+        margin-top: 5px;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 2px 5px;
+        border-radius: 4px;
+        background: rgba(0,0,0,0.3);
+    }
+    .req-met { color: #22c55e; }    /* Green */
+    .req-not-met { color: #ef4444; } /* Red */
+
+    /* Locked Item Visuals */
+    .shop-item.locked {
+        border: 1px dashed #ef4444;
+        opacity: 0.8;
+    }
+    .shop-item.locked .item-price {
+        color: #ef4444;
+    }
+
+    /* Font Preview Helpers */
+    .font-orbitron { font-family: 'Orbitron', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .font-bangers { font-family: 'Bangers', cursive; }
+    .font-cursive { font-family: 'Dancing Script', cursive; }
+    .font-pixel { font-family: 'Press Start 2P', cursive; font-size: 0.6rem; }
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -2113,13 +2168,9 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     }
 
     // Defined Shop Catalog
-    const shopItems = {
+        const shopItems = {
         tags: [
-            /*
-            ====================================================================
-            1. CHAT TAGS - LEGACY & SOCIAL
-            ====================================================================
-            */
+            /* EXISTING TAGS (DO NOT DELETE) */
             { id: 'tag_pro', name: '[PRO]', price: 100, type: 'tag' },
             { id: 'tag_gamer', name: '[GAMER]', price: 50, type: 'tag' },
             { id: 'tag_star', name: '[✨]', price: 125, type: 'tag' },
@@ -2177,14 +2228,32 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             { id: 'tag_error', name: '[ERROR]', price: 404, type: 'tag' },
             { id: 'tag_system', name: '[ROOT]', price: 9999, type: 'tag' },
             { id: 'tag_player', name: '[PLAYER]', price: 10, type: 'tag' },
-            { id: 'tag_user', name: '[USER]', price: 1, type: 'tag' }
+            { id: 'tag_user', name: '[USER]', price: 1, type: 'tag' },
+
+            /* NEW: ACHIEVEMENT & GAME-SPECIFIC TAGS (50+ Items Start) */
+            // Rank Achievements
+            { id: 'tag_champ', name: '[CHAMPION]', price: 2000, type: 'tag', req: 'top:1', reqText: 'Must be #1 on Leaderboard' },
+            { id: 'tag_royal', name: '[ROYALTY]', price: 1500, type: 'tag', req: 'top:3', reqText: 'Must be Top 3 Rank' },
+            { id: 'tag_global', name: '[GLOBAL]', price: 1000, type: 'tag', req: 'top:10', reqText: 'Must be Top 10 Rank' },
+            
+            // Game Mastery (Requires specific game play)
+            { id: 'tag_ovo_master', name: '[OvO GOD]', price: 800, type: 'tag', req: 'played:1', reqText: 'Must have played OvO' },
+            { id: 'tag_bitlife', name: '[LIVING LARGE]', price: 600, type: 'tag', req: 'played:13', reqText: 'Must have played BitLife' },
+            { id: 'tag_drivemad', name: '[UNSTOPPABLE]', price: 700, type: 'tag', req: 'played:5', reqText: 'Must have played Drive Mad' },
+            { id: 'tag_retro', name: '[QUARTERBACK]', price: 500, type: 'tag', req: 'played:8', reqText: 'Must have played Retro Bowl' },
+            { id: 'tag_slope', name: '[DOWNHILL]', price: 450, type: 'tag', req: 'played:19', reqText: 'Must have played Slope' },
+            { id: 'tag_subway', name: '[SURFER]', price: 400, type: 'tag', req: 'played:40', reqText: 'Must have played Subway Surfers' },
+            { id: 'tag_1v1', name: '[CRACKED]', price: 900, type: 'tag', req: 'played:60', reqText: 'Must have played 1v1.LOL' },
+            { id: 'tag_hook', name: '[SPIDERMAN]', price: 350, type: 'tag', req: 'played:72', reqText: 'Must have played Stickman Hook' },
+            
+            // Time & Wealth Stats
+            { id: 'tag_addict', name: '[NO LIFER]', price: 5000, type: 'tag', req: 'mins:10000', reqText: 'Play for 10,000+ Minutes' },
+            { id: 'tag_grinder', name: '[THE GRINDER]', price: 1000, type: 'tag', req: 'mins:1000', reqText: 'Play for 1,000+ Minutes' },
+            { id: 'tag_millionaire', name: '[MILLIONAIRE]', price: 10000, type: 'tag', req: 'coins:10000', reqText: 'Hold 10,000 Coins' },
+            { id: 'tag_spent', name: '[BIG SPENDER]', price: 0, type: 'tag', req: 'mins:500', reqText: 'Play for 500+ Minutes' }
         ],
         styles: [
-            /*
-            ====================================================================
-            2. FONT COLORS - VIVID SPECTRUM
-            ====================================================================
-            */
+            /* EXISTING COLORS (DO NOT DELETE) */
             { id: 'color_blue', name: 'Cool Blue', price: 150, type: 'color', value: '#3b82f6' },
             { id: 'color_rose', name: 'Rose Red', price: 200, type: 'color', value: '#f43f5e' },
             { id: 'color_neon', name: 'Neon Green', price: 210, type: 'color', value: '#22c55e' },
@@ -2205,11 +2274,14 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             { id: 'color_diamond', name: 'Diamond White', price: 1500, type: 'color', value: '#ffffff' },
             { id: 'color_black', name: 'Void Black', price: 2500, type: 'color', value: '#000000' },
 
-            /*
-            ====================================================================
-            3. NAME ANIMATIONS - PRESTIGE EFFECTS
-            ====================================================================
-            */
+            /* NEW: EXOTIC COLORS */
+            { id: 'color_vapor', name: 'Vapor Wave', price: 1200, type: 'color', value: '#ff71ce' },
+            { id: 'color_matrix', name: 'Matrix Green', price: 1100, type: 'color', value: '#00ff41' },
+            { id: 'color_blood', name: 'Blood Moon', price: 1300, type: 'color', value: '#8a0303' },
+            { id: 'color_ocean', name: 'Deep Sea', price: 900, type: 'color', value: '#0077be' },
+            { id: 'color_toxic', name: 'Toxic Waste', price: 950, type: 'color', value: '#ccff00' },
+
+            /* EXISTING ANIMATIONS (DO NOT DELETE) */
             { id: 'style_sparkle', name: 'Sparkly Name', price: 500, type: 'style', value: 'sparkle' },
             { id: 'style_glow', name: 'Glow Name', price: 550, type: 'style', value: 'glow' },
             { id: 'style_italic', name: 'Italic Name', price: 223, type: 'style', value: 'italic' },
@@ -2219,11 +2291,21 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             { id: 'style_wavy', name: 'Wavy Name', price: 1200, type: 'style', value: 'wavy' },
             { id: 'style_jitter', name: 'Jittery Name', price: 1500, type: 'style', value: 'jitter' },
 
-            /*
-            ====================================================================
-            4. PROFILE BORDERS - PRESTIGE FRAMES
-            ====================================================================
-            */
+            /* NEW: ELITE EFFECTS */
+            { id: 'style_rainbow_text', name: 'Rainbow Text', price: 10000, type: 'style', value: 'rainbow', req: 'top:1', reqText: 'Only for Rank #1' },
+            { id: 'style_ghost', name: 'Fade/Ghost', price: 2500, type: 'style', value: 'ghost' },
+            { id: 'style_pulse', name: 'Pulse Glow', price: 3000, type: 'style', value: 'pulse' },
+
+            /* NEW: FONT FAMILIES */
+            { id: 'font_orbitron', name: 'Cyber Font', price: 800, type: 'font', value: 'orbitron' },
+            { id: 'font_mono', name: 'Hacker Mono', price: 600, type: 'font', value: 'mono' },
+            { id: 'font_bangers', name: 'Hero Font', price: 750, type: 'font', value: 'bangers' },
+            { id: 'font_cursive', name: 'Fancy Script', price: 950, type: 'font', value: 'cursive' },
+            { id: 'font_pixel', name: 'Retro Pixel', price: 1200, type: 'font', value: 'pixel' },
+            { id: 'font_pressstart', name: '8-Bit Font', price: 1500, type: 'font', value: '8bit' },
+            { id: 'font_lobster', name: 'Lobster Font', price: 850, type: 'font', value: 'lobster' },
+
+            /* EXISTING BORDERS (DO NOT DELETE) */
             { id: 'border_gold', name: 'Gold Border', price: 800, type: 'border', value: 'gold' },
             { id: 'border_silver', name: 'Silver Border', price: 600, type: 'border', value: 'silver' },
             { id: 'border_bronze', name: 'Bronze Border', price: 400, type: 'border', value: 'bronze' },
@@ -2234,7 +2316,14 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             { id: 'border_emerald', name: 'Emerald Border', price: 1200, type: 'border', value: 'emerald' },
             { id: 'border_sapphire', name: 'Sapphire Border', price: 1400, type: 'border', value: 'sapphire' },
             { id: 'border_rainbow', name: 'Rainbow Border', price: 5000, type: 'border', value: 'rainbow' },
-            { id: 'border_none', name: 'Standard Border', price: 0, type: 'border', value: 'none' }
+            { id: 'border_none', name: 'Standard Border', price: 0, type: 'border', value: 'none' },
+
+            /* NEW: ELITE BORDERS */
+            { id: 'border_shadow', name: 'Shadow Aura', price: 5500, type: 'border', value: 'shadow' },
+            { id: 'border_obsidian', name: 'Obsidian Frame', price: 7000, type: 'border', value: 'obsidian', req: 'coins:20000', reqText: 'Hold 20k Coins' },
+            { id: 'border_glitch', name: 'Static Border', price: 4500, type: 'border', value: 'glitch' },
+            { id: 'border_fire', name: 'Flame Border', price: 8000, type: 'border', value: 'fire' },
+            { id: 'border_frozen', name: 'Ice Frame', price: 8000, type: 'border', value: 'ice' }
         ]
     };
 
@@ -3099,77 +3188,77 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
      * ========================================================================
      */
     function renderMessages() {
-      const body = document.getElementById('chatBody');
-      if (!body) return;
+  const body = document.getElementById('chatBody');
+  if (!body) return;
 
-      const isAtBottom = (body.scrollHeight - body.scrollTop - body.clientHeight < 150);
-      let source = (activeChannel === 'global') ? allMessages : staffMessages;
+  const isAtBottom = (body.scrollHeight - body.scrollTop - body.clientHeight < 150);
+  let source = (activeChannel === 'global') ? allMessages : staffMessages;
 
-      body.innerHTML = source.map(function(msg) {
-        const isOwn = msg.username === currentUser;
-        const isBlockedStr = (msg.content === "Message blocked due to policy violations");
-        const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
-        
-        // Match Parent IDs securely
-        const parentMsg = msg.parent_id ? source.find(function(m) { return m.id == msg.parent_id; }) : null;
-        
-        const isPM = (msg.recipient !== null && msg.recipient !== undefined);
-        const recipientLabel = (isPM && isModUser) ? ` to <b>${msg.recipient}</b>` : '';
-        
-        const isAdminSender = (msg.username === 'Derrick');
-        const isModSender = modUsernames.has(msg.username) && !isAdminSender;
-        
-        let parsedContent = "";
-        if (isBlockedStr) {
-          parsedContent = msg.content;
-        } else {
-            parsedContent = window.marked ? marked.parse(msg.content) : msg.content;
-        }
-
-        let highlightClass = (msg.content.includes('@everyone')) ? 'highlight' : '';
-
-        const canDM = (isModUser || (isPM && (isModSender || isAdminSender) && msg.recipient === currentUser));
-        
-        const prof = profilesCache[msg.username] || {};
-        const nameColor = prof.name_color || '';
-        const nameStyleClass = prof.name_style ? 'name-' + prof.name_style : '';
-
-        const tagText = prof.selected_tag || '';
-        const borderClass = (prof.leaderboard_border && prof.leaderboard_border !== 'none') ? 'border-' + prof.leaderboard_border : '';
-
-        let ownClass = isOwn ? 'own' : '';
-        let privateClass = isPM ? 'private' : '';
-        let blockedClass = isBlockedStr ? 'blocked-content' : '';
-        let staffRoomClass = (activeChannel === 'staff') ? 'staff-msg' : '';
-
-        return `
-          <div class="message ${ownClass} ${privateClass} ${blockedClass} ${staffRoomClass} ${borderClass} ${highlightClass}">
-            ${isPM ? `<div class="dm-banner">PRIVATE MESSAGE${recipientLabel}</div>` : ''}
-            <div class="msg-header">
-              <span class="msg-user">
-                ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px; font-style: normal; text-decoration: none;">${tagText}</span>` : ''}
-                <span class="${nameStyleClass}" style="color: ${nameColor || 'inherit'}">${msg.username}</span>
-                ${isAdminSender ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
-                ${isModSender ? '<span class="mod-badge">MOD</span>' : ''}
-              </span>
-              <span class="msg-time">${time}</span>
-            </div>
-            ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${parentMsg.content.substring(0, 30)}...</div>` : ''}
-            <div class="msg-content">${parsedContent}</div>
-            <div class="msg-footer">
-                <span class="msg-link" onclick="setReply('${msg.id}', '${msg.username}')">Reply</span>
-                ${(canDM && !isOwn) ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
-                ${isModUser ? `<span class="msg-link delete" onclick="deleteMessage('${msg.id}')">Delete</span>` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      if (isAtBottom) {
-        body.scrollTop = body.scrollHeight;
-      }
+  body.innerHTML = source.map(function(msg) {
+    const isOwn = msg.username === currentUser;
+    const isBlockedStr = (msg.content === "Message blocked due to policy violations");
+    const time = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...';
+    
+    // Match Parent IDs securely
+    const parentMsg = msg.parent_id ? source.find(function(m) { return m.id == msg.parent_id; }) : null;
+    
+    const isPM = (msg.recipient !== null && msg.recipient !== undefined);
+    const recipientLabel = (isPM && isModUser) ? ` to <b>${msg.recipient}</b>` : '';
+    
+    const isAdminSender = (msg.username === 'Derrick');
+    const isModSender = modUsernames.has(msg.username) && !isAdminSender;
+    
+    let parsedContent = "";
+    if (isBlockedStr) {
+      parsedContent = msg.content;
+    } else {
+        parsedContent = window.marked ? marked.parse(msg.content) : msg.content;
     }
 
+    let highlightClass = (msg.content.includes('@everyone')) ? 'highlight' : '';
+
+    const canDM = (isModUser || (isPM && (isModSender || isAdminSender) && msg.recipient === currentUser));
+    
+    const prof = profilesCache[msg.username] || {};
+    const nameColor = prof.name_color || '';
+    const nameStyleClass = prof.name_style ? 'name-' + prof.name_style : '';
+    const nameFontClass = prof.name_font ? 'font-' + prof.name_font : '';
+
+    const tagText = prof.selected_tag || '';
+    const borderClass = (prof.leaderboard_border && prof.leaderboard_border !== 'none') ? 'border-' + prof.leaderboard_border : '';
+
+    let ownClass = isOwn ? 'own' : '';
+    let privateClass = isPM ? 'private' : '';
+    let blockedClass = isBlockedStr ? 'blocked-content' : '';
+    let staffRoomClass = (activeChannel === 'staff') ? 'staff-msg' : '';
+
+    return `
+      <div class="message ${ownClass} ${privateClass} ${blockedClass} ${staffRoomClass} ${borderClass} ${highlightClass}">
+        ${isPM ? `<div class="dm-banner">PRIVATE MESSAGE${recipientLabel}</div>` : ''}
+        <div class="msg-header">
+          <span class="msg-user">
+            ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px; font-style: normal; text-decoration: none;">${tagText}</span>` : ''}
+            <span class="${nameStyleClass} ${nameFontClass}" style="color: ${nameColor || 'inherit'}">${msg.username}</span>
+            ${isAdminSender ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
+            ${isModSender ? '<span class="mod-badge">MOD</span>' : ''}
+          </span>
+          <span class="msg-time">${time}</span>
+        </div>
+        ${parentMsg ? `<div class="msg-parent">Replying to: <b>${parentMsg.username}</b>: ${parentMsg.content.substring(0, 30)}...</div>` : ''}
+        <div class="msg-content">${parsedContent}</div>
+        <div class="msg-footer">
+            <span class="msg-link" onclick="setReply('${msg.id}', '${msg.username}')">Reply</span>
+            ${(canDM && !isOwn) ? `<span class="msg-link" onclick="setDM('${msg.username}')">DM</span>` : ''}
+            ${isModUser ? `<span class="msg-link delete" onclick="deleteMessage('${msg.id}')">Delete</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (isAtBottom) {
+    body.scrollTop = body.scrollHeight;
+  }
+}
     document.getElementById('chatBody').addEventListener('load', (e) => {
         if (e.target.tagName === 'IMG') {
             const body = document.getElementById('chatBody');
@@ -3525,10 +3614,11 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             if (data.leaderboard_border && data.leaderboard_border !== 'none') pTrigger.classList.add('border-' + data.leaderboard_border);
             document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
 
-            const pMenuName = document.getElementById('pMenuName');
-            pMenuName.style.color = data.name_color || 'inherit';
-            pMenuName.className = 'menu-name'; 
-            if (data.name_style) pMenuName.classList.add('name-' + data.name_style);
+           const pMenuName = document.getElementById('pMenuName');
+pMenuName.style.color = data.name_color || 'inherit';
+pMenuName.className = 'menu-name'; 
+if (data.name_style) pMenuName.classList.add('name-' + data.name_style);
+if (data.name_font) pMenuName.classList.add('font-' + data.name_font);
             const displayName = savedName || currentUser;
             pMenuName.innerHTML = data.selected_tag ? `<span style="opacity: 0.6; font-size: 0.75rem; font-weight: 400; margin-right: 5px;">${data.selected_tag}</span>${displayName}` : displayName;
             document.getElementById('pMenuMins').textContent = (data.total_minutes || 0) + 'm';
@@ -3586,46 +3676,139 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         renderShopItems(tab);
     }
 
-    function renderShopItems(type) {
-        const grid = document.getElementById('shopGrid');
-        let items = (type === 'tags') ? shopItems.tags : shopItems.styles;
-        const inventory = profileData.inventory || [];
+// Add this new function to handle shop locks
+function checkItemRequirement(item) {
+    if (!item.req) return true;
+    const [type, value] = item.req.split(':');
+    const numVal = parseInt(value);
 
-        grid.innerHTML = items.map(function(item) {
-            const isOwned = inventory.includes(item.id);
-            const isEquipped = (profileData.selected_tag === item.name || profileData.name_color === item.value || profileData.name_style === item.value || profileData.leaderboard_border === item.value);
-            let statusText = isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : item.price + ' 🪙';
-            let visualClass = (item.type === 'border' && item.value !== 'none') ? 'border-' + item.value : '';
-            let previewStyling = (item.type === 'color') ? `style="color: ${item.value}"` : '';
-            let previewClassAdd = (item.type === 'style') ? `name-${item.value}` : '';
-            
-            return `
-                <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''} ${visualClass}" onclick="handleItemAction('${item.id}', ${isOwned})">
-                    <div class="item-preview ${previewClassAdd}" ${previewStyling}>${item.name}</div>
-                    <div class="item-price">${statusText}</div>
-                </div>`;
-        }).join('');
+    // 1. Check Coin Balance
+    if (type === 'coins') return (profileData.coins || 0) >= numVal;
+    
+    // 2. Check Playtime (Minutes)
+    if (type === 'mins') return (profileData.total_minutes || 0) >= numVal;
+    
+    // 3. Check Game History (Checks if ID is in recently_played)
+    if (type === 'played') {
+        const history = profileData.recently_played || [];
+        return history.includes(numVal);
     }
+    
+    // 4. Check Leaderboard Rank
+    if (type === 'top') {
+        // We find our rank from the most recent leaderboard fetch
+        if (window.currentUserRank) return window.currentUserRank <= numVal;
+        return false; 
+    }
+    return true;
+}
+    
+    function renderShopItems(type) {
+    const grid = document.getElementById('shopGrid');
+    let items = (type === 'tags') ? shopItems.tags : shopItems.styles;
+    const inventory = profileData.inventory || [];
+
+    grid.innerHTML = items.map(function(item) {
+        const isOwned = inventory.includes(item.id);
+        const reqMet = checkItemRequirement(item); // Uses your requirement logic
+        
+        // Determine if equipped
+        const isEquipped = (
+            profileData.selected_tag === item.name || 
+            profileData.name_color === item.value || 
+            profileData.name_style === item.value || 
+            profileData.leaderboard_border === item.value ||
+            profileData.name_font === item.value
+        );
+
+        // Prep the visual preview
+        let previewStyle = "";
+        let previewClass = "";
+        
+        if (item.type === 'color') previewStyle = `style="color: ${item.value}"`;
+        if (item.type === 'style') previewClass = `name-${item.value}`;
+        if (item.type === 'font') previewClass = `font-${item.value}`;
+        if (item.type === 'tag') previewClass = "tag-preview";
+
+        // Status Button Text
+        let statusDisplay = isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : `${item.price} 🪙`;
+
+        return `
+            <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''} ${!isOwned && !reqMet ? 'locked' : ''}" 
+                 onclick="handleItemAction('${item.id}', ${isOwned})">
+                
+                <!-- The Visual Preview -->
+                <div class="item-preview ${previewClass}" ${previewStyle}>
+                    ${item.name}
+                </div>
+
+                <!-- Price or Owned Status -->
+                <div class="item-price">${statusDisplay}</div>
+
+                <!-- Requirement Text (Only shows if NOT owned) -->
+                ${(!isOwned && item.req) ? `
+                    <span class="shop-req-text ${reqMet ? 'req-met' : 'req-not-met'}">
+                        ${reqMet ? '✅ Ready' : '❌ ' + item.reqText}
+                    </span>
+                ` : ''}
+            </div>`;
+    }).join('');
+}
 
     async function handleItemAction(itemId, isOwned) {
-        const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
-        if (!item) return;
-        if (isOwned) {
-            let update = {};
-            if (item.type === 'tag') update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
-            if (item.type === 'color') update.name_color = (profileData.name_color === item.value ? null : item.value);
-            if (item.type === 'style') update.name_style = (profileData.name_style === item.value ? null : item.value);
-            if (item.type === 'border') update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
-            await _supabase.from('profiles').update(update).eq('username', currentUser);
-            await loadProfile(); renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
-        } else {
-            if (profileData.coins < item.price) return alert("Not enough coins!");
-            if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
-                await _supabase.from('profiles').update({ coins: profileData.coins - item.price, inventory: [...(profileData.inventory || []), item.id] }).eq('username', currentUser);
-                await loadProfile(); renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
-            }
+    // 1. Locate the item in the catalog
+    const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
+    if (!item) return;
+
+    if (isOwned) {
+        // 2. EQUIPPING LOGIC (Toggle existing items)
+        let update = {};
+        
+        if (item.type === 'tag') 
+            update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
+            
+        if (item.type === 'color') 
+            update.name_color = (profileData.name_color === item.value ? null : item.value);
+            
+        if (item.type === 'style') 
+            update.name_style = (profileData.name_style === item.value ? null : item.value);
+            
+        if (item.type === 'border') 
+            update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
+            
+        // NEW: Toggle Font Support
+        if (item.type === 'font') 
+            update.name_font = (profileData.name_font === item.value ? null : item.value); 
+        
+        await _supabase.from('profiles').update(update).eq('username', currentUser);
+        await loadProfile(); 
+        renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
+
+    } else {
+        // 3. PURCHASE LOGIC
+        
+        // CHECK REQUIREMENTS (Rank, Minutes, Played Games)
+        if (!checkItemRequirement(item)) {
+            return alert(`🚫 LOCKED!\n\nTo buy this, you must: ${item.reqText}`);
+        }
+
+        // CHECK COINS
+        if (profileData.coins < item.price) {
+            return alert(`💸 INSUFFICIENT COINS!\n\nYou need ${item.price - profileData.coins} more 🪙.`);
+        }
+        
+        // CONFIRM & CHARGE
+        if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
+            await _supabase.from('profiles').update({ 
+                coins: profileData.coins - item.price, 
+                inventory: [...(profileData.inventory || []), item.id] 
+            }).eq('username', currentUser);
+
+            await loadProfile(); 
+            renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
         }
     }
+}
 
     async function toggleFavorite(gameId) {
         event.stopPropagation();
@@ -3687,26 +3870,30 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
       await _supabase.from('profiles').update({ total_minutes: nextTotal, coins: newCoins }).eq('username', currentUser);
     }
 
-    async function fetchLeaderboard() {
-      const { data } = await _supabase.from('leaderboard').select('username, minutes').order('minutes', { ascending: false }).limit(10);
-      if (data) {
-        const body = document.getElementById('leaderboardBody');
-        body.innerHTML = data.map(function(entry, index) {
-            const isMe = (entry.username === currentUser);
-            const prof = profilesCache[entry.username] || {};
-            const borderClass = (prof.leaderboard_border && prof.leaderboard_border !== 'none') ? 'border-' + prof.leaderboard_border : '';
-            return `
-              <tr class="${isMe ? 'current-user' : ''} ${borderClass}">
-                <td class="rank-cell">#${index + 1}</td>
-                <td class="user-cell">
-                    ${prof.selected_tag ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${prof.selected_tag}</span>` : ''}
-                    <span class="name-${prof.name_style || ''}" style="color: ${prof.name_color || 'inherit'}">${entry.username}</span>
-                </td>
-                <td class="mins-cell">${entry.minutes}m</td>
-              </tr>`;
-        }).join('');
-      }
-    }
+  async function fetchLeaderboard() {
+  const { data } = await _supabase.from('leaderboard').select('username, minutes').order('minutes', { ascending: false }).limit(50);
+  if (data) {
+    // TRACK RANK FOR SHOP
+    const myRank = data.findIndex(e => e.username === currentUser);
+    window.currentUserRank = myRank !== -1 ? myRank + 1 : 999;
+
+    const body = document.getElementById('leaderboardBody');
+    body.innerHTML = data.slice(0, 10).map(function(entry, index) {
+        const isMe = (entry.username === currentUser);
+        const prof = profilesCache[entry.username] || {};
+        const borderClass = (prof.leaderboard_border && prof.leaderboard_border !== 'none') ? 'border-' + prof.leaderboard_border : '';
+        return `
+          <tr class="${isMe ? 'current-user' : ''} ${borderClass}">
+            <td class="rank-cell">#${index + 1}</td>
+            <td class="user-cell">
+                ${prof.selected_tag ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${prof.selected_tag}</span>` : ''}
+                <span class="name-${prof.name_style || ''} font-${prof.name_font || ''}" style="color: ${prof.name_color || 'inherit'}">${entry.username}</span>
+            </td>
+            <td class="mins-cell">${entry.minutes}m</td>
+          </tr>`;
+    }).join('');
+  }
+}
 
     setInterval(trackMinutes, 60000); setInterval(function() { checkActiveBan(true); }, 15000);
     trackMinutes(); fetchLeaderboard();
