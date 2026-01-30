@@ -3733,49 +3733,48 @@ function checkItemRequirement(item) {
     
     function renderShopItems(type) {
     const grid = document.getElementById('shopGrid');
+    if (!grid) return;
+    
     let items = (type === 'tags') ? shopItems.tags : shopItems.styles;
     const inventory = profileData.inventory || [];
 
     grid.innerHTML = items.map(function(item) {
         const isOwned = inventory.includes(item.id);
-        const reqMet = checkItemRequirement(item); // Uses your requirement logic
+        const reqMet = checkItemRequirement(item);
         
-        // Determine if equipped
-        const isEquipped = (
-            profileData.selected_tag === item.name || 
-            profileData.name_color === item.value || 
-            profileData.name_style === item.value || 
-            profileData.leaderboard_border === item.value ||
-            profileData.name_font === item.value
-        );
+        // --- FIXED: STRICT CATEGORY CHECKING ---
+        // This stops tags from showing as equipped just because a color is null/matches.
+        let isEquipped = false;
+        if (isOwned) {
+            if (item.type === 'tag') isEquipped = (profileData.selected_tag === item.name);
+            else if (item.type === 'color') isEquipped = (profileData.name_color === item.value);
+            else if (item.type === 'style') isEquipped = (profileData.name_style === item.value);
+            else if (item.type === 'border') isEquipped = (profileData.leaderboard_border === item.value);
+            else if (item.type === 'font') isEquipped = (profileData.name_font === item.value);
+        }
 
-        // Prep the visual preview
+        // --- PREVIEW LOGIC ---
         let previewStyle = "";
         let previewClass = "";
         
         if (item.type === 'color') previewStyle = `style="color: ${item.value}"`;
         if (item.type === 'style') previewClass = `name-${item.value}`;
         if (item.type === 'font') previewClass = `font-${item.value}`;
-        // FIX: Added the logic to apply border classes to the preview box
         if (item.type === 'border') previewClass = `border-${item.value}`;
         if (item.type === 'tag') previewClass = "tag-preview";
 
-        // Status Button Text
         let statusDisplay = isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : `${item.price} 🪙`;
 
         return `
             <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''} ${!isOwned && !reqMet ? 'locked' : ''}" 
                  onclick="handleItemAction('${item.id}', ${isOwned})">
                 
-                <!-- The Visual Preview -->
                 <div class="item-preview ${previewClass}" ${previewStyle}>
-                    ${item.name}
+                    <span style="padding: 5px;">${item.name}</span>
                 </div>
 
-                <!-- Price or Owned Status -->
                 <div class="item-price">${statusDisplay}</div>
 
-                <!-- Requirement Text (Only shows if NOT owned) -->
                 ${(!isOwned && item.req) ? `
                     <span class="shop-req-text ${reqMet ? 'req-met' : 'req-not-met'}">
                         ${reqMet ? '✅ Ready' : '❌ ' + item.reqText}
@@ -3784,17 +3783,15 @@ function checkItemRequirement(item) {
             </div>`;
     }).join('');
 }
- async function handleItemAction(itemId, isOwned) {
-    // 1. Locate the item in the catalog
+
+async function handleItemAction(itemId, isOwned) {
     const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
     if (!item) return;
 
     if (isOwned) {
-        // 2. EQUIPPING LOGIC (Optimistic Swapping & Toggling)
         let prop = '';
         let valToCompare = '';
         
-        // Define which profile property we are touching
         if (item.type === 'tag') { prop = 'selected_tag'; valToCompare = item.name; }
         else if (item.type === 'color') { prop = 'name_color'; valToCompare = item.value; }
         else if (item.type === 'style') { prop = 'name_style'; valToCompare = item.value; }
@@ -3802,44 +3799,35 @@ function checkItemRequirement(item) {
         else if (item.type === 'font') { prop = 'name_font'; valToCompare = item.value; }
 
         if (prop) {
-            // This logic handles both toggling (OFF) and swapping (A to B)
-            // If already equipped, set to null. If different, set to new value.
+            // Toggles OFF if same item, Swaps ON if different item
             const newVal = (profileData[prop] === valToCompare ? null : valToCompare);
             
-            // --- OPTIMISTIC UI: Update local data immediately for "instant" feel ---
+            // --- OPTIMISTIC UI: Update instantly ---
             profileData[prop] = newVal;
-            
-            // Refresh shop immediately so the "Equipped" badge moves instantly
             renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
             
-            // Background Sync with Database
-            const update = { [prop]: newVal };
-            const { error } = await _supabase.from('profiles').update(update).eq('username', currentUser);
+            // Sync with DB in background
+            const { error } = await _supabase.from('profiles').update({ [prop]: newVal }).eq('username', currentUser);
             
-            // Final sync to ensure everything is perfect
+            // Final Refresh to ensure profile menu and shop stay in sync
             await loadProfile(); 
             renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
         }
 
     } else {
-        // 3. PURCHASE LOGIC (Preserved exactly as requested)
-        
-        // CHECK REQUIREMENTS (Rank, Minutes, Played Games)
+        // --- PURCHASE LOGIC (Maintained exactly as requested) ---
         if (!checkItemRequirement(item)) {
             return alert(`🚫 LOCKED!\n\nTo buy this, you must: ${item.reqText}`);
         }
 
-        // CHECK COINS
         if ((profileData.coins || 0) < item.price) {
             return alert(`💸 INSUFFICIENT COINS!\n\nYou need ${item.price - (profileData.coins || 0)} more 🪙.`);
         }
         
-        // CONFIRM & CHARGE
         if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
             const newCoins = (profileData.coins || 0) - item.price;
             const newInventory = [...(profileData.inventory || []), item.id];
 
-            // Optimistic Purchase Update
             profileData.coins = newCoins;
             profileData.inventory = newInventory;
             renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
@@ -3854,7 +3842,6 @@ function checkItemRequirement(item) {
         }
     }
 }
-
     async function toggleFavorite(gameId) {
         event.stopPropagation();
         let favs = profileData.favorites || [];
