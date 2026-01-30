@@ -1674,6 +1674,35 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     .font-bangers { font-family: 'Bangers', cursive; }
     .font-cursive { font-family: 'Dancing Script', cursive; }
     .font-pixel { font-family: 'Press Start 2P', cursive; font-size: 0.6rem; }
+
+    /* --- Missing Border Styles --- */
+.border-shadow { border: 3px solid #111 !important; box-shadow: 0 0 20px rgba(0, 0, 0, 0.9); }
+.border-obsidian { border: 3px solid #1a1a1a !important; box-shadow: 0 0 15px #4f46e5; }
+.border-glitch { border: 3px solid #fff !important; animation: jitter 0.1s infinite; box-shadow: 2px 2px 0 #ff00c1, -2px -2px 0 #00fff9; }
+.border-fire { border: 3px solid #f97316 !important; box-shadow: 0 0 20px #ef4444, inset 0 0 10px #f59e0b; }
+.border-ice { border: 3px solid #06b6d4 !important; box-shadow: 0 0 20px #3b82f6, inset 0 0 5px #fff; }
+
+/* --- Missing Text Effects --- */
+.name-rainbow {
+    background-image: linear-gradient(to left, violet, indigo, blue, green, yellow, orange, red);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 2s linear infinite;
+    background-size: 200% auto;
+    font-weight: 800;
+}
+.name-ghost { opacity: 0.4; filter: blur(0.5px); }
+.name-pulse { animation: pulseGlow 2s infinite; font-weight: 800; }
+
+@keyframes pulseGlow {
+    0% { filter: drop-shadow(0 0 2px currentColor); }
+    50% { filter: drop-shadow(0 0 10px currentColor); }
+    100% { filter: drop-shadow(0 0 2px currentColor); }
+}
+
+/* --- Missing Font Classes --- */
+.font-8bit { font-family: 'Press Start 2P', cursive; font-size: 0.6rem; }
+.font-lobster { font-family: 'Lobster', cursive; }
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -3728,6 +3757,8 @@ function checkItemRequirement(item) {
         if (item.type === 'color') previewStyle = `style="color: ${item.value}"`;
         if (item.type === 'style') previewClass = `name-${item.value}`;
         if (item.type === 'font') previewClass = `font-${item.value}`;
+        // FIX: Added the logic to apply border classes to the preview box
+        if (item.type === 'border') previewClass = `border-${item.value}`;
         if (item.type === 'tag') previewClass = "tag-preview";
 
         // Status Button Text
@@ -3754,7 +3785,6 @@ function checkItemRequirement(item) {
             </div>`;
     }).join('');
 }
-
     async function handleItemAction(itemId, isOwned) {
     // 1. Locate the item in the catalog
     const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
