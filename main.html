@@ -1644,6 +1644,36 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         display: block;
     }
     .item-req.met { color: var(--accent); } /* Green for met */
+
+        /* Requirement Text Styling */
+    .shop-req-text {
+        font-size: 0.65rem;
+        display: block;
+        margin-top: 5px;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 2px 5px;
+        border-radius: 4px;
+        background: rgba(0,0,0,0.3);
+    }
+    .req-met { color: #22c55e; }    /* Green */
+    .req-not-met { color: #ef4444; } /* Red */
+
+    /* Locked Item Visuals */
+    .shop-item.locked {
+        border: 1px dashed #ef4444;
+        opacity: 0.8;
+    }
+    .shop-item.locked .item-price {
+        color: #ef4444;
+    }
+
+    /* Font Preview Helpers */
+    .font-orbitron { font-family: 'Orbitron', sans-serif; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .font-bangers { font-family: 'Bangers', cursive; }
+    .font-cursive { font-family: 'Dancing Script', cursive; }
+    .font-pixel { font-family: 'Press Start 2P', cursive; font-size: 0.6rem; }
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -3646,45 +3676,111 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     }
 
     function renderShopItems(type) {
-        const grid = document.getElementById('shopGrid');
-        let items = (type === 'tags') ? shopItems.tags : shopItems.styles;
-        const inventory = profileData.inventory || [];
+    const grid = document.getElementById('shopGrid');
+    let items = (type === 'tags') ? shopItems.tags : shopItems.styles;
+    const inventory = profileData.inventory || [];
 
-        grid.innerHTML = items.map(function(item) {
-            const isOwned = inventory.includes(item.id);
-            const isEquipped = (profileData.selected_tag === item.name || profileData.name_color === item.value || profileData.name_style === item.value || profileData.leaderboard_border === item.value);
-            let statusText = isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : item.price + ' 🪙';
-            let visualClass = (item.type === 'border' && item.value !== 'none') ? 'border-' + item.value : '';
-            let previewStyling = (item.type === 'color') ? `style="color: ${item.value}"` : '';
-            let previewClassAdd = (item.type === 'style') ? `name-${item.value}` : '';
-            
-            return `
-                <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''} ${visualClass}" onclick="handleItemAction('${item.id}', ${isOwned})">
-                    <div class="item-preview ${previewClassAdd}" ${previewStyling}>${item.name}</div>
-                    <div class="item-price">${statusText}</div>
-                </div>`;
-        }).join('');
-    }
+    grid.innerHTML = items.map(function(item) {
+        const isOwned = inventory.includes(item.id);
+        const reqMet = checkItemRequirement(item); // Uses your requirement logic
+        
+        // Determine if equipped
+        const isEquipped = (
+            profileData.selected_tag === item.name || 
+            profileData.name_color === item.value || 
+            profileData.name_style === item.value || 
+            profileData.leaderboard_border === item.value ||
+            profileData.name_font === item.value
+        );
+
+        // Prep the visual preview
+        let previewStyle = "";
+        let previewClass = "";
+        
+        if (item.type === 'color') previewStyle = `style="color: ${item.value}"`;
+        if (item.type === 'style') previewClass = `name-${item.value}`;
+        if (item.type === 'font') previewClass = `font-${item.value}`;
+        if (item.type === 'tag') previewClass = "tag-preview";
+
+        // Status Button Text
+        let statusDisplay = isOwned ? (isEquipped ? 'EQUIPPED' : 'OWNED') : `${item.price} 🪙`;
+
+        return `
+            <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''} ${!isOwned && !reqMet ? 'locked' : ''}" 
+                 onclick="handleItemAction('${item.id}', ${isOwned})">
+                
+                <!-- The Visual Preview -->
+                <div class="item-preview ${previewClass}" ${previewStyle}>
+                    ${item.name}
+                </div>
+
+                <!-- Price or Owned Status -->
+                <div class="item-price">${statusDisplay}</div>
+
+                <!-- Requirement Text (Only shows if NOT owned) -->
+                ${(!isOwned && item.req) ? `
+                    <span class="shop-req-text ${reqMet ? 'req-met' : 'req-not-met'}">
+                        ${reqMet ? '✅ Ready' : '❌ ' + item.reqText}
+                    </span>
+                ` : ''}
+            </div>`;
+    }).join('');
+}
 
     async function handleItemAction(itemId, isOwned) {
-        const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
-        if (!item) return;
-        if (isOwned) {
-            let update = {};
-            if (item.type === 'tag') update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
-            if (item.type === 'color') update.name_color = (profileData.name_color === item.value ? null : item.value);
-            if (item.type === 'style') update.name_style = (profileData.name_style === item.value ? null : item.value);
-            if (item.type === 'border') update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
-            await _supabase.from('profiles').update(update).eq('username', currentUser);
-            await loadProfile(); renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
-        } else {
-            if (profileData.coins < item.price) return alert("Not enough coins!");
-            if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
-                await _supabase.from('profiles').update({ coins: profileData.coins - item.price, inventory: [...(profileData.inventory || []), item.id] }).eq('username', currentUser);
-                await loadProfile(); renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
-            }
+    // 1. Locate the item in the catalog
+    const item = [...shopItems.tags, ...shopItems.styles].find(i => i.id === itemId);
+    if (!item) return;
+
+    if (isOwned) {
+        // 2. EQUIPPING LOGIC (Toggle existing items)
+        let update = {};
+        
+        if (item.type === 'tag') 
+            update.selected_tag = (profileData.selected_tag === item.name ? null : item.name);
+            
+        if (item.type === 'color') 
+            update.name_color = (profileData.name_color === item.value ? null : item.value);
+            
+        if (item.type === 'style') 
+            update.name_style = (profileData.name_style === item.value ? null : item.value);
+            
+        if (item.type === 'border') 
+            update.leaderboard_border = (profileData.leaderboard_border === item.value ? null : item.value);
+            
+        // NEW: Toggle Font Support
+        if (item.type === 'font') 
+            update.name_font = (profileData.name_font === item.value ? null : item.value); 
+        
+        await _supabase.from('profiles').update(update).eq('username', currentUser);
+        await loadProfile(); 
+        renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
+
+    } else {
+        // 3. PURCHASE LOGIC
+        
+        // CHECK REQUIREMENTS (Rank, Minutes, Played Games)
+        if (!checkItemRequirement(item)) {
+            return alert(`🚫 LOCKED!\n\nTo buy this, you must: ${item.reqText}`);
+        }
+
+        // CHECK COINS
+        if (profileData.coins < item.price) {
+            return alert(`💸 INSUFFICIENT COINS!\n\nYou need ${item.price - profileData.coins} more 🪙.`);
+        }
+        
+        // CONFIRM & CHARGE
+        if (confirm(`Purchase ${item.name} for ${item.price} coins?`)) {
+            await _supabase.from('profiles').update({ 
+                coins: profileData.coins - item.price, 
+                inventory: [...(profileData.inventory || []), item.id] 
+            }).eq('username', currentUser);
+
+            await loadProfile(); 
+            renderShopItems(item.type === 'tag' ? 'tags' : 'styles');
         }
     }
+}
 
     async function toggleFavorite(gameId) {
         event.stopPropagation();
