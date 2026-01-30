@@ -1196,7 +1196,8 @@
 .leaderboard-table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 0 15px; /* Increased vertical gap to make room for glows */
+    /* Increase spacing to 16px to ensure shadows have room to breathe */
+    border-spacing: 0 16px; 
     margin-top: 1rem;
 }
 
@@ -1211,87 +1212,64 @@
 .leaderboard-table td {
     padding: 1.4rem 1.2rem;
     background: var(--bg-surface);
-    /* Default border */
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+    /* Remove all standard borders to prevent clipping issues */
+    border: none !important;
     transition: all 0.2s ease;
 }
 
 /* Card rounding for rows */
 .leaderboard-table tr td:first-child {
-    border-left: 1px solid var(--border);
     border-radius: 12px 0 0 12px;
 }
-
 .leaderboard-table tr td:last-child {
-    border-right: 1px solid var(--border);
     border-radius: 0 12px 12px 0;
 }
 
-/* --- THE FIX: HIGHLIGHTED BORDERS --- */
+/* --- THE FIX: BOX-SHADOW BORDERS --- */
 
-/* 1. Make the row "pop" */
+/* This simulates a 2px border by using a shadow with 0 blur and 2px spread */
 .leaderboard-table tr[class*="border-"] td {
-    border-top-width: 3px !important;
-    border-bottom-width: 3px !important;
-    transform: scale(1.01); /* Physically makes the row larger so borders show */
+    box-shadow: 0 -2px 0 0 var(--b-color), 0 2px 0 0 var(--b-color);
 }
-.leaderboard-table tr[class*="border-"] td:first-child { border-left-width: 3px !important; }
-.leaderboard-table tr[class*="border-"] td:last-child { border-right-width: 3px !important; }
-
-/* 2. Specific Vibrant Colors + Glows */
-.leaderboard-table tr.border-gold td { 
-    border-color: #FFD700 !important; 
-    box-shadow: 0 4px 20px rgba(255, 215, 0, 0.25);
+.leaderboard-table tr[class*="border-"] td:first-child {
+    box-shadow: -2px -2px 0 0 var(--b-color), -2px 2px 0 0 var(--b-color), 0 -2px 0 0 var(--b-color), 0 2px 0 0 var(--b-color);
 }
-.leaderboard-table tr.border-silver td { 
-    border-color: #C0C0C0 !important;
-    box-shadow: 0 4px 20px rgba(192, 192, 192, 0.2);
-}
-.leaderboard-table tr.border-bronze td { 
-    border-color: #CD7F32 !important; 
-}
-.leaderboard-table tr.border-diamond td { 
-    border-color: #b9f2ff !important; 
-    box-shadow: 0 0 25px rgba(185, 242, 255, 0.4);
-}
-.leaderboard-table tr.border-ruby td { 
-    border-color: #ff1166 !important; 
-    box-shadow: 0 0 20px rgba(255, 17, 102, 0.3);
-}
-.leaderboard-table tr.border-emerald td { 
-    border-color: #10b981 !important; 
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+.leaderboard-table tr[class*="border-"] td:last-child {
+    box-shadow: 2px -2px 0 0 var(--b-color), 2px 2px 0 0 var(--b-color), 0 -2px 0 0 var(--b-color), 0 2px 0 0 var(--b-color);
 }
 
-/* 3. Special Animated Rainbow Fix for Tables */
+/* Specific Colors (using CSS variables for cleaner application) */
+.leaderboard-table tr.border-gold { --b-color: #FFD700; }
+.leaderboard-table tr.border-silver { --b-color: #C0C0C0; }
+.leaderboard-table tr.border-bronze { --b-color: #CD7F32; }
+.leaderboard-table tr.border-diamond { --b-color: #b9f2ff; }
+.leaderboard-table tr.border-ruby { --b-color: #ff1166; }
+.leaderboard-table tr.border-emerald { --b-color: #10b981; }
+.leaderboard-table tr.border-fire { --b-color: #f97316; }
+.leaderboard-table tr.border-ice { --b-color: #06b6d4; }
+
+/* Add a Glow effect if it has a border */
+.leaderboard-table tr[class*="border-"] td {
+    filter: drop-shadow(0 0 5px var(--b-color));
+}
+
+/* Special Rainbow Handling */
+.leaderboard-table tr.border-rainbow {
+    /* Rainbow is tricky with shadows, so we use a filter to color the glow instead */
+    --b-color: #fff; 
+}
 .leaderboard-table tr.border-rainbow td {
-    border-color: transparent !important;
-    background: 
-        linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box,
-        linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff) border-box !important;
-    box-shadow: 0 5px 25px rgba(255, 255, 255, 0.15);
+    background: linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box,
+                linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00) border-box !important;
+    border: 2px solid transparent !important;
 }
 
-.rank-cell { 
-    font-weight: 800; 
-    width: 60px; 
-    color: var(--text-muted);
-}
+.rank-cell { font-weight: 800; width: 60px; color: var(--text-muted); }
+.user-cell { font-weight: 600; }
+.mins-cell { color: var(--accent); font-weight: 800; text-align: right; }
 
-.user-cell { 
-    font-weight: 600; 
-}
-
-.mins-cell { 
-    color: var(--accent); 
-    font-weight: 800; 
-    text-align: right; 
-}
-
-/* Specific styling for the logged in user row */
-.leaderboard-table tr.current-user td { 
-    background: rgba(99, 102, 241, 0.12) !important;
+.current-user td { 
+    background: rgba(99, 102, 241, 0.15) !important;
 }
 
     /* Game Catalog Grid */
