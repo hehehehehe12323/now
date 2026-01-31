@@ -1909,6 +1909,69 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 .choice-btn:active {
     transform: scale(0.95);
 }
+
+    /* --- Easter Egg Visuals --- */
+
+/* 1. The Glitch Effect (For Konami Code reward) */
+.glitch-text {
+    animation: glitch 0.4s cubic-bezier(.25,.46,.45,.94) both infinite;
+    color: #00fff2 !important;
+    text-shadow: 0 0 10px #00fff2, 2px 0 #ff00c1, -2px 0 #00fff2;
+}
+
+@keyframes glitch {
+    0% { transform: translate(0) }
+    20% { transform: translate(-2px, 2px) }
+    40% { transform: translate(-2px, -2px) }
+    60% { transform: translate(2px, 2px) }
+    80% { transform: translate(2px, -2px) }
+    100% { transform: translate(0) }
+}
+
+/* 2. The Overdrive Glow (For Logo Clicks) */
+.logo-overdrive {
+    filter: drop-shadow(0 0 15px #FFD700) brightness(1.5) !important;
+    animation: pulse-glow 1s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-glow {
+    from { filter: drop-shadow(0 0 5px #f59e0b) brightness(1.2); }
+    to { filter: drop-shadow(0 0 25px #f59e0b) brightness(2); }
+}
+
+/* 3. The Smoother Barrel Roll */
+.spinning-body {
+    transition: transform 2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transform: rotate(360deg);
+}
+
+/* 4. Falling Coins (Bonus visual for finding secrets) */
+.falling-coin {
+    position: fixed;
+    top: -50px;
+    font-size: 24px;
+    z-index: 9999;
+    pointer-events: none;
+    animation: coin-fall 2s linear forwards;
+}
+
+@keyframes coin-fall {
+    to { 
+        transform: translateY(110vh) rotate(720deg); 
+        opacity: 0;
+    }
+}
+
+    @keyframes launch {
+    0% { transform: translate(0,0) rotate(0); }
+    15% { transform: translate(-15px, 15px) rotate(-10deg); filter: brightness(2); } /* Pulling back */
+    100% { transform: translate(2500px, -2500px) rotate(45deg); opacity: 0; } /* Blasting off screen */
+}
+
+    .rocket-launch {
+    animation: launch 2.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+    pointer-events: none; /* Can't click it while it's flying */
+}
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -4489,6 +4552,96 @@ async function runRiggedFlip() {
         btn.disabled = false;
         btn.innerText = "FLIP!!";
     }, 1000);
+}
+
+    // Easter Eggs
+   // KONAMI CODE 
+let kKeys = [];
+const kCode = '38384040373937396665'; 
+
+document.addEventListener('keydown', (e) => {
+    kKeys.push(e.keyCode);
+    kKeys = kKeys.slice(-10); 
+    if (kKeys.join('') === kCode) {
+        profileData.coins += 500;
+        
+        // Visual Trigger: Use the CSS Glitch class
+        const nameEl = document.getElementById('pMenuName');
+        if(nameEl) {
+            nameEl.classList.add('glitch-text');
+            setTimeout(() => nameEl.classList.remove('glitch-text'), 10000);
+        }
+
+        addSystemMessage("CORE OVERRIDE", "Secret cheat detected. 500 Coins injected into account.");
+        
+        if(typeof _supabase !== 'undefined') {
+            _supabase.from('profiles').update({ coins: profileData.coins }).eq('username', currentUser);
+        }
+        
+        document.getElementById('pMenuCoins').innerText = profileData.coins;
+        document.getElementById('shopBalance').innerText = profileData.coins;
+    }
+});
+    //rocket logo
+let logoClicks = 0;
+const logoEl = document.getElementById('mainLogo');
+
+if (logoEl) {
+    logoEl.addEventListener('click', () => {
+        logoClicks++;
+        // Visual feedback per click (shakes a bit)
+        logoEl.style.transform = `scale(${1 + logoClicks * 0.05}) rotate(${logoClicks * 5}deg)`;
+
+        if (logoClicks >= 10) {
+            // 1. Add the launch class
+            logoEl.classList.add('rocket-launch');
+            
+            // 2. Spawn the coin shower
+            spawnCoinShower();
+
+            // 3. Give reward
+            profileData.coins += 100;
+            document.getElementById('pMenuCoins').innerText = profileData.coins;
+            addSystemMessage("ASTEROID DISCOVERED", "You found a secret cache! +100 Coins.");
+
+            // 4. Reset logo position after it flies back
+            logoClicks = 0;
+            setTimeout(() => { 
+                logoEl.classList.remove('rocket-launch');
+                logoEl.style.transform = ""; 
+            }, 3000); 
+        }
+    });
+}
+
+// Function to create the "Golden Shower" effect
+function spawnCoinShower() {
+    for (let i = 0; i < 20; i++) {
+        const coin = document.createElement('div');
+        coin.innerHTML = '🪙';
+        coin.className = 'falling-coin';
+        coin.style.left = Math.random() * 100 + 'vw';
+        coin.style.animationDelay = Math.random() * 2 + 's';
+        document.body.appendChild(coin);
+        
+        // Clean up memory
+        setTimeout(() => coin.remove(), 4000);
+    }
+}
+//barrel roll
+const searchInput = document.getElementById('searchBar');
+
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        if (e.target.value.toLowerCase() === "do a barrel roll") {
+            document.body.classList.add('spinning-body'); // Uses the 2s smooth animation
+            
+            setTimeout(() => {
+                document.body.classList.remove('spinning-body');
+                e.target.value = ""; 
+            }, 2000);
+        }
+    });
 }
   </script>
 </body>
