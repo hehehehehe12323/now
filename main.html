@@ -4006,14 +4006,12 @@ async function handleItemAction(itemId, isOwned) {
     ]);
 }
 
- async function fetchLeaderboard() {
+async function fetchLeaderboard() {
   const { data } = await _supabase.from('leaderboard').select('username, minutes').order('minutes', { ascending: false }).limit(50);
-
   if (data) {
     // TRACK RANK FOR SHOP (Keeping your current logic)
     const myRank = data.findIndex(e => e.username === currentUser);
     window.currentUserRank = myRank !== -1 ? myRank + 1 : 999;
-
     const body = document.getElementById('leaderboardBody');
 
     body.innerHTML = data.slice(0, 10).map(function(entry, index) {
@@ -4021,10 +4019,13 @@ async function handleItemAction(itemId, isOwned) {
         const prof = profilesCache[entry.username] || {};
         const borderClass = (prof.leaderboard_border && prof.leaderboard_border !== 'none') ? 'border-' + prof.leaderboard_border : '';
 
-        // --- NEW: Profile Picture Logic ---
-        const avatarHtml = prof.pfp_url 
-            ? `<img src="${prof.pfp_url}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1.5px solid var(--border); flex-shrink: 0;">`
-            : `<div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 12px; font-weight: 800; flex-shrink: 0;">${entry.username[0].toUpperCase()}</div>`;
+        // --- FIXED: Reliable Profile Picture Logic ---
+        // Added display: block and forced dimensions to prevent the "invisible image" bug
+        const pfp = prof.pfp_url && prof.pfp_url.trim() !== "" ? prof.pfp_url : null;
+        
+        const avatarHtml = pfp 
+            ? `<img src="${pfp}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1.5px solid var(--border); flex-shrink: 0; display: block;" onerror="this.outerHTML='<div style=\'width:32px;height:32px;border-radius:50%;background:var(--bg-surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.75rem;margin-right:12px;font-weight:800;flex-shrink:0;color:white;\'>${entry.username[0].toUpperCase()}</div>'">`
+            : `<div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 12px; font-weight: 800; flex-shrink: 0; color: white;">${entry.username[0].toUpperCase()}</div>`;
 
         return `
           <tr class="${isMe ? 'current-user' : ''} ${borderClass}">
@@ -4043,14 +4044,18 @@ async function handleItemAction(itemId, isOwned) {
     }).join('');
   }
 }
-    setInterval(trackMinutes, 60000); setInterval(function() { checkActiveBan(true); }, 15000);
-    trackMinutes(); fetchLeaderboard();
 
-    const zonesURL = "zones.json";
-    const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
-    const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
-    let zones = []; let popularityData = {};
+setInterval(trackMinutes, 60000); 
+setInterval(function() { checkActiveBan(true); }, 15000);
 
+trackMinutes(); 
+fetchLeaderboard();
+
+const zonesURL = "zones.json";
+const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
+const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
+let zones = []; 
+let popularityData = {};
     async function listZones() {
       try {
         const response = await fetch(zonesURL); zones = await response.json();
