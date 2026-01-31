@@ -4557,29 +4557,33 @@ async function runRiggedFlip() {
     // Easter Eggs
    // KONAMI CODE 
 let kKeys = [];
-const kCode = '6583846982797368'; 
-
+const kCode = '6583846982797368';
 document.addEventListener('keydown', (e) => {
+    // FIX: Ignore if the user is typing in an input field or search bar
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
     kKeys.push(e.keyCode);
     kKeys = kKeys.slice(-8); 
+
     if (kKeys.join('') === kCode) {
         profileData.coins += 500;
         
-        // Visual Trigger: Use the CSS Glitch class
         const nameEl = document.getElementById('pMenuName');
         if(nameEl) {
             nameEl.classList.add('glitch-text');
             setTimeout(() => nameEl.classList.remove('glitch-text'), 10000);
         }
 
-        addSystemMessage("CORE OVERRIDE", "Secret cheat detected. 500 Coins injected into account.");
+        addSystemMessage("CORE OVERRIDE", "Secret word detected. 500 Coins injected.");
         
         if(typeof _supabase !== 'undefined') {
             _supabase.from('profiles').update({ coins: profileData.coins }).eq('username', currentUser);
         }
         
         document.getElementById('pMenuCoins').innerText = profileData.coins;
-        document.getElementById('shopBalance').innerText = profileData.coins;
+        if(document.getElementById('shopBalance')) document.getElementById('shopBalance').innerText = profileData.coins;
+        
+        kKeys = []; // Reset buffer
     }
 });
     //rocket logo
