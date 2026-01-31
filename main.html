@@ -1181,95 +1181,109 @@
       font-weight: 800;
     }
 
-/* Leaderboard Component */
+/* Leaderboard Component - Enhanced Visuals */
 #leaderboardSection {
-    max-width: 800px;
-    margin: 2rem auto;
+    max-width: 850px;
+    margin: 3rem auto;
     background: var(--bg-card);
-    border-radius: 24px;
+    border-radius: 28px;
     border: 1px solid var(--border);
-    padding: 2rem;
+    padding: 2.5rem;
     display: block;
     animation: fadeIn 0.4s ease forwards;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .leaderboard-table {
     width: 100%;
-    border-collapse: separate;
-    /* Increase spacing to 16px to ensure shadows have room to breathe */
-    border-spacing: 0 16px; 
-    margin-top: 1rem;
+    border-separate: separate;
+    /* Increased vertical spacing to let glows breathe */
+    border-spacing: 0 14px; 
+    margin-top: 1.5rem;
 }
 
 .leaderboard-table th {
     text-align: left;
     color: var(--text-muted);
-    padding: 0 1.2rem 0.5rem 1.2rem;
-    font-size: 0.8rem;
+    padding: 0 1.5rem 0.5rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 800;
 }
 
 .leaderboard-table td {
-    padding: 1.4rem 1.2rem;
+    padding: 1.25rem 1.5rem;
     background: var(--bg-surface);
-    /* Remove all standard borders to prevent clipping issues */
     border: none !important;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Card rounding for rows */
 .leaderboard-table tr td:first-child {
-    border-radius: 12px 0 0 12px;
+    border-radius: 16px 0 0 16px;
 }
 .leaderboard-table tr td:last-child {
-    border-radius: 0 12px 12px 0;
+    border-radius: 0 16px 16px 0;
 }
 
-/* --- THE FIX: BOX-SHADOW BORDERS --- */
+/* Subtle row hover effect */
+.leaderboard-table tr:hover td {
+    background: #1e293b;
+    transform: translateY(-2px);
+}
 
-/* This simulates a 2px border by using a shadow with 0 blur and 2px spread */
+/* --- THE FIX: PREMIUM GLOW BORDERS --- */
+
+/* Base Logic for Border Styles */
 .leaderboard-table tr[class*="border-"] td {
-    box-shadow: 0 -2px 0 0 var(--b-color), 0 2px 0 0 var(--b-color);
+    /* Main edge border using box-shadow */
+    box-shadow: inset 0 2px 0 0 var(--b-color), inset 0 -2px 0 0 var(--b-color);
+    /* Soft glow using filter to prevent cell clipping */
+    filter: drop-shadow(0 0 4px var(--b-glow));
 }
+
 .leaderboard-table tr[class*="border-"] td:first-child {
-    box-shadow: -2px -2px 0 0 var(--b-color), -2px 2px 0 0 var(--b-color), 0 -2px 0 0 var(--b-color), 0 2px 0 0 var(--b-color);
+    box-shadow: inset 2px 2px 0 0 var(--b-color), inset 0 -2px 0 0 var(--b-color), inset 0 2px 0 0 var(--b-color);
 }
+
 .leaderboard-table tr[class*="border-"] td:last-child {
-    box-shadow: 2px -2px 0 0 var(--b-color), 2px 2px 0 0 var(--b-color), 0 -2px 0 0 var(--b-color), 0 2px 0 0 var(--b-color);
+    box-shadow: inset -2px -2px 0 0 var(--b-color), inset 0 2px 0 0 var(--b-color), inset 0 -2px 0 0 var(--b-color);
 }
 
-/* Specific Colors (using CSS variables for cleaner application) */
-.leaderboard-table tr.border-gold { --b-color: #FFD700; }
-.leaderboard-table tr.border-silver { --b-color: #C0C0C0; }
-.leaderboard-table tr.border-bronze { --b-color: #CD7F32; }
-.leaderboard-table tr.border-diamond { --b-color: #b9f2ff; }
-.leaderboard-table tr.border-ruby { --b-color: #ff1166; }
-.leaderboard-table tr.border-emerald { --b-color: #10b981; }
-.leaderboard-table tr.border-fire { --b-color: #f97316; }
-.leaderboard-table tr.border-ice { --b-color: #06b6d4; }
+/* Color Palette with matching Glows */
+.leaderboard-table tr.border-gold { --b-color: #FFD700; --b-glow: rgba(255, 215, 0, 0.3); }
+.leaderboard-table tr.border-silver { --b-color: #C0C0C0; --b-glow: rgba(192, 192, 192, 0.2); }
+.leaderboard-table tr.border-bronze { --b-color: #CD7F32; --b-glow: rgba(205, 127, 50, 0.2); }
+.leaderboard-table tr.border-diamond { --b-color: #b9f2ff; --b-glow: rgba(185, 242, 255, 0.4); }
+.leaderboard-table tr.border-ruby { --b-color: #ff1166; --b-glow: rgba(255, 17, 102, 0.3); }
+.leaderboard-table tr.border-emerald { --b-color: #10b981; --b-glow: rgba(16, 185, 129, 0.3); }
+.leaderboard-table tr.border-fire { --b-color: #f97316; --b-glow: rgba(239, 68, 68, 0.3); }
+.leaderboard-table tr.border-ice { --b-color: #06b6d4; --b-glow: rgba(6, 182, 212, 0.3); }
+.leaderboard-table tr.border-neon { --b-color: #a855f7; --b-glow: rgba(168, 85, 247, 0.3); }
+.leaderboard-table tr.border-cyan { --b-color: #00bcd4; --b-glow: rgba(0, 188, 212, 0.3); }
+.leaderboard-table tr.border-sapphire { --b-color: #3b82f6; --b-glow: rgba(59, 130, 246, 0.3); }
 
-/* Add a Glow effect if it has a border */
-.leaderboard-table tr[class*="border-"] td {
-    filter: drop-shadow(0 0 5px var(--b-color));
-}
-
-/* Special Rainbow Handling */
-.leaderboard-table tr.border-rainbow {
-    /* Rainbow is tricky with shadows, so we use a filter to color the glow instead */
-    --b-color: #fff; 
-}
+/* Animated Rainbow Border */
 .leaderboard-table tr.border-rainbow td {
     background: linear-gradient(var(--bg-surface), var(--bg-surface)) padding-box,
                 linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00) border-box !important;
     border: 2px solid transparent !important;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.1));
 }
 
-.rank-cell { font-weight: 800; width: 60px; color: var(--text-muted); }
-.user-cell { font-weight: 600; }
-.mins-cell { color: var(--accent); font-weight: 800; text-align: right; }
+.leaderboard-table tr.border-rainbow:hover td {
+    background: linear-gradient(#1e293b, #1e293b) padding-box,
+                linear-gradient(90deg, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00) border-box !important;
+}
+
+/* User Text Polish */
+.rank-cell { font-weight: 800; width: 80px; color: var(--text-muted); font-size: 1.1rem; }
+.user-cell { font-weight: 600; font-size: 1rem; }
+.mins-cell { color: var(--accent); font-weight: 800; text-align: right; font-family: 'JetBrains Mono', monospace; }
 
 .current-user td { 
-    background: rgba(99, 102, 241, 0.15) !important;
+    background: rgba(99, 102, 241, 0.1) !important;
 }
 
     /* Game Catalog Grid */
