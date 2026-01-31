@@ -4557,11 +4557,11 @@ async function runRiggedFlip() {
     // Easter Eggs
    // KONAMI CODE 
 let kKeys = [];
-const kCode = '38384040373937396665'; 
+const kCode = '6583846982797368'; 
 
 document.addEventListener('keydown', (e) => {
     kKeys.push(e.keyCode);
-    kKeys = kKeys.slice(-10); 
+    kKeys = kKeys.slice(-8); 
     if (kKeys.join('') === kCode) {
         profileData.coins += 500;
         
