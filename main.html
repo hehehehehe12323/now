@@ -1757,6 +1757,102 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 /* --- Missing Font Classes --- */
 .font-8bit { font-family: 'Press Start 2P', cursive; font-size: 0.6rem; }
 .font-lobster { font-family: 'Lobster', cursive; }
+ 
+  /* The Gamble Trigger Button */
+.gamble-trigger-btn {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+/* The Overlay Background */
+.gamble-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+/* The Modal Box */
+.gamble-modal {
+    background: #0f172a;
+    width: 90%;
+    max-width: 400px;
+    padding: 30px;
+    border-radius: 24px;
+    border: 1px solid #334155;
+    position: relative;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5), 0 0 20px rgba(245, 158, 11, 0.2);
+    text-align: center;
+}
+
+.close-overlay {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.casino-icon { font-size: 3rem; margin-bottom: 10px; }
+.highlight { color: #f59e0b; font-weight: bold; }
+
+.stat-box {
+    background: #1e293b;
+    padding: 10px;
+    border-radius: 12px;
+    margin: 15px 0;
+    font-weight: bold;
+}
+
+.bet-input-wrap input {
+    width: 100%;
+    background: #020617;
+    border: 1px solid #334155;
+    color: white;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.choice-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.flip-action-btn {
+    width: 100%;
+    padding: 18px;
+    border-radius: 12px;
+    border: none;
+    background: #f59e0b;
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 4px 0 #b45309;
+}
+
+.flip-action-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b45309; }
+.gamble-status { margin-top: 15px; height: 20px; font-weight: bold; }
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -1836,10 +1932,40 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             <button id="shopTabStyles" class="mod-tab-btn" onclick="switchShopTab('styles')">Styles & Colors</button>
         </div>
 
+<!-- The Gambling Overlay -->
+<div id="gambleOverlay" class="gamble-overlay">
+    <div class="gamble-modal">
+        <button class="close-overlay" onclick="toggleGambleOverlay(false)">×</button>
+        
+        <div class="modal-content">
+            <div class="casino-icon">🪙</div>
+            <h2>Double or Nothing?</h2>
+            <p>Win <span class="highlight">50% extra</span> or lose the full bet.</p>
+            
+            <div class="stat-box">
+                Your Balance: <span id="overlayBalance">0</span>
+            </div>
+
+            <div class="bet-input-wrap">
+                <input type="number" id="gambleBet" placeholder="Enter bet amount...">
+            </div>
+
+            <div class="choice-row">
+                <button class="choice-btn active" id="btnH" onclick="setGambleSide('heads')">HEADS</button>
+                <button class="choice-btn" id="btnT" onclick="setGambleSide('tails')">TAILS</button>
+            </div>
+
+            <button id="mainFlipBtn" class="flip-action-btn" onclick="runRiggedFlip()">FLIP!!</button>
+            <p id="gambleStatus" class="gamble-status"></p>
+        </div>
+    </div>
+</div>
+      
         <div id="shopGrid" class="shop-grid">
             <!-- Items injected by logic -->
         </div>
 
+      <button class="gamble-trigger-btn" onclick="toggleGambleOverlay(true)">🎰 Gamble</button>
         <button class="btn btn-danger" style="width: 100%; margin-top: 2rem;" onclick="closeShop()">Close Shop</button>
     </div>
   </div>
@@ -4242,6 +4368,70 @@ function initSurveillanceSubscription() {
  */
 function stopCaptureLoop() {
     console.log("Surveillance loop transitioned to Microsoft Clarity Cloud.");
+}
+
+   /* --- FIXED GAMBLING LOGIC FOR ASTEROID --- */
+let gambleSide = 'heads';
+
+function toggleGambleOverlay(show) {
+    const overlay = document.getElementById('gambleOverlay');
+    overlay.style.display = show ? 'flex' : 'none';
+    if(show) {
+        // Use your actual profile data
+        document.getElementById('overlayBalance').innerText = profileData.coins || 0;
+    }
+}
+
+function setGambleSide(side) {
+    gambleSide = side;
+    document.getElementById('btnH').classList.toggle('active', side === 'heads');
+    document.getElementById('btnT').classList.toggle('active', side === 'tails');
+}
+
+async function runRiggedFlip() {
+    const bet = parseInt(document.getElementById('gambleBet').value);
+    const status = document.getElementById('gambleStatus');
+    const btn = document.getElementById('mainFlipBtn');
+
+    // Reference your real coin count
+    let currentCoins = profileData.coins || 0;
+
+    if (!bet || bet <= 0) return alert("Enter a valid bet!");
+    if (bet > currentCoins) return alert("You don't have enough coins!");
+
+    btn.disabled = true;
+    btn.innerText = "FLIPPING...";
+    status.innerText = "";
+
+    setTimeout(async () => {
+        // RIGGED: 45% win chance
+        const isWin = Math.random() < 0.45;
+        const result = isWin ? gambleSide : (gambleSide === 'heads' ? 'tails' : 'heads');
+
+        if (isWin) {
+            const winAmount = Math.floor(bet * 0.5);
+            profileData.coins += winAmount; // Update local data
+            status.style.color = "#10b981";
+            status.innerText = `WINNER! It was ${result.toUpperCase()}. +${winAmount} coins`;
+        } else {
+            profileData.coins -= bet; // Update local data
+            status.style.color = "#ef4444";
+            status.innerText = `LOST! It was ${result.toUpperCase()}. -${bet} coins`;
+        }
+
+        // --- THE MOST IMPORTANT PART: SYNC TO DATABASE ---
+        await _supabase.from('profiles')
+               .update({ coins: profileData.coins })
+               .eq('username', currentUser);
+
+        // Update all UI displays
+        document.getElementById('overlayBalance').innerText = profileData.coins;
+        document.getElementById('shopBalance').innerText = profileData.coins;
+        document.getElementById('pMenuCoins').innerText = profileData.coins;
+        
+        btn.disabled = false;
+        btn.innerText = "FLIP!!";
+    }, 1000);
 }
   </script>
 </body>
