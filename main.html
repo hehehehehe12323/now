@@ -4462,7 +4462,7 @@ async function runRiggedFlip() {
 
     setTimeout(async () => {
         // RIGGED: 45% win chance
-        const isWin = Math.random() < 0.45;
+        const isWin = Math.random() < 0.25;
         const result = isWin ? gambleSide : (gambleSide === 'heads' ? 'tails' : 'heads');
 
         if (isWin) {
