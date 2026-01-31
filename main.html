@@ -1972,31 +1972,6 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     animation: launch 2.5s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
     pointer-events: none; /* Can't click it while it's flying */
 }
-
-    /* RGB Rainbow Effect */
-.name-rgb {
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: rgb-shift 3s linear infinite;
-    font-weight: bold;
-}
-
-@keyframes rgb-shift {
-    to { background-position: 200% center; }
-}
-
-/* Wave/Bounce Effect */
-.name-wave span {
-    display: inline-block;
-    animation: wave-bounce 1s ease-in-out infinite;
-}
-
-@keyframes wave-bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-6px); }
-}
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -2528,17 +2503,6 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
       return id;
     }
 
-    // wave helper
-    function formatDisplayName(name, style) {
-    // We check for 'wave' because that is what is stored in prof.name_style
-    if (style === 'wave' || style === 'name-wave') {
-        return name.split('').map((char, i) => 
-            `<span style="animation-delay: ${i * 0.1}s">${char === ' ' ? '&nbsp;' : char}</span>`
-        ).join('');
-    }
-    return name;
-}
-
     // Defined Shop Catalog
         const shopItems = {
         tags: [
@@ -2645,7 +2609,6 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             { id: 'color_ruby', name: 'Imperial Ruby', price: 750, type: 'color', value: '#d81b60' },
             { id: 'color_diamond', name: 'Diamond White', price: 1500, type: 'color', value: '#ffffff' },
             { id: 'color_black', name: 'Void Black', price: 2500, type: 'color', value: '#000000' },
-            { id: 'style_rgb', name: 'RGB Name', price: 5000, type: 'style', value: 'rgb' }
 
             /* NEW: EXOTIC COLORS */
             { id: 'color_vapor', name: 'Vapor Wave', price: 1200, type: 'color', value: '#ff71ce' },
@@ -2663,7 +2626,6 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
             { id: 'style_strike', name: 'Strikethrough', price: 400, type: 'style', value: 'strike' },
             { id: 'style_wavy', name: 'Wavy Name', price: 1200, type: 'style', value: 'wavy' },
             { id: 'style_jitter', name: 'Jittery Name', price: 1500, type: 'style', value: 'jitter' },
-            { id: 'style_wave', name: 'Wave Name', price: 7500, type: 'style', value: 'wave' }
 
             /* NEW: ELITE EFFECTS */
             { id: 'style_rainbow_text', name: 'Rainbow Text', price: 10000, type: 'style', value: 'rainbow', req: 'top:1', reqText: 'Only for Rank #1' },
@@ -3998,10 +3960,7 @@ pMenuName.className = 'menu-name';
 if (data.name_style) pMenuName.classList.add('name-' + data.name_style);
 if (data.name_font) pMenuName.classList.add('font-' + data.name_font);
             const displayName = savedName || currentUser;
-            pMenuName.innerHTML = data.selected_tag ? 
-    `<span style="opacity: 0.6; font-size: 0.75rem; font-weight: 400; margin-right: 5px;">${data.selected_tag}</span>${formatDisplayName(displayName, data.name_style)}` : 
-    formatDisplayName(displayName, data.name_style);
-
+            pMenuName.innerHTML = data.selected_tag ? `<span style="opacity: 0.6; font-size: 0.75rem; font-weight: 400; margin-right: 5px;">${data.selected_tag}</span>${displayName}` : displayName;
             
             // --- FIXED: Use All-Time Stats for Minutes ---
             const atmins = stats ? (stats.minutes || 0) : 0;
@@ -4124,12 +4083,10 @@ function checkItemRequirement(item) {
         return `
             <div class="shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''} ${!isOwned && !reqMet ? 'locked' : ''}" 
                  onclick="handleItemAction('${item.id}', ${isOwned})">
-
- <div class="item-preview ${previewClass}" ${previewStyle}>
-    <span style="padding: 5px;">
-        ${(item.value === 'wave') ? formatDisplayName(item.name, 'wave') : item.name}
-    </span>
-</div>
+                
+                <div class="item-preview ${previewClass}" ${previewStyle}>
+                    <span style="padding: 5px;">${item.name}</span>
+                </div>
 
                 <div class="item-price">${statusDisplay}</div>
 
@@ -4323,12 +4280,10 @@ async function fetchLeaderboard(type = 'weekly') {
         return `
           <tr class="${isMe ? 'current-user' : ''} ${borderClass}">
             <td class="rank-cell">#${index + 1}</td>
-<td class="user-cell">
-    ${prof.selected_tag ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${prof.selected_tag}</span>` : ''}
-    <span class="name-${prof.name_style || ''} font-${prof.name_font || ''}" style="color: ${prof.name_color || 'inherit'}">
-        ${formatDisplayName(entry.username, prof.name_style)}
-    </span>
-</td>
+            <td class="user-cell">
+                ${prof.selected_tag ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${prof.selected_tag}</span>` : ''}
+                <span class="name-${prof.name_style || ''} font-${prof.name_font || ''}" style="color: ${prof.name_color || 'inherit'}">${entry.username}</span>
+            </td>
             <td class="mins-cell">${displayMins}m</td>
           </tr>`;
     }).join('');
