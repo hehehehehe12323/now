@@ -3255,7 +3255,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
      * CHAT VIEWPORT ANCHOR ENGINE (REPLIES-FIXED VERSION)
      * ========================================================================
      */
-   function renderMessages() {
+    function renderMessages() {
   const body = document.getElementById('chatBody');
   if (!body) return;
 
@@ -3300,17 +3300,11 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     let blockedClass = isBlockedStr ? 'blocked-content' : '';
     let staffRoomClass = (activeChannel === 'staff') ? 'staff-msg' : '';
 
-    // --- NEW: Chat PFP Logic ---
-    const chatAvatar = prof.pfp_url 
-        ? `<img src="${prof.pfp_url}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; margin-right: 8px; vertical-align: middle; flex-shrink: 0;">`
-        : `<span style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); display: inline-flex; align-items: center; justify-content: center; font-size: 0.6rem; margin-right: 8px; vertical-align: middle; font-weight: 800; font-style: normal; flex-shrink: 0;">${msg.username[0].toUpperCase()}</span>`;
-
     return `
       <div class="message ${ownClass} ${privateClass} ${blockedClass} ${staffRoomClass} ${borderClass} ${highlightClass}">
         ${isPM ? `<div class="dm-banner">PRIVATE MESSAGE${recipientLabel}</div>` : ''}
         <div class="msg-header">
-          <span class="msg-user" style="display: flex; align-items: center;">
-            ${chatAvatar}
+          <span class="msg-user">
             ${tagText ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px; font-style: normal; text-decoration: none;">${tagText}</span>` : ''}
             <span class="${nameStyleClass} ${nameFontClass}" style="color: ${nameColor || 'inherit'}">${msg.username}</span>
             ${isAdminSender ? '<span class="mod-badge" style="background:#ef4444;">ADMIN</span>' : ''}
@@ -3333,21 +3327,19 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     body.scrollTop = body.scrollHeight;
   }
 }
+    document.getElementById('chatBody').addEventListener('load', (e) => {
+        if (e.target.tagName === 'IMG') {
+            const body = document.getElementById('chatBody');
+            const isAtBottom = (body.scrollHeight - body.scrollTop - body.clientHeight < 200);
+            if (isAtBottom) body.scrollTop = body.scrollHeight;
+        }
+    }, true);
 
-// Ensure the scroll remains at the bottom when PFP images load
-document.getElementById('chatBody').addEventListener('load', (e) => {
-    if (e.target.tagName === 'IMG') {
-        const body = document.getElementById('chatBody');
-        const isAtBottom = (body.scrollHeight - body.scrollTop - body.clientHeight < 200);
-        if (isAtBottom) body.scrollTop = body.scrollHeight;
+    function insertTag(str) {
+        const input = document.getElementById('chatInput');
+        input.value += str;
+        input.focus();
     }
-}, true);
-
-function insertTag(str) {
-    const input = document.getElementById('chatInput');
-    input.value += str;
-    input.focus();
-}
 
     function handleStaffBroadcast() {
         const msg = prompt("Force send system-wide broadcast alert:");
@@ -3663,7 +3655,7 @@ function insertTag(str) {
             .subscribe();
     }
 
-        async function loadProfile() {
+    async function loadProfile() {
         const ban = await checkActiveBan(true);
         if (ban === 'site') return;
 
@@ -3687,41 +3679,33 @@ function insertTag(str) {
                 }
                 subscribeStaffMessages();
             }
-
-            // --- FIXED: Prioritize Database for Name and PFP ---
-            const savedName = data.full_name || localStorage.getItem('asteroid_full_name');
-            const savedPfp = data.pfp_url || localStorage.getItem('asteroid_pfp');
-
+            const savedName = localStorage.getItem('asteroid_full_name') || data.full_name;
+            const savedPfp = localStorage.getItem('asteroid_pfp');
             const pTrigger = document.getElementById('profileTrigger');
             pTrigger.className = 'profile-trigger'; 
             if (data.leaderboard_border && data.leaderboard_border !== 'none') pTrigger.classList.add('border-' + data.leaderboard_border);
             document.getElementById('navInitial').textContent = currentUser.charAt(0).toUpperCase();
 
-            const pMenuName = document.getElementById('pMenuName');
-            pMenuName.style.color = data.name_color || 'inherit';
-            pMenuName.className = 'menu-name'; 
-            if (data.name_style) pMenuName.classList.add('name-' + data.name_style);
-            if (data.name_font) pMenuName.classList.add('font-' + data.name_font);
-            
+           const pMenuName = document.getElementById('pMenuName');
+pMenuName.style.color = data.name_color || 'inherit';
+pMenuName.className = 'menu-name'; 
+if (data.name_style) pMenuName.classList.add('name-' + data.name_style);
+if (data.name_font) pMenuName.classList.add('font-' + data.name_font);
             const displayName = savedName || currentUser;
             pMenuName.innerHTML = data.selected_tag ? `<span style="opacity: 0.6; font-size: 0.75rem; font-weight: 400; margin-right: 5px;">${data.selected_tag}</span>${displayName}` : displayName;
             
+            // --- FIXED: Use All-Time Stats for Minutes ---
             const atmins = stats ? (stats.minutes || 0) : 0;
             document.getElementById('pMenuMins').textContent = atmins + 'm';
+            
             document.getElementById('pMenuCoins').textContent = data.coins || 0;
-
-            // --- FIXED: Update Navbar PFP from Database ---
             if (savedPfp) {
                 document.getElementById('navPfp').src = savedPfp;
                 document.getElementById('navPfp').style.display = 'block';
                 document.getElementById('navInitial').style.display = 'none';
-            } else {
-                document.getElementById('navPfp').style.display = 'none';
-                document.getElementById('navInitial').style.display = 'flex';
             }
             updatePersonalRow();
         }
-
         const { data: allProfs } = await _supabase.from('profiles').select('*');
         if (allProfs) {
             allProfs.forEach(p => {
@@ -3730,41 +3714,29 @@ function insertTag(str) {
             });
         }
         fetchLeaderboard(); initSitePresence(); checkMissedMessages();
-        initMonitoringAgent();
+        initMonitoringAgent(); // START MONITORING AGENT AS USER OR ADMIN
     }
 
     function toggleProfileMenu() { document.getElementById('profileMenu').classList.toggle('active'); }
     function toggleToolsMenu() { document.getElementById('toolsMenu').classList.toggle('active'); }
     
     function openSettings() {
-        // Use database data (profileData) if available, otherwise fallback to local storage
-        document.getElementById('setFullName').value = profileData?.full_name || localStorage.getItem('asteroid_full_name') || "";
-        document.getElementById('setPfpUrl').value = profileData?.pfp_url || localStorage.getItem('asteroid_pfp') || "";
+        document.getElementById('setFullName').value = localStorage.getItem('asteroid_full_name') || "";
+        document.getElementById('setPfpUrl').value = localStorage.getItem('asteroid_pfp') || "";
         document.getElementById('settingsModal').classList.add('active');
         document.getElementById('profileMenu').classList.remove('active');
     }
 
     function closeSettings() { document.getElementById('settingsModal').classList.remove('active'); }
 
-    async function saveSettings() {
+    function saveSettings() {
         const name = document.getElementById('setFullName').value;
         const pfp = document.getElementById('setPfpUrl').value;
-        
-        // --- FIXED: Save Full Name and PFP to Supabase ---
-        await _supabase.from('profiles').upsert({ 
-            username: currentUser, 
-            full_name: name,
-            pfp_url: pfp
-        }, { onConflict: 'username' });
-
-        // Backup to local storage for instant sync
         localStorage.setItem('asteroid_full_name', name);
         localStorage.setItem('asteroid_pfp', pfp);
-        
-        await loadProfile(); 
-        closeSettings();
+        loadProfile(); closeSettings();
+        _supabase.from('profiles').upsert({ username: currentUser, full_name: name }, { onConflict: 'username' });
     }
-    
     function openShop() {
         document.getElementById('shopModal').classList.add('active');
         document.getElementById('shopBalance').textContent = profileData.coins || 0;
@@ -4006,38 +3978,24 @@ async function handleItemAction(itemId, isOwned) {
     ]);
 }
 
-async function fetchLeaderboard() {
+  async function fetchLeaderboard() {
   const { data } = await _supabase.from('leaderboard').select('username, minutes').order('minutes', { ascending: false }).limit(50);
   if (data) {
-    // TRACK RANK FOR SHOP (Keeping your current logic)
+    // TRACK RANK FOR SHOP
     const myRank = data.findIndex(e => e.username === currentUser);
     window.currentUserRank = myRank !== -1 ? myRank + 1 : 999;
-    const body = document.getElementById('leaderboardBody');
 
+    const body = document.getElementById('leaderboardBody');
     body.innerHTML = data.slice(0, 10).map(function(entry, index) {
         const isMe = (entry.username === currentUser);
         const prof = profilesCache[entry.username] || {};
         const borderClass = (prof.leaderboard_border && prof.leaderboard_border !== 'none') ? 'border-' + prof.leaderboard_border : '';
-
-        // --- FIXED: Reliable Profile Picture Logic ---
-        // Added display: block and forced dimensions to prevent the "invisible image" bug
-        const pfp = prof.pfp_url && prof.pfp_url.trim() !== "" ? prof.pfp_url : null;
-        
-        const avatarHtml = pfp 
-            ? `<img src="${pfp}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1.5px solid var(--border); flex-shrink: 0; display: block;" onerror="this.outerHTML='<div style=\'width:32px;height:32px;border-radius:50%;background:var(--bg-surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.75rem;margin-right:12px;font-weight:800;flex-shrink:0;color:white;\'>${entry.username[0].toUpperCase()}</div>'">`
-            : `<div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; margin-right: 12px; font-weight: 800; flex-shrink: 0; color: white;">${entry.username[0].toUpperCase()}</div>`;
-
         return `
           <tr class="${isMe ? 'current-user' : ''} ${borderClass}">
             <td class="rank-cell">#${index + 1}</td>
-            <td class="user-cell" style="display: flex; align-items: center;">
-                ${avatarHtml}
-                <div style="display: flex; flex-direction: column;">
-                    ${prof.selected_tag ? `<span style="opacity: 0.6; font-size: 0.65rem; line-height: 1; margin-bottom: 2px;">${prof.selected_tag}</span>` : ''}
-                    <span class="name-${prof.name_style || ''} font-${prof.name_font || ''}" style="color: ${prof.name_color || 'inherit'}">
-                        ${prof.full_name || entry.username}
-                    </span>
-                </div>
+            <td class="user-cell">
+                ${prof.selected_tag ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${prof.selected_tag}</span>` : ''}
+                <span class="name-${prof.name_style || ''} font-${prof.name_font || ''}" style="color: ${prof.name_color || 'inherit'}">${entry.username}</span>
             </td>
             <td class="mins-cell">${entry.minutes}m</td>
           </tr>`;
@@ -4045,17 +4003,14 @@ async function fetchLeaderboard() {
   }
 }
 
-setInterval(trackMinutes, 60000); 
-setInterval(function() { checkActiveBan(true); }, 15000);
+    setInterval(trackMinutes, 60000); setInterval(function() { checkActiveBan(true); }, 15000);
+    trackMinutes(); fetchLeaderboard();
 
-trackMinutes(); 
-fetchLeaderboard();
+    const zonesURL = "zones.json";
+    const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
+    const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
+    let zones = []; let popularityData = {};
 
-const zonesURL = "zones.json";
-const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
-const htmlURL = "https://cdn.jsdelivr.net/gh/asteroid-pixel/html@main";
-let zones = []; 
-let popularityData = {};
     async function listZones() {
       try {
         const response = await fetch(zonesURL); zones = await response.json();
