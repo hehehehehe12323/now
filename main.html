@@ -2259,10 +2259,17 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
    <!-- Sitewide Engagement Leaderboard -->
   <section id="leaderboardSection" class="animate-in">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h3 style="margin: 0; letter-spacing: -1px;">Global Leaderboard</h3>
-      <button class="btn" onclick="fetchLeaderboard()">Refresh</button>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h3 id="leaderboardTitle" style="margin: 0; letter-spacing: -1px;">Weekly Leaderboard</h3>
+      <button class="btn" onclick="fetchLeaderboard(currentLeaderboardTab)">Refresh</button>
     </div>
+
+    <!-- Tab Toggle -->
+    <div class="mod-tabs" style="margin-bottom: 1.5rem;">
+      <button id="lbTabWeekly" class="mod-tab-btn active" onclick="fetchLeaderboard('weekly')">Weekly</button>
+      <button id="lbTabAllTime" class="mod-tab-btn" onclick="fetchLeaderboard('all_time')">All Time (Started On 01/31/2026)</button>
+    </div>
+
     <div id="leaderboardContent">
       <table class="leaderboard-table">
         <thead>
@@ -2277,7 +2284,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
         </tbody>
       </table>
     </div>
-  </section>
+</section>
 
   <!-- Daily Selection UI -->
   <section class="featured-section">
@@ -2460,6 +2467,7 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
     let unreadCount = 0;
     let unreadGlobal = 0;
     let unreadStaff = 0;
+    let currentLeaderboardTab = 'weekly';
     
     // Cloud Profile Synchronization Logic
     let profileData = null;
@@ -4238,18 +4246,37 @@ async function handleItemAction(itemId, isOwned) {
     ]);
 }
 
-  async function fetchLeaderboard() {
-  const { data } = await _supabase.from('leaderboard').select('username, minutes').order('minutes', { ascending: false }).limit(50);
+async function fetchLeaderboard(type = 'weekly') {
+  currentLeaderboardTab = type;
+  const table = (type === 'weekly') ? 'leaderboard' : 'all_time_stats';
+
+  // Toggle UI state
+  const titleEl = document.getElementById('leaderboardTitle');
+  if (titleEl) titleEl.innerText = (type === 'weekly' ? 'Weekly Leaderboard' : 'All-Time Leaderboard');
+  
+  const tabW = document.getElementById('lbTabWeekly');
+  const tabA = document.getElementById('lbTabAllTime');
+  if (tabW) tabW.classList.toggle('active', type === 'weekly');
+  if (tabA) tabA.classList.toggle('active', type === 'all_time');
+
+  const { data } = await _supabase.from(table).select('username, minutes').order('minutes', { ascending: false }).limit(50);
+
   if (data) {
-    // TRACK RANK FOR SHOP
-    const myRank = data.findIndex(e => e.username === currentUser);
-    window.currentUserRank = myRank !== -1 ? myRank + 1 : 999;
+    // --- FIXED LOGIC: Only update shop rank based on WEEKLY stats ---
+    if (type === 'weekly') {
+        const myRank = data.findIndex(e => e.username === currentUser);
+        window.currentUserRank = myRank !== -1 ? myRank + 1 : 999;
+    }
 
     const body = document.getElementById('leaderboardBody');
     body.innerHTML = data.slice(0, 10).map(function(entry, index) {
         const isMe = (entry.username === currentUser);
         const prof = profilesCache[entry.username] || {};
         const borderClass = (prof.leaderboard_border && prof.leaderboard_border !== 'none') ? 'border-' + prof.leaderboard_border : '';
+        
+        // Use locales for All-Time mins since they get very high (e.g. 10,000 -> 10,000)
+        const displayMins = entry.minutes.toLocaleString();
+
         return `
           <tr class="${isMe ? 'current-user' : ''} ${borderClass}">
             <td class="rank-cell">#${index + 1}</td>
@@ -4257,14 +4284,20 @@ async function handleItemAction(itemId, isOwned) {
                 ${prof.selected_tag ? `<span style="opacity: 0.6; font-size: 0.7rem; margin-right: 5px;">${prof.selected_tag}</span>` : ''}
                 <span class="name-${prof.name_style || ''} font-${prof.name_font || ''}" style="color: ${prof.name_color || 'inherit'}">${entry.username}</span>
             </td>
-            <td class="mins-cell">${entry.minutes}m</td>
+            <td class="mins-cell">${displayMins}m</td>
           </tr>`;
     }).join('');
   }
 }
 
-    setInterval(trackMinutes, 60000); setInterval(function() { checkActiveBan(true); }, 15000);
-    trackMinutes(); fetchLeaderboard();
+// Fixed Intervals and Initial Calls
+setInterval(trackMinutes, 60000); 
+setInterval(function() { checkActiveBan(true); }, 15000);
+// Fixed Leaderboard refresh to respect the currently active tab
+setInterval(function() { fetchLeaderboard(currentLeaderboardTab); }, 120000);
+
+trackMinutes(); 
+fetchLeaderboard('weekly');
 
     const zonesURL = "zones.json";
     const coverURL = "https://cdn.jsdelivr.net/gh/gn-math/covers@main";
