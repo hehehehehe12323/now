@@ -1853,6 +1853,62 @@ ADMIN SURVEILLANCE STYLES (V5.0 - PRO MODERATOR LAYOUT)
 
 .flip-action-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b45309; }
 .gamble-status { margin-top: 15px; height: 20px; font-weight: bold; }
+
+    /* --- Coin Flip Choice Buttons --- */
+.choice-btn {
+    background: #1e293b;
+    border: 2px solid #334155;
+    color: #94a3b8;
+    padding: 15px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-family: 'Orbitron', sans-serif; /* Using your cyber font */
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hover effect for unselected buttons */
+.choice-btn:hover:not(.active) {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* The "Selection" Light for Heads (Gold) */
+#btnH.active {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: #FFD700;
+    color: #FFD700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), inset 0 0 10px rgba(255, 215, 0, 0.2);
+    transform: scale(1.05);
+}
+
+/* The "Selection" Light for Tails (Silver/Blue) */
+#btnT.active {
+    background: rgba(148, 163, 184, 0.1);
+    border-color: #f8fafc;
+    color: white;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+/* Adding a small dot indicator inside the active button */
+.choice-btn.active::after {
+    content: '●';
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-size: 0.6rem;
+}
+
+/* Press effect */
+.choice-btn:active {
+    transform: scale(0.95);
+}
   </style>
  <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
